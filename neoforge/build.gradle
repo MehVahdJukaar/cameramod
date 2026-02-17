@@ -19,12 +19,12 @@ configurations {
     shadowCommon // Don't use shadow from the shadow plugin because we don't want IDEA to index this.
     compileClasspath.extendsFrom common
     runtimeClasspath.extendsFrom common
-    developmentNeoForge.extendsFrom common
+    developmentForge.extendsFrom common
 }
 
 
 processResources {
-    filesMatching(['META-INF/neoforge.mods.toml', 'pack.mcmeta', 'update.json']) {
+    filesMatching(['META-INF/mods.toml', 'pack.mcmeta', 'update.json']) {
         expand rootProject.ext.replaceProperties + [project: project]
     }
 }
@@ -40,7 +40,7 @@ shadowJar {
 remapJar {
     input.set shadowJar.archiveFile
     dependsOn shadowJar
-    archiveClassifier = "neoforge"
+    archiveClassifier = "forge"
     atAccessWideners.add("${mod_id}.accesswidener") // this is a path inside the mod jar
 }
 
@@ -53,11 +53,11 @@ sourcesJar {
     dependsOn commonSources
     from commonSources.archiveFile.map { zipTree(it) }
 
-    archiveClassifier = "neoforge-sources"
+    archiveClassifier = "forge-sources"
 }
 
 remapSourcesJar{
-    archiveClassifier = "neoforge-sources"
+    archiveClassifier = "forge-sources"
 }
 
 components.java {
@@ -89,13 +89,13 @@ tasks.withType(JavaCompile).configureEach {
 
 }
 dependencies {
-    neoForge "net.neoforged:neoforge:${neo_version}"
+    forge "net.minecraftforge:forge:${rootProject.forge_version}"
 
     common(project(path: ':common', configuration: 'namedElements')) { transitive false }
-    shadowCommon(project(path: ':common', configuration: 'transformProductionNeoForge'))
+    shadowCommon(project(path: ':common', configuration: 'transformProductionForge'))
 
     compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:0.5.0"))
-    implementation(include("io.github.llamalad7:mixinextras-neoforge:0.5.0"))
+    implementation(include("io.github.llamalad7:mixinextras-forge:0.5.0"))
 
     implementation 'org.jetbrains:annotations:22.0.0'
 
@@ -107,9 +107,6 @@ dependencies {
     modImplementation("curse.maven:jei-238222:7057366")
     modCompileOnly("curse.maven:cc-tweaked-282001:5714512")
     //modImplementation("cc.tweaked-cobalt:cobalt:0.93")
-    modImplementation("net.mehvahdjukaar:supplementaries-neoforge:${supplementaries_version}"){
-        transitive = false
-    }
 
   //  modImplementation("cc.tweaked:cc-tweaked-1.21.1-forge:1.117.0")
 

@@ -123,9 +123,7 @@ subprojects {
             projectId = mr_project_id
             uploadFile = tasks.remapJar
             gameVersions = mcVersions
-            if (modLoader == "forge") {
-                loaders = ["neoforge"]
-            } else loaders = [modLoader]
+            loaders = [modLoader]
             changelog = changelogText
             versionNumber = mod_version + "-" + modLoader
             versionType = release_type
@@ -153,9 +151,7 @@ subprojects {
                     addGameVersion ver
                 }
 
-                if (modLoader == "neoforge") {
-                    addGameVersion("NeoForge")
-                } else addGameVersion modLoader.capitalize()
+                addGameVersion modLoader.capitalize()
 
                 mainArtifact(tasks.remapJar)
 
@@ -241,12 +237,12 @@ static List<String> listGameVersions(String minInclusive, String maxExclusive) {
 tasks.register('buildAndpublishAll') {
     dependsOn ':clean'
     dependsOn ':build'
-    dependsOn ':neoforge:curseforge'
-    dependsOn ':neoforge:modrinth'
+    dependsOn ':forge:curseforge'
+    dependsOn ':forge:modrinth'
     dependsOn ':fabric:curseforge'
     dependsOn ':fabric:modrinth'
     dependsOn ':publish'
 
     group = 'build'
-    description = 'Runs clean, build, and publish neoforge and fabric'
+    description = 'Runs clean, build, and publish forge and fabric'
 }
