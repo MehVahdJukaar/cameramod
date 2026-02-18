@@ -7,11 +7,10 @@ import net.mehvahdjukaar.moonlight.api.misc.EventCalled;
 import net.mehvahdjukaar.moonlight.api.platform.ClientHelper;
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
-import net.mehvahdjukaar.texture_renderer.DynamicTextureRenderer;
+import net.mehvahdjukaar.ml_classes.DynamicTextureRenderer;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.mehvahdjukaar.vista.client.VistaDynamicResources;
 import net.mehvahdjukaar.vista.client.renderer.TvBlockEntityRenderer;
-import net.mehvahdjukaar.vista.client.renderer.TvItemRenderer;
 import net.mehvahdjukaar.vista.client.renderer.ViewFinderBlockEntityRenderer;
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import net.mehvahdjukaar.vista.client.textures.CassetteTexturesManager;
@@ -84,15 +83,10 @@ public class VistaModClient {
         ClientHelper.addShaderRegistration(VistaModClient::registerShaders);
         ClientHelper.addModelLayerRegistration(VistaModClient::registerModelLayers);
         ClientHelper.addItemColorsRegistration(VistaModClient::registerItemColors);
-        ClientHelper.addItemRenderersRegistration(VistaModClient::registerItemRenderers);
 
         ClientHelper.addClientReloadListener(() -> CassetteTexturesManager.INSTANCE, VistaMod.res("gif_manager"));
 
         RegHelper.registerDynamicResourceProvider(new VistaDynamicResources());
-    }
-
-    private static void registerItemRenderers(ClientHelper.ItemRendererEvent event) {
-        event.register(VistaMod.TV_ITEM.get(), new TvItemRenderer());
     }
 
     private static void registerItemColors(ClientHelper.ItemColorEvent event) {

@@ -1,9 +1,8 @@
 package net.mehvahdjukaar.vista.configs;
 
-import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigBuilder;
+import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigSpec;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigType;
-import net.mehvahdjukaar.moonlight.api.platform.configs.ModConfigHolder;
 import net.mehvahdjukaar.vista.VistaMod;
 
 import java.util.function.Supplier;
@@ -11,14 +10,15 @@ import java.util.function.Supplier;
 public class CommonConfigs {
 
 
-    public static final ModConfigHolder SPEC;
+    public static final ConfigSpec SPEC;
 
     public static final Supplier<Integer> MAX_CONNECTED_TV_SIZE;
     public static final Supplier<Boolean> CREEPER_DROP;
     public static final Supplier<Boolean> CHEST_DROP;
 
     static {
-        ConfigBuilder builder = ConfigBuilder.create(VistaMod.MOD_ID, ConfigType.COMMON_SYNCED);
+        ConfigBuilder builder = ConfigBuilder.create(VistaMod.MOD_ID, ConfigType.COMMON);
+        builder.setSynced();
 
         builder.push("general");
         MAX_CONNECTED_TV_SIZE = builder
@@ -33,7 +33,7 @@ public class CommonConfigs {
         builder.pop();
 
         SPEC = builder.build();
-        SPEC.forceLoad();
+        SPEC.loadFromFile();
     }
 
     public static void init() {

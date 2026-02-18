@@ -1,7 +1,8 @@
 package net.mehvahdjukaar.vista;
 
 import com.mojang.serialization.Codec;
-import net.mehvahdjukaar.moonlight.api.misc.*;
+import net.mehvahdjukaar.moonlight.api.misc.EventCalled;
+import net.mehvahdjukaar.moonlight.api.misc.RegSupplier;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.vista.common.BroadcastManager;
@@ -25,7 +26,6 @@ import net.mehvahdjukaar.vista.integration.supplementaries.SuppCompat;
 import net.mehvahdjukaar.vista.network.ModNetwork;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
-import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -46,7 +46,6 @@ import net.minecraft.world.level.storage.loot.predicates.LootItemConditionType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.UUID;
 import java.util.function.Supplier;
 
 
@@ -110,13 +109,6 @@ public class VistaMod {
                     .stacksTo(1)));
 
 
-    public static final Supplier<DataComponentType<UUID>> LINKED_FEED_COMPONENT = RegHelper.registerDataComponent(
-            res("linked_feed"), () ->
-                    DataComponentType.<UUID>builder()
-                            .persistent(UUIDUtil.CODEC)
-                            .networkSynchronized(UUIDUtil.STREAM_CODEC)
-                            .build());
-
     public static final Supplier<DataComponentType<Holder<CassetteTape>>> CASSETTE_TAPE_COMPONENT = RegHelper.registerDataComponent(
             res("cassette_tape"), () ->
                     DataComponentType.<Holder<CassetteTape>>builder()
@@ -141,7 +133,9 @@ public class VistaMod {
     public static final int STATIC_SOUND_DURATION = 4 * 20; //4 seconds
 
     public static final Supplier<LootItemFunctionType> CASSETTE_TAPE_LOOT_FUNCTION =
-            RegHelper.registerLootFunction(res("random_tape"), CassetteTapeLootFunction.CODEC);
+            RegHelper.register(res("random_tape"), () ->
+                            new LootItemFunctionType(CassetteTapeLootFunction.SERIALIZER),
+                    Registries.LOOT_FUNCTION_TYPE);
 
     public static final TagKey<CassetteTape> SUPPORTER_TAPES_TAG = TagKey.create(
             CASSETTE_TAPE_REGISTRY_KEY, res("supporter_tapes"));
@@ -151,7 +145,7 @@ public class VistaMod {
 
     public static final Supplier<Item> SOJOURN_MUSIC_DISC = RegHelper.registerItem(res("music_disc_sojourn"),
             () -> PlatHelper.newRecordItem(13, SOJOURN_DISC_SONG,
-                    new Item.Properties() .stacksTo(1).rarity(Rarity.RARE), 159 )
+                    new Item.Properties().stacksTo(1).rarity(Rarity.RARE), 159)
     );
 
     public static void init() {

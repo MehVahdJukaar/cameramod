@@ -1,12 +1,12 @@
 package net.mehvahdjukaar.vista.common.tv;
 
 import com.mojang.serialization.MapCodec;
-import net.mehvahdjukaar.moonlight.api.block.IOptionalEntityBlock;
+import net.mehvahdjukaar.ml_classes.Direction2D;
+import net.mehvahdjukaar.ml_classes.IOptionalEntityBlock;
+import net.mehvahdjukaar.ml_classes.Rect2D;
+import net.mehvahdjukaar.ml_classes.Vec2i;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
-import net.mehvahdjukaar.moonlight.api.util.math.Direction2D;
 import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
-import net.mehvahdjukaar.moonlight.api.util.math.Rect2D;
-import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.tv.connection.GridAccessor;
 import net.mehvahdjukaar.vista.common.tv.connection.GridTile;
@@ -17,7 +17,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Equipable;
@@ -43,7 +43,6 @@ import java.util.Map;
 
 public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, Equipable, IOptionalEntityBlock {
 
-    public static final MapCodec<TVBlock> CODEC = simpleCodec(TVBlock::new);
     public static final EnumProperty<PowerState> POWER_STATE = EnumProperty.create("powered", PowerState.class);
     public static final EnumProperty<TVType> CONNECTION = EnumProperty.create("connection", TVType.class);
 
@@ -110,12 +109,6 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
         return null;
     }
 
-
-    @Override
-    protected MapCodec<? extends HorizontalDirectionalBlock> codec() {
-        return CODEC;
-    }
-
     @Override
     public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
         boolean powered = context.getLevel().hasNeighborSignal(context.getClickedPos());
@@ -145,7 +138,7 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
 
 
     @Override
-    protected boolean triggerEvent(BlockState state, Level level, BlockPos pos, int id, int param) {
+    public boolean triggerEvent(BlockState state, Level level, BlockPos pos, int id, int param) {
         if (id == 1) {
             if (level.isClientSide) {
                 if (level.getBlockEntity(pos) instanceof TVBlockEntity tile) {
@@ -158,15 +151,15 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
     }
 
     @Override
-    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player,
-                                              InteractionHand hand, BlockHitResult hitResult) {
-        if (level.isClientSide) return ItemInteractionResult.SUCCESS;
+    public InteractionResult use(BlockState blockState, Level level, BlockPos pos, Player player, InteractionHand interactionHand, BlockHitResult blockHitResult) {
+        if (level.isClientSide) return InteractionResult.SUCCESS;
 
-        TVBlockEntity masterTile = getMasterBlockEntity(level, pos, state);
+        TVBlockEntity masterTile = getMasterBlockEntity(level, pos, blockState);
         if (masterTile != null) {
-            return masterTile.interactWithPlayerItem(player, hand, stack, 0, hitResult);
+            ItemStack stack =player.getItemInHand(interactionHand);
+            return masterTile.interactWithPlayerItem(player, interactionHand, stack, 0, blockHitResult);
         }
-        return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        return super.use(blockState, level, pos, player, interactionHand, blockHitResult);
     }
 
     @Override
@@ -181,7 +174,7 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
     }
 
     @Override
-    protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean movedByPiston) {
+    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean movedByPiston) {
         super.neighborChanged(state, level, pos, neighborBlock, neighborPos, movedByPiston);
         if (neighborBlock == this) return;
         boolean powered = level.hasNeighborSignal(pos);
@@ -200,13 +193,13 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
     }
 
     @Override
-    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
         if (!state.is(newState.getBlock())) this.shrinkConnection(state, level, pos);
         super.onRemove(state, level, pos, newState, movedByPiston);
     }
 
     @Override
-    protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
+    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
         super.onPlace(state, level, pos, oldState, movedByPiston);
         if (!state.is(oldState.getBlock())) this.enlargeConnection(state, level, pos);
     }

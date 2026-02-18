@@ -2,8 +2,8 @@ package net.mehvahdjukaar.vista.configs;
 
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigBuilder;
+import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigSpec;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigType;
-import net.mehvahdjukaar.moonlight.api.platform.configs.ModConfigHolder;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 
@@ -14,7 +14,7 @@ public class ClientConfigs {
     public static void init() {
     }
 
-    public static final ModConfigHolder SPEC;
+    public static final ConfigSpec SPEC;
 
     public static final Supplier<Integer> RENDER_DISTANCE;
     public static final Supplier<Double> UPDATE_FPS;
@@ -25,8 +25,8 @@ public class ClientConfigs {
     public static final Supplier<Boolean> RENDER_DEBUG;
     public static final Supplier<Boolean> SCALE_PIXELS;
     public static final Supplier<Boolean> TURN_OFF_EFFECTS;
-    public static final Supplier<Float> PIXEL_DENSITY;
-    public static final Supplier<Float> VIGNETTE;
+    public static final Supplier<Double> PIXEL_DENSITY;
+    public static final Supplier<Double> VIGNETTE;
     public static final Supplier<Boolean> DRAW_DATE;
     public static final Supplier<Boolean> SCREEN_EFFECTS;
 
@@ -44,12 +44,12 @@ public class ClientConfigs {
                 .define("screen_effects", true);
         PIXEL_DENSITY = builder
                 .comment("Pixel density of televisions, in pixels per block side")
-                .define("pixel_density", 1.37f, 0.1f, 10);
+                .define("pixel_density", 1.37, 0.1, 10);
         SCALE_PIXELS = builder.comment("Make connected tvs have higher pixel density, such that the per block pixel density is constant")
                 .define("constant_pixel_density", true);
         VIGNETTE = builder
                 .comment("Amount of vignette effect applied to television live feed (0 = none, 1 = full)")
-                .define("vignette", 1f, 0f, 1f);
+                .define("vignette", 1, 0, 1.);
         TURN_OFF_EFFECTS = builder
                 .comment("Plays an animation when the television is turned off or on")
                 .define("turn_off_animation", true);
@@ -90,7 +90,7 @@ public class ClientConfigs {
         builder.pop();
 
         SPEC = builder.build();
-        SPEC.forceLoad();
+        SPEC.loadFromFile();
     }
 
     public static boolean rendersDebug() {

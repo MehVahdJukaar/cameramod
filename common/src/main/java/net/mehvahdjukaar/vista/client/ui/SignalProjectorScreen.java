@@ -1,7 +1,8 @@
 package net.mehvahdjukaar.vista.client.ui;
 
-import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
+import net.mehvahdjukaar.moonlight.api.platform.network.ChannelHandler;
 import net.mehvahdjukaar.vista.common.projector.SignalProjectorBlockEntity;
+import net.mehvahdjukaar.vista.network.ModNetwork;
 import net.mehvahdjukaar.vista.network.ServerBoundSyncSignalProjectorPacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -49,7 +50,7 @@ public class SignalProjectorScreen extends Screen {
         //update this client immediately
         String str = this.editBox.getValue();
         //  this.tile.setUrl(str); updated by packet layer
-        NetworkHelper.sendToServer(new ServerBoundSyncSignalProjectorPacket(this.tile.getBlockPos(), str));
+        ModNetwork.CHANNEL.sendToServer(new ServerBoundSyncSignalProjectorPacket(this.tile.getBlockPos(), str));
 
     }
 

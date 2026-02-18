@@ -15,6 +15,7 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.UUID;
@@ -26,6 +27,16 @@ public class HollowCassetteItem extends Item {
         super(properties);
     }
 
+    @Nullable
+    public static UUID getLinkedFeed(ItemStack stack){
+        if(!stack.hasTag())return null;
+        return stack.getOrCreateTag().getUUID("linked_feed");
+    }
+
+    public static void setLinkedFeed(ItemStack stack, UUID id){
+        stack.getOrCreateTag().putUUID("linked_feed",id);
+    }
+
     @Override
     public InteractionResult useOn(UseOnContext context) {
         Level level = context.getLevel();
@@ -34,7 +45,7 @@ public class HollowCassetteItem extends Item {
             if (!level.isClientSide) {
 
                 ItemStack stack = context.getItemInHand();
-                stack.set(VistaMod.LINKED_FEED_COMPONENT.get(), feed.getUUID());
+                setLinkedFeed(stack, feed.getUUID());
             }
             return InteractionResult.sidedSuccess(level.isClientSide);
         }
@@ -44,30 +55,31 @@ public class HollowCassetteItem extends Item {
     @Override
     public boolean isFoil(ItemStack stack) {
         return super.isFoil(stack) ||
-                stack.get(VistaMod.LINKED_FEED_COMPONENT.get()) != null;
+               getLinkedFeed(stack) != null;
     }
 
+
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
-        super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
-        UUID feedId = stack.get(VistaMod.LINKED_FEED_COMPONENT.get());
+    public void appendHoverText(ItemStack itemStack, @Nullable Level level, List<Component> list, TooltipFlag tooltipFlag) {
+        super.appendHoverText(itemStack, level, list, tooltipFlag);
+        UUID feedId = getLinkedFeed(itemStack);
         if (feedId != null) {
             if (PlatHelper.getPhysicalSide().isClient()) {
-                Level level = VistaModClient.getLocalLevel();
+             if(level == null)    level = VistaModClient.getLocalLevel();
                 BroadcastManager connection = BroadcastManager.getInstance(level);
                 if (connection == null) return;
                 GlobalPos gp = connection.getBroadcastOriginById(feedId);
                 if (gp == null) {
-                    tooltipComponents.add(Component.translatable("tooltip.vista.hollow_cassette.linked_unknown")
+                    list.add(Component.translatable("tooltip.vista.hollow_cassette.linked_unknown")
                             .withStyle(ChatFormatting.GRAY));
                 } else {
                     if (gp.dimension() == level.dimension()) {
                         BlockPos pos = gp.pos();
-                        tooltipComponents.add(Component.translatable("tooltip.vista.hollow_cassette.linked",
+                        list.add(Component.translatable("tooltip.vista.hollow_cassette.linked",
                                         pos.getX(), pos.getY(), pos.getZ())
                                 .withStyle(ChatFormatting.GRAY));
                     } else {
-                        tooltipComponents.add(Component.translatable("tooltip.vista.hollow_cassette.linked_away", gp.dimension())
+                        list.add(Component.translatable("tooltip.vista.hollow_cassette.linked_away", gp.dimension())
                                 .withStyle(ChatFormatting.GRAY));
                     }
                 }

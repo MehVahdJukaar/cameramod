@@ -1,9 +1,8 @@
 package net.mehvahdjukaar.vista.common.view_finder;
 
-import net.mehvahdjukaar.moonlight.api.block.IOneUserInteractable;
+import net.mehvahdjukaar.ml_classes.IOneUserInteractable;
+import net.mehvahdjukaar.ml_classes.TileOrEntityTarget;
 import net.mehvahdjukaar.moonlight.api.block.ItemDisplayTile;
-import net.mehvahdjukaar.moonlight.api.misc.TileOrEntityTarget;
-import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
 import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
@@ -12,6 +11,7 @@ import net.mehvahdjukaar.vista.common.cassette.IBroadcastProvider;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.mehvahdjukaar.vista.integration.supplementaries.SuppCompat;
 import net.mehvahdjukaar.vista.network.ClientBoundControlViewFinderPacket;
+import net.mehvahdjukaar.vista.network.ModNetwork;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -19,7 +19,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -114,14 +114,14 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     }
 
     @Override
-    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-        return this.saveWithoutMetadata(registries);
+    public CompoundTag getUpdateTag() {
+        return this.saveWithoutMetadata();
     }
 
-    public ItemInteractionResult tryInteracting(Player player, InteractionHand hand, ItemStack stack,
-                                                BlockPos pos) {
+    public InteractionResult tryInteracting(Player player, InteractionHand hand, ItemStack stack,
+                                            BlockPos pos) {
         if (player.isSecondaryUseActive() || this.isEmpty()) {
-            ItemInteractionResult itemAdd = this.interactWithPlayerItem(player, hand, stack);
+            InteractionResult itemAdd = this.interactWithPlayerItem(player, hand, stack);
             if (itemAdd.consumesAction()) {
                 return itemAdd;
             }
@@ -130,10 +130,10 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
         if (player instanceof ServerPlayer sp && this.canBeUsedBy(pos, player)) {
             // open gui (edit sign with empty hand)
             this.setCurrentUser(player.getUUID());
-            NetworkHelper.sendToClientPlayer(sp, new ClientBoundControlViewFinderPacket(TileOrEntityTarget.of(this)));
+            ModNetwork.CHANNEL.sendToClientPlayer(sp, new ClientBoundControlViewFinderPacket(TileOrEntityTarget.of(this)));
         }
         //always swing on fail
-        return ItemInteractionResult.SUCCESS;
+        return InteractionResult.SUCCESS;
     }
 
     public UUID getUUID() {

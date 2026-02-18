@@ -4,6 +4,7 @@ import net.mehvahdjukaar.moonlight.api.block.ItemDisplayTile;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
+import net.mehvahdjukaar.vista.common.cassette.HollowCassetteItem;
 import net.mehvahdjukaar.vista.common.tv.enderman.TVEndermanObservationController;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
@@ -17,7 +18,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -54,16 +55,16 @@ public class TVBlockEntity extends ItemDisplayTile {
     }
 
     @Override
-    public void saveAdditional(CompoundTag compound, HolderLookup.Provider registries) {
-        super.saveAdditional(compound, registries);
+    public void saveAdditional(CompoundTag compound) {
+        super.saveAdditional(compound);
         compound.putInt("ConnectionWidth", connectedTvsAmount);
         compound.putBoolean("Paused", paused);
         compound.putInt("VideoPlaybackTicks", videoPlaybackTicks);
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
+    public void load(CompoundTag tag) {
+        super.load(tag);
         this.connectedTvsAmount = Math.max(1, tag.getInt("ConnectionWidth"));
         this.paused = tag.getBoolean("Paused");
         this.videoPlaybackTicks = tag.getInt("VideoPlaybackTicks");
@@ -109,8 +110,7 @@ public class TVBlockEntity extends ItemDisplayTile {
 
     @Override
     public boolean canPlaceItem(int index, ItemStack stack) {
-        return stack.is(VistaMod.CASSETTE.get()) || stack.is(VistaMod.HOLLOW_CASSETTE.get()) ||
-                (CompatHandler.EXPOSURE && ExposureCompat.isPictureItem(stack));
+        return stack.is(VistaMod.CASSETTE.get()) || stack.is(VistaMod.HOLLOW_CASSETTE.get());
     }
 
     @Override
@@ -126,7 +126,7 @@ public class TVBlockEntity extends ItemDisplayTile {
 
     private void updateObservationController() {
         ItemStack displayedItem = this.getDisplayedItem();
-        var uuid = displayedItem.get(VistaMod.LINKED_FEED_COMPONENT.get());
+        var uuid = HollowCassetteItem.getLinkedFeed(displayedItem);
         this.observationController = uuid == null ? null : new TVEndermanObservationController(uuid, this);
     }
 
@@ -137,7 +137,7 @@ public class TVBlockEntity extends ItemDisplayTile {
         this.videoPlaybackTicks = 0;
     }
 
-    public ItemInteractionResult interactWithPlayerItem(
+    public InteractionResult interactWithPlayerItem(
             Player player, InteractionHand handIn, ItemStack stack, int slot, BlockHitResult hit) {
 
         boolean powered = this.getBlockState().getValue(TVBlock.POWER_STATE).isOn();
@@ -147,7 +147,7 @@ public class TVBlockEntity extends ItemDisplayTile {
         if (!isEmpty && powered && player.isSecondaryUseActive()) {
             this.paused = !this.paused;
             this.setChanged();
-            return ItemInteractionResult.sidedSuccess(this.level.isClientSide);
+            return InteractionResult.sidedSuccess(this.level.isClientSide);
         }
 
         if (!isEmpty && (canPlaceItem(0, stack) || stack.isEmpty())) {
@@ -164,7 +164,7 @@ public class TVBlockEntity extends ItemDisplayTile {
             this.level.addFreshEntity(itemEntity);
             this.clearContent();
             this.setChanged();
-            return ItemInteractionResult.sidedSuccess(this.level.isClientSide);
+            return InteractionResult.sidedSuccess(this.level.isClientSide);
         }
 
         //add item

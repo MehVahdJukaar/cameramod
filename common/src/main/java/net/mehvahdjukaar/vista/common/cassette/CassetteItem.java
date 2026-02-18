@@ -4,7 +4,6 @@ import net.mehvahdjukaar.moonlight.api.resources.assets.LangBuilder;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
@@ -13,6 +12,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Locale;
@@ -47,8 +47,8 @@ public class CassetteItem extends Item {
     }
 
     public static void assignCustomCassette(ItemStack stack, Level level) {
-        Component customName = stack.get(DataComponents.CUSTOM_NAME);
-        if (customName != null) {
+        if (stack.hasCustomHoverName()) {
+            Component customName = stack.getDisplayName();
             String name = customName.getString().toLowerCase(Locale.ROOT);
             assignCustomCassette(stack, level, name);
         }
@@ -61,7 +61,7 @@ public class CassetteItem extends Item {
             var key = h.unwrapKey().get();
             if (key.location().getPath().equals(name)) {
                 setCassette(stack, h);
-                stack.remove(DataComponents.CUSTOM_NAME);
+                stack.resetHoverName();
                 break;
             }
         }
@@ -74,18 +74,18 @@ public class CassetteItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
-        super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
+    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag tooltipFlag) {
+        super.appendHoverText(stack, level, list, tooltipFlag);
 
-        var tape = stack.get(VistaMod.CASSETTE_TAPE_COMPONENT.get());
+        var tape = getCassette(stack);
         if (tape != null) {
             tape.unwrapKey().ifPresent((resourceKey) -> {
                 ResourceLocation location = resourceKey.location();
                 if (tape.is(VistaMod.SUPPORTER_TAPES_TAG)) {
-                    tooltipComponents.add(Component.literal(LangBuilder.getReadableName(location.getPath()))
+                    list.add(Component.literal(LangBuilder.getReadableName(location.getPath()))
                             .withStyle(ChatFormatting.GRAY));
                 } else {
-                    tooltipComponents.add(Component.translatable(location.toLanguageKey("cassette_tape", "tooltip")).withStyle(ChatFormatting.GRAY));
+                    list.add(Component.translatable(location.toLanguageKey("cassette_tape", "tooltip")).withStyle(ChatFormatting.GRAY));
                 }
             });
         }

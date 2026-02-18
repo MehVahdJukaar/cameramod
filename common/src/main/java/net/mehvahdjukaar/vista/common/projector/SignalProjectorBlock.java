@@ -43,7 +43,8 @@ public class SignalProjectorBlock extends BaseEntityBlock {
     public InteractionResult use(BlockState blockState, Level level, BlockPos blockPos, Player player, InteractionHand interactionHand, BlockHitResult blockHitResult) {
         if (level.getBlockEntity(blockPos) instanceof SignalProjectorBlockEntity tile && tile.canBeEditedBy(player)) {
             if (player instanceof ServerPlayer serverPlayer) {
-                Utils.openGuiIfPossible(tile, serverPlayer, stack, hitResult.getDirection(), blockHitResult.getLocation());
+                ItemStack stack = player.getItemInHand(interactionHand);
+                Utils.openGuiIfPossible(tile, serverPlayer, stack, blockHitResult.getDirection(), blockHitResult.getLocation());
             }
             return InteractionResult.sidedSuccess(level.isClientSide);
         }

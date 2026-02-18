@@ -11,7 +11,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -57,13 +57,16 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock {
     }
 
     @Override
-    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
+    public InteractionResult use(BlockState blockState, Level level, BlockPos pos,
+                                 Player player, InteractionHand hand, BlockHitResult blockHitResult) {
         ItemStack heldItem = player.getItemInHand(hand);
-        if (heldItem.is(VistaMod.HOLLOW_CASSETTE.get())) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
-        if (level.getBlockEntity(pos) instanceof ViewFinderBlockEntity tile) {
-            return tile.tryInteracting(player, hand, stack, pos);
+        if (!heldItem.is(VistaMod.HOLLOW_CASSETTE.get())){
+            if (level.getBlockEntity(pos) instanceof ViewFinderBlockEntity tile) {
+                ItemStack stack = player.getItemInHand(hand);
+                return tile.tryInteracting(player, hand, stack, pos);
+            }
         }
-        return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        return super.use(blockState, level, pos, player, hand, blockHitResult);
     }
 
     @Override
@@ -97,11 +100,6 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock {
     }
 
     @Override
-    protected MapCodec<? extends DirectionalBlock> codec() {
-        return CODEC;
-    }
-
-    @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         super.createBlockStateDefinition(builder);
         builder.add(FACING, ROTATE_TILE);
@@ -114,7 +112,7 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock {
     }
 
     @Override
-    protected void onRemove(BlockState oldState, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+    public void onRemove(BlockState oldState, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
         super.onRemove(oldState, level, pos, newState, movedByPiston);
         if (oldState.getBlock() instanceof ViewFinderBlock &&
                 !(newState.getBlock() instanceof ViewFinderBlock) &&

@@ -83,8 +83,8 @@ dependencies {
 
     include(implementation(annotationProcessor("io.github.llamalad7:mixinextras-fabric:0.5.0")))
 
-    modApi("net.mehvahdjukaar:moonlight-fabric:${moonlight_version}")
-
+    //modApi("net.mehvahdjukaar:moonlight-fabric:${moonlight_version}")
+    modImplementation "curse.maven:selene-499980:7541534"
     modRuntimeOnly("net.mehvahdjukaar:supplementaries-fabric:${supplementaries_version}"){
         transitive = false
     }

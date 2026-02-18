@@ -6,9 +6,6 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.mehvahdjukaar.moonlight.api.util.math.ColorUtils;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.minecraft.core.Holder;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.RegistryFileCodec;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
@@ -25,13 +22,7 @@ public record CassetteTape(ResourceLocation assetId, int color, Optional<Holder<
                     SoundEvent.CODEC.optionalFieldOf("sound").forGetter(CassetteTape::soundEvent),
                     ExtraCodecs.POSITIVE_INT.optionalFieldOf("sound_duration").forGetter(CassetteTape::soundDuration)
 
-            ).apply(instance, CassetteTape::new))
-            .validate(obj -> {
-                if (obj.soundEvent.isPresent() && !obj.soundDuration.isPresent()) {
-                    return DataResult.error(() -> "Cassette tapes with sound events must have a sound duration");
-                }
-                return DataResult.success(obj);
-            });
+            ).apply(instance, CassetteTape::new));
 
 
     public static final StreamCodec<RegistryFriendlyByteBuf, CassetteTape> DIRECT_STREAM_CODEC =

@@ -1,7 +1,7 @@
 package net.mehvahdjukaar.vista.common.tv;
 
 
-import net.mehvahdjukaar.moonlight.api.util.math.Direction2D;
+import net.mehvahdjukaar.ml_classes.Direction2D;
 import net.minecraft.core.Direction;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.level.block.Rotation;

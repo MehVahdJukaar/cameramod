@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.texture_renderer;
+package net.mehvahdjukaar.ml_classes;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;

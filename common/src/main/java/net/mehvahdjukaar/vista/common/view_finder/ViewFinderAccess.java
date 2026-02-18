@@ -1,8 +1,8 @@
 package net.mehvahdjukaar.vista.common.view_finder;
 
 
-import net.mehvahdjukaar.moonlight.api.misc.TileOrEntityTarget;
-import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
+import net.mehvahdjukaar.ml_classes.TileOrEntityTarget;
+import net.mehvahdjukaar.vista.network.ModNetwork;
 import net.mehvahdjukaar.vista.network.ServerBoundSyncViewFinderPacket;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -73,7 +73,7 @@ public interface ViewFinderAccess {
 
         @Override
         public void syncToServer(boolean removeOwner) {
-            NetworkHelper.sendToServer(new ServerBoundSyncViewFinderPacket(
+            ModNetwork.CHANNEL.sendToServer(new ServerBoundSyncViewFinderPacket(
                     blockEntity.getYaw(), blockEntity.getPitch(), blockEntity.getZoomLevel(),
                     blockEntity.isLocked(),
                     removeOwner, TileOrEntityTarget.of(this.blockEntity)));

@@ -22,9 +22,7 @@ public class VistaForge {
     public static WeakReference<IEventBus> modBus;
 
     public VistaForge(IEventBus bus) {
-
         modBus = new WeakReference<>(bus);
-        RegHelper.startRegisteringFor(bus);
         VistaMod.init();
         MinecraftForge.EVENT_BUS.register(this);
     }

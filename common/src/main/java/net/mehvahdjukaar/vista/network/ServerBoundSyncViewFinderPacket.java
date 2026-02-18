@@ -1,21 +1,17 @@
 package net.mehvahdjukaar.vista.network;
 
-import net.mehvahdjukaar.moonlight.api.misc.TileOrEntityTarget;
+import net.mehvahdjukaar.ml_classes.TileOrEntityTarget;
+import net.mehvahdjukaar.moonlight.api.platform.network.ChannelHandler;
 import net.mehvahdjukaar.moonlight.api.platform.network.Message;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderAccess;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 
 public record ServerBoundSyncViewFinderPacket(
         float yaw, float pitch, int zoomLevel, boolean locked, boolean stopControlling,
         TileOrEntityTarget target) implements Message {
-
-    public static final TypeAndCodec<RegistryFriendlyByteBuf, ServerBoundSyncViewFinderPacket> CODEC = Message.makeType(
-            VistaMod.res("c2s_sync_viewfinder"), ServerBoundSyncViewFinderPacket::new);
 
     public ServerBoundSyncViewFinderPacket(FriendlyByteBuf buf) {
         this(buf.readFloat(), buf.readFloat(), buf.readVarInt(),
@@ -23,7 +19,7 @@ public record ServerBoundSyncViewFinderPacket(
     }
 
     @Override
-    public void write(RegistryFriendlyByteBuf buf) {
+    public void writeToBuffer(FriendlyByteBuf buf) {
         buf.writeFloat(this.yaw);
         buf.writeFloat(this.pitch);
         buf.writeVarInt(this.zoomLevel);
@@ -33,10 +29,9 @@ public record ServerBoundSyncViewFinderPacket(
     }
 
     @Override
-    public void handle(Context context) {
-
+    public void handle(ChannelHandler.Context context) {
         // server world
-        if (context.getPlayer() instanceof ServerPlayer player) {
+        if (context.getSender() instanceof ServerPlayer player) {
 
             ViewFinderAccess access = ViewFinderAccess.find(player.level(), this.target);
             if (access != null) {
@@ -59,8 +54,4 @@ public record ServerBoundSyncViewFinderPacket(
         //Supplementaries.error(); //should not happen
     }
 
-    @Override
-    public Type<? extends CustomPacketPayload> type() {
-        return CODEC.type();
-    }
 }

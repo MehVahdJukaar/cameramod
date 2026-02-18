@@ -2,7 +2,7 @@ package net.mehvahdjukaar.vista.integration.computer_craft;
 
 import dan200.computercraft.api.lua.LuaFunction;
 import dan200.computercraft.api.peripheral.IPeripheral;
-import net.mehvahdjukaar.moonlight.api.misc.TileOrEntityTarget;
+import net.mehvahdjukaar.ml_classes.TileOrEntityTarget;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderAccess;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import org.jetbrains.annotations.Nullable;

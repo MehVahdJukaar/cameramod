@@ -1,8 +1,8 @@
 package net.mehvahdjukaar.vista.common.tv.connection;
 
-import net.mehvahdjukaar.moonlight.api.util.math.Direction2D;
-import net.mehvahdjukaar.moonlight.api.util.math.Rect2D;
-import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
+import net.mehvahdjukaar.ml_classes.Direction2D;
+import net.mehvahdjukaar.ml_classes.Rect2D;
+import net.mehvahdjukaar.ml_classes.Vec2i;
 import net.mehvahdjukaar.vista.common.tv.TVType;
 
 import java.util.*;

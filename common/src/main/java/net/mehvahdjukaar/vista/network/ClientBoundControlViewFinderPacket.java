@@ -2,39 +2,29 @@ package net.mehvahdjukaar.vista.network;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.mehvahdjukaar.moonlight.api.misc.TileOrEntityTarget;
+import net.mehvahdjukaar.ml_classes.TileOrEntityTarget;
+import net.mehvahdjukaar.moonlight.api.platform.network.ChannelHandler;
 import net.mehvahdjukaar.moonlight.api.platform.network.Message;
-import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderAccess;
 import net.minecraft.client.Minecraft;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.network.FriendlyByteBuf;
 
 public record ClientBoundControlViewFinderPacket(TileOrEntityTarget target) implements Message {
 
-    public static final TypeAndCodec<RegistryFriendlyByteBuf, ClientBoundControlViewFinderPacket> CODEC = Message.makeType(
-            VistaMod.res("s2c_control_viewfinder"), ClientBoundControlViewFinderPacket::new);
-
-
-    public ClientBoundControlViewFinderPacket(RegistryFriendlyByteBuf buf) {
+    public ClientBoundControlViewFinderPacket(FriendlyByteBuf buf) {
         this(TileOrEntityTarget.read(buf));
     }
 
     @Override
-    public void write(RegistryFriendlyByteBuf buf) {
+    public void writeToBuffer(FriendlyByteBuf buf) {
         target.write(buf);
     }
 
     @Override
-    public void handle(Context context) {
+    public void handle(ChannelHandler.Context context) {
         // client world
         handleCannonControlPacket(this);
-    }
-
-    @Override
-    public Type<? extends CustomPacketPayload> type() {
-        return CODEC.type();
     }
 
     @Environment(value = EnvType.CLIENT)

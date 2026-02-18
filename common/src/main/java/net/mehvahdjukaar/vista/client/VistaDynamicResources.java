@@ -1,32 +1,32 @@
 package net.mehvahdjukaar.vista.client;
 
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
-import net.mehvahdjukaar.moonlight.api.events.AfterLanguageLoadEvent;
 import net.mehvahdjukaar.moonlight.api.resources.ResType;
-import net.mehvahdjukaar.moonlight.api.resources.pack.DynamicClientResourceProvider;
-import net.mehvahdjukaar.moonlight.api.resources.pack.PackGenerationStrategy;
+import net.mehvahdjukaar.moonlight.api.resources.pack.DynClientResourcesGenerator;
+import net.mehvahdjukaar.moonlight.api.resources.pack.DynamicTexturePack;
 import net.mehvahdjukaar.moonlight.api.resources.pack.ResourceGenTask;
-import net.mehvahdjukaar.moonlight.api.resources.pack.ResourceSink;
 import net.mehvahdjukaar.vista.VistaMod;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.world.item.DyeColor;
+import org.apache.logging.log4j.Logger;
 
-import java.util.Collection;
-import java.util.List;
 import java.util.function.Consumer;
 
-public class VistaDynamicResources extends DynamicClientResourceProvider {
+public class VistaDynamicResources extends DynClientResourcesGenerator {
 
     public VistaDynamicResources() {
-        super(VistaMod.res("color_shaders"), PackGenerationStrategy.CACHED);
+        super(new DynamicTexturePack(VistaMod.res("color_shaders")));
+    }
+
+
+    @Override
+    public Logger getLogger() {
+        return VistaMod.LOGGER;
     }
 
     @Override
-    protected void regenerateDynamicAssets(Consumer<ResourceGenTask> consumer) {
+    public void regenerateDynamicAssets(Consumer<ResourceGenTask> consumer) {
         consumer.accept((resourceManager, resourceSink) -> {
             for (var c : DyeColor.values()) {
                 int intValue = c.getTextColor(); // assumed 0xRRGGBB
@@ -36,9 +36,9 @@ public class VistaDynamicResources extends DynamicClientResourceProvider {
                 float sb = (intValue & 0xFF) / 255f;
 
                 // sRGB -> linear (use for luminance and some calculations)
-                float lr = sr <= 0.04045f ? sr / 12.92f : (float)Math.pow((sr + 0.055f) / 1.055f, 2.4);
-                float lg = sg <= 0.04045f ? sg / 12.92f : (float)Math.pow((sg + 0.055f) / 1.055f, 2.4);
-                float lb = sb <= 0.04045f ? sb / 12.92f : (float)Math.pow((sb + 0.055f) / 1.055f, 2.4);
+                float lr = sr <= 0.04045f ? sr / 12.92f : (float) Math.pow((sr + 0.055f) / 1.055f, 2.4);
+                float lg = sg <= 0.04045f ? sg / 12.92f : (float) Math.pow((sg + 0.055f) / 1.055f, 2.4);
+                float lb = sb <= 0.04045f ? sb / 12.92f : (float) Math.pow((sb + 0.055f) / 1.055f, 2.4);
 
                 // perceptual luminance (linear)
                 float lum = 0.2126f * lr + 0.7152f * lg + 0.0722f * lb;
@@ -71,9 +71,9 @@ public class VistaDynamicResources extends DynamicClientResourceProvider {
                 // Slight nonlinear smoothing to avoid overly harsh low-channel crushing
                 // apply a very mild gamma-like lift to mul (optional, keeps midtones nicer)
                 final float MUL_SMOOTH = 0.98f;
-                mulR = (float)Math.pow(mulR, MUL_SMOOTH);
-                mulG = (float)Math.pow(mulG, MUL_SMOOTH);
-                mulB = (float)Math.pow(mulB, MUL_SMOOTH);
+                mulR = (float) Math.pow(mulR, MUL_SMOOTH);
+                mulG = (float) Math.pow(mulG, MUL_SMOOTH);
+                mulB = (float) Math.pow(mulB, MUL_SMOOTH);
 
                 // Add: tiny per-channel lift to open shadows and give the grade a "film-like" subtle tint in darks.
                 // The lift scales with (1 - luminance) so darker tints give slightly more shadow lift,
@@ -189,17 +189,11 @@ public class VistaDynamicResources extends DynamicClientResourceProvider {
         });
     }
 
-    /** helper: round to 4 decimal places for nicer JSON numbers */
+    /**
+     * helper: round to 4 decimal places for nicer JSON numbers
+     */
     private static float round4(float v) {
         return Math.round(v * 10000f) / 10000f;
     }
 
-    @Override
-    protected Collection<String> gatherSupportedNamespaces() {
-        return List.of();
-    }
-
-    @Override
-    protected void addDynamicTranslations(AfterLanguageLoadEvent afterLanguageLoadEvent) {
-    }
 }

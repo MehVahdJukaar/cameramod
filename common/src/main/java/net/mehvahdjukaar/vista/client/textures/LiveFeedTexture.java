@@ -3,7 +3,7 @@ package net.mehvahdjukaar.vista.client.textures;
 import com.google.gson.JsonSyntaxException;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.mehvahdjukaar.texture_renderer.RenderTargetDynamicTexture;
+import net.mehvahdjukaar.ml_classes.RenderTargetDynamicTexture;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.CrtOverlay;
 import net.mehvahdjukaar.vista.client.SlidingWindowCounter;

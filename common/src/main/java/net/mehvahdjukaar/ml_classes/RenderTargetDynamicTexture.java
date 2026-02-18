@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.texture_renderer;
+package net.mehvahdjukaar.ml_classes;
 
 import com.mojang.blaze3d.pipeline.RenderCall;
 import com.mojang.blaze3d.pipeline.RenderTarget;

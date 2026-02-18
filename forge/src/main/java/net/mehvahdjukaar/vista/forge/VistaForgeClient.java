@@ -4,7 +4,6 @@ import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.mehvahdjukaar.vista.client.renderer.FeedConnectionDebugRenderer;
-import net.mehvahdjukaar.vista.client.textures.GifPathSpriteSource;
 import net.mehvahdjukaar.vista.client.ui.ViewFinderHud;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.client.Minecraft;
@@ -27,18 +26,19 @@ public class VistaForgeClient {
 
     @SubscribeEvent
     public static void onLevelLoaded(LevelEvent.Load event) {
-        if(event.getLevel() instanceof ClientLevel cl){
+        if (event.getLevel() instanceof ClientLevel cl) {
             VistaModClient.onLevelLoaded(cl);
         }
     }
+
     @SubscribeEvent
-    public static void onClientEndTick(TickEvent.ClientTickEvent.Post event) {
-        VistaModClient.onClientTick(Minecraft.getInstance());
+    public static void onClientEndTick(TickEvent.ClientTickEvent event) {
+       if(event.phase == TickEvent.Phase.END) VistaModClient.onClientTick(Minecraft.getInstance());
     }
 
     @SubscribeEvent
-    public static void onRenderTick(RenderFrameEvent.Post event) {
-        VistaModClient.onRenderTickEnd(Minecraft.getInstance());
+    public static void onRenderTick(TickEvent.RenderTickEvent event) {
+        if (event.phase == TickEvent.Phase.END) VistaModClient.onRenderTickEnd(Minecraft.getInstance());
     }
 
     @SubscribeEvent
@@ -83,14 +83,14 @@ public class VistaForgeClient {
 
     @SubscribeEvent
     public static void onMouseScrolled(InputEvent.MouseScrollingEvent event) {
-        if (ViewFinderController.onMouseScrolled(event.getScrollDeltaY())) {
+        if (ViewFinderController.onMouseScrolled(event.getScrollDelta())) {
             event.setCanceled(true);
         }
     }
 
     @SubscribeEvent
     public static void onPlayerLoggedOut(ClientPlayerNetworkEvent.LoggingOut event) {
-         VistaModClient.onClientDisconnect();
+        VistaModClient.onClientDisconnect();
     }
 
     @SubscribeEvent

@@ -101,18 +101,20 @@ public class VistaRenderTypes extends RenderType {
         ShaderInstance shader = VistaModClient.CAMERA_VIEW_SHADER.get();
         shader.safeGetUniform("SpriteDimensions").set(key.frameW, key.frameH);
         shader.safeGetUniform("OverlayIndex").set(key.overlay.ordinal());
-        float pt = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
+        float pt = Minecraft.getInstance().getDeltaFrameTime();
 
         //float max = 24000;
         //float myTime = ((Minecraft.getInstance().level.getGameTime() % max) + pt)/max;
         //shader.safeGetUniform("Time").set(myTime);
         float scale = key.scale / 12f;
+        double v = ClientConfigs.PIXEL_DENSITY.get() * scale;
         setFloat(shader, "TriadsPerPixel",
-                ClientConfigs.PIXEL_DENSITY.get() * scale);
+                (float) v);
         setFloat(shader, "Smear", 1f);
         setFloat(shader, "EnableEnergyNormalize", 0.0f);
 
-        setFloat(shader, "VignetteIntensity", ClientConfigs.VIGNETTE.get());
+        double v1 = ClientConfigs.VIGNETTE.get();
+        setFloat(shader, "VignetteIntensity", (float)v1);
         setFloat(shader, "NoiseIntensity", key.staticAnim.getValue(pt));
         setFloat(shader, "FadeAnimation", key.turnOnAnim.getValue(pt));
     }

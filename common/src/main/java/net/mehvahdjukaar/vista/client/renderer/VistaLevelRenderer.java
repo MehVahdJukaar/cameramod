@@ -11,7 +11,6 @@ import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.minecraft.client.Camera;
-import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.*;
@@ -83,7 +82,7 @@ public class VistaLevelRenderer {
         try {
             renderingLiveFeedVF = tile;
 
-            float partialTicks = mc.getTimer().getGameTimeDeltaTicks();
+            float partialTicks = mc.getDeltaFrameTime();
             setupSceneCamera(tile, camera, partialTicks);
 
             canvas.bindWrite(true);
@@ -115,8 +114,7 @@ public class VistaLevelRenderer {
                 RenderSystem.disableBlend();
                 RenderSystem.disableDepthTest();
                 RenderSystem.resetTextureMatrix();
-                DeltaTracker deltaTracker = mc.getTimer();
-                mc.gameRenderer.postEffect.process(deltaTracker.getGameTimeDeltaTicks());
+                mc.gameRenderer.postEffect.process(mc.getDeltaFrameTime());
             }
         } finally {
             MC_OWN_GRAPH.set(null);
@@ -150,7 +148,6 @@ public class VistaLevelRenderer {
 
     //same as game renderer render level but simplified
     private static void renderLevel(Minecraft mc, RenderTarget target, Camera camera, float fov) {
-        DeltaTracker deltaTracker = mc.getTimer();
         GameRenderer gr = mc.gameRenderer;
         LevelRenderer lr = mc.levelRenderer;
         Matrix4f oldProjectionMatrix = new Matrix4f(RenderSystem.getProjectionMatrix());

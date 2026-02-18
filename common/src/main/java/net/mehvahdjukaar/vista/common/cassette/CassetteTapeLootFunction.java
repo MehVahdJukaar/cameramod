@@ -1,16 +1,31 @@
 package net.mehvahdjukaar.vista.common.cassette;
 
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSerializationContext;
 import com.mojang.serialization.MapCodec;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.loot.LootContext;
+import net.minecraft.world.level.storage.loot.Serializer;
 import net.minecraft.world.level.storage.loot.functions.LootItemFunction;
 import net.minecraft.world.level.storage.loot.functions.LootItemFunctionType;
 
 public class CassetteTapeLootFunction implements LootItemFunction {
 
-    public static final MapCodec<CassetteTapeLootFunction> CODEC = MapCodec.unit((new CassetteTapeLootFunction()));
+    public static final Serializer<CassetteTapeLootFunction> SERIALIZER = new Serializer<CassetteTapeLootFunction>() {
+        @Override
+        public void serialize(JsonObject jsonObject, CassetteTapeLootFunction object, JsonSerializationContext jsonSerializationContext) {
+
+        }
+
+        @Override
+        public CassetteTapeLootFunction deserialize(JsonObject jsonObject, JsonDeserializationContext jsonDeserializationContext) {
+            return new CassetteTapeLootFunction();
+        }
+    };
+
 
     @Override
     public LootItemFunctionType getType() {
@@ -27,7 +42,7 @@ public class CassetteTapeLootFunction implements LootItemFunction {
                 .toList();
         if (!holders.isEmpty()) {
             int index = level.random.nextInt(holders.size());
-            stack.set(VistaMod.CASSETTE_TAPE_COMPONENT.get(), holders.get(index));
+            CassetteItem.setCassette(stack, holders.get(index));
         }
 
         return stack;

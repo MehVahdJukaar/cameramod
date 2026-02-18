@@ -9,7 +9,7 @@ import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
-import net.mehvahdjukaar.texture_renderer.DynamicTextureRenderer;
+import net.mehvahdjukaar.ml_classes.DynamicTextureRenderer;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.AdaptiveUpdateScheduler;
