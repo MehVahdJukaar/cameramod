@@ -1,18 +1,13 @@
-package net.mehvahdjukaar.vista.neoforge;
+package net.mehvahdjukaar.vista.forge;
 
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.vista.VistaMod;
-import net.mehvahdjukaar.vista.common.BroadcastManager;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.LevelAccessor;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.AddReloadListenerEvent;
-import net.neoforged.neoforge.event.ModifyDefaultComponentsEvent;
-import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
-import net.neoforged.neoforge.event.level.LevelEvent;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.entity.EntityJoinLevelEvent;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 
 import java.lang.ref.WeakReference;
 
@@ -31,7 +26,7 @@ public class VistaForge {
         modBus = new WeakReference<>(bus);
         RegHelper.startRegisteringFor(bus);
         VistaMod.init();
-        NeoForge.EVENT_BUS.register(this);
+        MinecraftForge.EVENT_BUS.register(this);
     }
 
     @SubscribeEvent

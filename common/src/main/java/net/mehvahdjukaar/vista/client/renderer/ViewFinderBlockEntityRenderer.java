@@ -25,6 +25,7 @@ import net.minecraft.util.VisibleForDebug;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Matrix3f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -180,32 +181,34 @@ public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFi
             poseStack.translate(pos.x, pos.y, pos.z);
             PoseStack.Pose pose = poseStack.last();
             VertexConsumer vc = bufferSource.getBuffer(RenderType.lines());
-            vc.addVertex(pose, 0, 0, 0)
-                    .setColor(255, 0, 255, 255)
-                    .setNormal(pose, 0, 1, 0);
-            vc.addVertex(pose, 0, 1, 0)
-                    .setColor(255, 0, 255, 255)
-                    .setNormal(pose, 0, 1, 0);
+            var last = pose.pose();
+            Matrix3f normal = pose.normal();
+            vc.vertex(last, 0, 0, 0)
+                    .color(255, 0, 255, 255)
+                    .normal(normal, 0, 1, 0);
+            vc.vertex(last, 0, 1, 0)
+                    .color(255, 0, 255, 255)
+                    .normal(normal, 0, 1, 0);
 
             float tileYaw = tile.getYaw();
             float tilePitch = tile.getPitch();
             var tileView = Vec3.directionFromRotation(tilePitch, tileYaw).normalize();
-            vc.addVertex(pose, 0, 0, 0)
-                    .setColor(30, 30, 255, 255)
-                    .setNormal(pose, 0, 1, 0);
-            vc.addVertex(pose, (float) tileView.x, (float) tileView.y, (float) tileView.z)
-                    .setColor(30, 30, 255, 255)
-                    .setNormal(pose, 0, 1, 0);
+            vc.vertex(last, 0, 0, 0)
+                    .color(30, 30, 255, 255)
+                    .normal(normal, 0, 1, 0);
+            vc.vertex(last, (float) tileView.x, (float) tileView.y, (float) tileView.z)
+                    .color(30, 30, 255, 255)
+                    .normal(normal, 0, 1, 0);
 
             float headY = player.getYHeadRot();
             float headX = player.getXRot();
             var view = Vec3.directionFromRotation(headX, headY).normalize();
-            vc.addVertex(pose, 0, 0, 0)
-                    .setColor(30, 255, 30, 255)
-                    .setNormal(pose, 0, 1, 0);
-            vc.addVertex(pose, (float) view.x, (float) view.y, (float) view.z)
-                    .setColor(30, 255, 30, 255)
-                    .setNormal(pose, 0, 1, 0);
+            vc.vertex(last, 0, 0, 0)
+                    .color(30, 255, 30, 255)
+                    .normal(normal, 0, 1, 0);
+            vc.vertex(last, (float) view.x, (float) view.y, (float) view.z)
+                    .color(30, 255, 30, 255)
+                    .normal(normal, 0, 1, 0);
 
             poseStack.popPose();
         }

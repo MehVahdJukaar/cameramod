@@ -117,12 +117,12 @@ public class LiveFeedTexture extends RenderTargetDynamicTexture {
                 postChain.addTempTarget("swap", getWidth(), getHeight());
             }
             if (postFragment != null) {
-                postChain.addPass(postFragment.toString(), canvasTarget, swapTarget, false);
+                postChain.addPass(postFragment.toString(), canvasTarget, swapTarget);
                 //swap back
-                postChain.addPass("vista:blit_flip_y", swapTarget, canvasTarget, false);
+                postChain.addPass("vista:blit_flip_y", swapTarget, canvasTarget);
             } else {
-                postChain.addPass("blit", canvasTarget, swapTarget, false);
-                postChain.addPass("vista:blit_flip_y", swapTarget, canvasTarget, false);
+                postChain.addPass("blit", canvasTarget, swapTarget);
+                postChain.addPass("vista:blit_flip_y", swapTarget, canvasTarget);
             }
             for (PostPass postPass : postChain.passes) {
                 postPass.setOrthoMatrix(postChain.shaderOrthoMatrix);

@@ -15,21 +15,21 @@ public class ModLootOverrides {
     private static final ResourceLocation CHEST_LOOT = VistaMod.res("inject/treasure_tapes");
     private static final ResourceLocation CREEPER_LOOT = VistaMod.res("inject/creeper_tapes");
     private static final ResourceLocation ENDERMAN_LOOT = VistaMod.res("inject/enderman_disc");
-    private static final ResourceLocation CREEPER_TABLE = ResourceLocation.withDefaultNamespace("entities/creeper");
-    private static final ResourceLocation ENDERMAN_TABLE = ResourceLocation.withDefaultNamespace("entities/enderman");
+    private static final ResourceLocation CREEPER_TABLE = new ResourceLocation("entities/creeper");
+    private static final ResourceLocation ENDERMAN_TABLE = new ResourceLocation("entities/enderman");
 
     public static void init() {
         RegHelper.addLootTableInjects(ModLootOverrides::addLootMod);
-        VALID_CHESTS.add(ResourceLocation.parse("minecraft:archaeology/trail_ruins_rare"));
-        VALID_CHESTS.add(ResourceLocation.parse("minecraft:chests/bastion_hoglin_stable"));
-        VALID_CHESTS.add(ResourceLocation.parse("minecraft:chests/igloo_chest"));
-        VALID_CHESTS.add(ResourceLocation.parse("minecraft:chests/jungle_temple"));
-        VALID_CHESTS.add(ResourceLocation.parse("minecraft:chests/woodland_mansion"));
-        VALID_CHESTS.add(ResourceLocation.parse("minecraft:chests/stronghold_library"));
-        VALID_CHESTS.add(ResourceLocation.parse("minecraft:chests/shipwreck_supply"));
-        VALID_CHESTS.add(ResourceLocation.parse("minecraft:chests/simple_dungeon"));
-        VALID_CHESTS.add(ResourceLocation.parse("minecraft:chests/nether_bridge"));
-        VALID_CHESTS.add(ResourceLocation.parse("minecraft:chests/trial_chambers/reward_ominous_rare"));
+        VALID_CHESTS.add(new ResourceLocation("minecraft:archaeology/trail_ruins_rare"));
+        VALID_CHESTS.add(new ResourceLocation("minecraft:chests/bastion_hoglin_stable"));
+        VALID_CHESTS.add(new ResourceLocation("minecraft:chests/igloo_chest"));
+        VALID_CHESTS.add(new ResourceLocation("minecraft:chests/jungle_temple"));
+        VALID_CHESTS.add(new ResourceLocation("minecraft:chests/woodland_mansion"));
+        VALID_CHESTS.add(new ResourceLocation("minecraft:chests/stronghold_library"));
+        VALID_CHESTS.add(new ResourceLocation("minecraft:chests/shipwreck_supply"));
+        VALID_CHESTS.add(new ResourceLocation("minecraft:chests/simple_dungeon"));
+        VALID_CHESTS.add(new ResourceLocation("minecraft:chests/nether_bridge"));
+        VALID_CHESTS.add(new ResourceLocation("minecraft:chests/trial_chambers/reward_ominous_rare"));
     }
 
     private static void addLootMod(RegHelper.LootInjectEvent event) {

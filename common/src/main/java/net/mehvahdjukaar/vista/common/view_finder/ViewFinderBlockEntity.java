@@ -76,8 +76,8 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
+    public void load(CompoundTag tag) {
+        super.load(tag);
         this.myUUID = tag.getUUID("UUID");
         this.yaw = tag.getFloat("yaw");
         this.pitch = tag.getFloat("pitch");
@@ -93,8 +93,8 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     }
 
     @Override
-    public void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
+    public void saveAdditional(CompoundTag tag) {
+        super.saveAdditional(tag);
         tag.putUUID("UUID", this.myUUID);
         tag.putFloat("yaw", this.yaw);
         tag.putFloat("pitch", this.pitch);

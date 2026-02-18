@@ -16,7 +16,7 @@ accessible method net/minecraft/client/Camera move (FFF)V
 #Render system state
 accessible field com/mojang/blaze3d/systems/RenderSystem savedProjectionMatrix Lorg/joml/Matrix4f;
 accessible field com/mojang/blaze3d/systems/RenderSystem savedVertexSorting Lcom/mojang/blaze3d/vertex/VertexSorting;
-accessible field com/mojang/blaze3d/systems/RenderSystem modelViewStack Lorg/joml/Matrix4fStack;
+accessible field com/mojang/blaze3d/systems/RenderSystem modelViewStack Lcom/mojang/blaze3d/vertex/PoseStack;
 accessible field com/mojang/blaze3d/systems/RenderSystem shaderTextures [I
 accessible field com/mojang/blaze3d/systems/RenderSystem shaderLightDirections [Lorg/joml/Vector3f;
 accessible field com/mojang/blaze3d/systems/RenderSystem shaderGameTime F

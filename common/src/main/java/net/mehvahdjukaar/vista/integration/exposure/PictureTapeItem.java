@@ -17,6 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -73,11 +74,12 @@ public class PictureTapeItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
-        tooltipComponents.add(Component.literal("WIP"));
-        int photographsCount = getContent(stack).size();
+    public void appendHoverText(ItemStack itemStack, @Nullable Level level, List<Component> list, TooltipFlag tooltipFlag) {
+        super.appendHoverText(itemStack, level, list, tooltipFlag);
+        list.add(Component.literal("WIP"));
+        int photographsCount = getContent(itemStack).size();
         if (photographsCount > 0) {
-            tooltipComponents.add(Component.translatable("item.exposure.album.tooltip.photos_count", photographsCount));
+            list.add(Component.translatable("item.exposure.album.tooltip.photos_count", photographsCount));
         }
     }
 

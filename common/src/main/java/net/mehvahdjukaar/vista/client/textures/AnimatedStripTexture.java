@@ -14,6 +14,8 @@ import net.minecraft.client.renderer.texture.atlas.SpriteResourceLoader;
 import net.minecraft.client.resources.metadata.animation.AnimationMetadataSection;
 import net.minecraft.client.resources.metadata.animation.FrameSize;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.metadata.MetadataSectionSerializer;
+import net.minecraft.server.packs.metadata.MetadataSectionType;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceMetadata;
@@ -25,6 +27,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import static net.mehvahdjukaar.vista.client.textures.GifPathSpriteSource.computeAtlasLayout;
 
@@ -68,9 +72,13 @@ public class AnimatedStripTexture extends AbstractTexture implements Dumpable {
 
     private @Nullable SpriteContents loadContent(ResourceManager resourceManager) throws FileNotFoundException {
         Resource resource = resourceManager.getResourceOrThrow(this.fileLocation);
-        SpriteResourceLoader loader = fileLocation.getPath().endsWith(".gif") ?
+        SpriteLoadFunc loader = fileLocation.getPath().endsWith(".gif") ?
                 GifPathSpriteSource.GIF_CONTENT_LOADER : RESHAPING_PNG_STRIP_LOADER;
         return loader.loadSprite(fileLocation, resource);
+    }
+
+    public interface SpriteLoadFunc{
+        SpriteContents loadSprite(ResourceLocation id, Resource res);
     }
 
     private void doLoad(NativeImage image) {
@@ -91,10 +99,11 @@ public class AnimatedStripTexture extends AbstractTexture implements Dumpable {
 
 
     //same as default logic but with reshaping capability
-    private static final SpriteResourceLoader RESHAPING_PNG_STRIP_LOADER = (resourceLocation, resource) -> {
+    private static final SpriteLoadFunc RESHAPING_PNG_STRIP_LOADER =
+            (resourceLocation, resource) -> {
         ResourceMetadata resourceMetadata;
         try {
-            resourceMetadata = resource.metadata().copySections(SpriteLoader.DEFAULT_METADATA_SECTIONS);
+            resourceMetadata = resource.metadata();
         } catch (Exception e) {
             VistaMod.LOGGER.error("Unable to parse metadata from {}", resourceLocation, e);
             return null;
@@ -132,7 +141,7 @@ public class AnimatedStripTexture extends AbstractTexture implements Dumpable {
         int maxDim = RenderSystem.maxSupportedTextureSize() / 2;
 
         if (nativeImage.getWidth() <= maxDim && nativeImage.getHeight() <= maxDim) {
-            return new SpriteContents(resourceLocation, frameSize, nativeImage, resourceMetadata);
+            return new SpriteContents(resourceLocation, frameSize, nativeImage, metadata);
         }
 
         NativeImage atlas = buildTileAtlasFromStrip(
@@ -140,7 +149,7 @@ public class AnimatedStripTexture extends AbstractTexture implements Dumpable {
         );
 
         nativeImage.close();
-        return new SpriteContents(resourceLocation, frameSize, atlas, resourceMetadata);
+        return new SpriteContents(resourceLocation, frameSize, atlas, metadata);
     };
 
     private static NativeImage buildTileAtlasFromStrip(

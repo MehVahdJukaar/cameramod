@@ -3,6 +3,7 @@ package net.mehvahdjukaar.vista.common.cassette;
 import net.mehvahdjukaar.moonlight.api.resources.assets.LangBuilder;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -28,10 +29,21 @@ public class CassetteItem extends Item {
         return super.getTooltipImage(stack);
     }
 
-    @Override
-    public void onCraftedPostProcess(ItemStack stack, Level level) {
-        super.onCraftedPostProcess(stack, level);
-        assignCustomCassette(stack, level);
+    public static CassetteTape getCassette(ItemStack stack) {
+        var tag = stack.getTagElement("cassette_tape");
+        if (tag != null) {
+            var registry = VistaMod.CASSETTE_TAPE_REGISTRY.get();
+            var holder = registry.getHolder(ResourceLocation.tryParse(tag.getAsString())).orElse(null);
+            if (holder != null) {
+                return holder.value();
+            }
+        }
+        return null;
+    }
+
+    public static void setCassette(ItemStack stack, Holder<CassetteTape> tape) {
+        stack.getOrCreateTag().putString("cassette_tape", tape.unwrapKey()
+                .map(k -> k.location().toString()).orElse(""));
     }
 
     public static void assignCustomCassette(ItemStack stack, Level level) {
@@ -48,7 +60,7 @@ public class CassetteItem extends Item {
         for (var h : level.registryAccess().registryOrThrow(VistaMod.CASSETTE_TAPE_REGISTRY_KEY).getTagOrEmpty(VistaMod.SUPPORTER_TAPES_TAG)) {
             var key = h.unwrapKey().get();
             if (key.location().getPath().equals(name)) {
-                stack.set(VistaMod.CASSETTE_TAPE_COMPONENT.get(), h);
+                setCassette(stack, h);
                 stack.remove(DataComponents.CUSTOM_NAME);
                 break;
             }
@@ -58,6 +70,7 @@ public class CassetteItem extends Item {
     @Override
     public void onCraftedBy(ItemStack stack, Level level, Player player) {
         super.onCraftedBy(stack, level, player);
+        assignCustomCassette(stack, level);
     }
 
     @Override

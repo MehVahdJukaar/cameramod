@@ -34,8 +34,6 @@ import org.jetbrains.annotations.Nullable;
 
 public class ViewFinderBlock extends DirectionalBlock implements EntityBlock {
 
-    public static final MapCodec<ViewFinderBlock> CODEC = simpleCodec(ViewFinderBlock::new);
-
     protected static final VoxelShape SHAPE_DOWN = Block.box(0.0, 0.0, 0.0, 14, 2.0, 14);
     protected static final VoxelShape SHAPE_UP = Block.box(0.0, 14.0, 0.0, 14, 14, 14);
     protected static final VoxelShape SHAPE_SOUTH = Block.box(0.0, 0.0, 14.0, 14, 14, 14);
@@ -121,7 +119,7 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock {
         if (oldState.getBlock() instanceof ViewFinderBlock &&
                 !(newState.getBlock() instanceof ViewFinderBlock) &&
                 level instanceof ServerLevel sl) {
-            BroadcastManager.getInstance(sl).unlinkFeed(new GlobalPos(level.dimension(), pos));
+            BroadcastManager.getInstance(sl).unlinkFeed(GlobalPos.of(level.dimension(), pos));
         }
     }
 
@@ -160,9 +158,8 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock {
     }
 
 
-    //TODO: bug here
     @Override
-    protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         if (PlatHelper.getPhysicalSide().isClient() && ViewFinderController.isActiveAt(pos)) {
             return Shapes.empty();
         }

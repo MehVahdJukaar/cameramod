@@ -26,7 +26,6 @@ import net.mehvahdjukaar.vista.network.ModNetwork;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.UUIDUtil;
-import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -56,7 +55,7 @@ public class VistaMod {
     public static final Logger LOGGER = LogManager.getLogger("Vista");
 
     public static ResourceLocation res(String name) {
-        return ResourceLocation.fromNamespaceAndPath(MOD_ID, name);
+        return new ResourceLocation(MOD_ID, name);
     }
 
     public static final WorldSavedDataType<BroadcastManager> VIEWFINDER_CONNECTION =
@@ -93,7 +92,7 @@ public class VistaMod {
 
     public static final RegSupplier<SignalProjectorBlock> SIGNAL_PROJECTOR =
             RegHelper.registerBlockWithItem(VistaMod.res("wave_collector"), //wideband reciver, wideband listener, signal harvester
-                    () -> new SignalProjectorBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.COBBLESTONE)));
+                    () -> new SignalProjectorBlock(BlockBehaviour.Properties.copy(Blocks.COBBLESTONE)));
 
     public static final RegSupplier<BlockEntityType<SignalProjectorBlockEntity>> SIGNAL_PROJECTOR_TILE =
             RegHelper.registerBlockEntityType(VistaMod.res("wave_collector"),
@@ -139,23 +138,21 @@ public class VistaMod {
     public static final RegSupplier<SoundEvent> CASSETTE_EJECT_SOUND = RegHelper.registerSound(res("block.television.eject"));
     public static final RegSupplier<SoundEvent> TV_STATIC_SOUND = RegHelper.registerSound(res("block.television.static"));
     public static final RegSupplier<SoundEvent> SOJOURN_DISC_SOUND = RegHelper.registerSound(res("music_disc.sojourn"));
-    public static final HolderRef<JukeboxSong> SOJOURN_DISC_SONG = HolderRef.of(
-            res("sojourn"), Registries.JUKEBOX_SONG);
     public static final int STATIC_SOUND_DURATION = 4 * 20; //4 seconds
 
-    public static final Supplier<LootItemFunctionType<CassetteTapeLootFunction>> CASSETTE_TAPE_LOOT_FUNCTION =
+    public static final Supplier<LootItemFunctionType> CASSETTE_TAPE_LOOT_FUNCTION =
             RegHelper.registerLootFunction(res("random_tape"), CassetteTapeLootFunction.CODEC);
 
     public static final TagKey<CassetteTape> SUPPORTER_TAPES_TAG = TagKey.create(
             CASSETTE_TAPE_REGISTRY_KEY, res("supporter_tapes"));
 
     public static final TagKey<Item> GLASS_PANES_TAG = TagKey.create(
-            Registries.ITEM, ResourceLocation.fromNamespaceAndPath("c", "glass_panes"));
+            Registries.ITEM, new ResourceLocation("c", "glass_panes"));
 
     public static final Supplier<Item> SOJOURN_MUSIC_DISC = RegHelper.registerItem(res("music_disc_sojourn"),
-            () -> new Item(new Item.Properties()
-                    .jukeboxPlayable(SOJOURN_DISC_SONG.getKey())
-                    .stacksTo(1).rarity(Rarity.RARE)));
+            () -> PlatHelper.newRecordItem(13, SOJOURN_DISC_SONG,
+                    new Item.Properties() .stacksTo(1).rarity(Rarity.RARE), 159 )
+    );
 
     public static void init() {
         if (CompatHandler.IRIS) {

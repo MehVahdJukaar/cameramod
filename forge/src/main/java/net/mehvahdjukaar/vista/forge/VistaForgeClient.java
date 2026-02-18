@@ -1,7 +1,5 @@
-package net.mehvahdjukaar.vista.neoforge;
+package net.mehvahdjukaar.vista.forge;
 
-import net.mehvahdjukaar.moonlight.api.client.texture_renderer.RenderedTexturesManager;
-import net.mehvahdjukaar.moonlight.api.misc.fake_level.FakeLevelManager;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
@@ -13,14 +11,17 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.*;
-import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
-import net.neoforged.neoforge.event.level.LevelEvent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
+import net.minecraftforge.client.event.ComputeFovModifierEvent;
+import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.client.event.RenderLevelStageEvent;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.level.LevelEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 
-@EventBusSubscriber(Dist.CLIENT)
+@Mod.EventBusSubscriber(Dist.CLIENT)
 public class VistaForgeClient {
 
 
@@ -31,7 +32,7 @@ public class VistaForgeClient {
         }
     }
     @SubscribeEvent
-    public static void onClientEndTick(ClientTickEvent.Post event) {
+    public static void onClientEndTick(TickEvent.ClientTickEvent.Post event) {
         VistaModClient.onClientTick(Minecraft.getInstance());
     }
 
@@ -85,11 +86,6 @@ public class VistaForgeClient {
         if (ViewFinderController.onMouseScrolled(event.getScrollDeltaY())) {
             event.setCanceled(true);
         }
-    }
-
-    @SubscribeEvent
-    public static void registerSpriteSources(RegisterSpriteSourceTypesEvent event) {
-        event.register(VistaMod.res("directory_gifs"), GifPathSpriteSource.TYPE);
     }
 
     @SubscribeEvent

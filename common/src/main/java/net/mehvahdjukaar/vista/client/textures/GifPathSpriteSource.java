@@ -16,6 +16,7 @@ import net.minecraft.client.resources.metadata.animation.AnimationMetadataSectio
 import net.minecraft.client.resources.metadata.animation.FrameSize;
 import net.minecraft.resources.FileToIdConverter;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.metadata.MetadataSectionSerializer;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceMetadata;
@@ -36,7 +37,7 @@ import java.util.Optional;
 
 public class GifPathSpriteSource implements SpriteSource {
 
-    public static final MapCodec<GifPathSpriteSource> CODEC = RecordCodecBuilder.mapCodec((i) -> i.group(
+    public static final Codec<GifPathSpriteSource> CODEC = RecordCodecBuilder.create((i) -> i.group(
             Codec.STRING.fieldOf("source").forGetter((l) -> l.sourcePath),
             Codec.STRING.fieldOf("prefix").forGetter((l) -> l.idPrefix)
     ).apply(i, GifPathSpriteSource::new));
@@ -60,8 +61,7 @@ public class GifPathSpriteSource implements SpriteSource {
             if (optional.isEmpty()) {
                 VistaMod.LOGGER.warn("Unable to find texture {}", id);
             } else {
-                output.add(id, spriteLoader ->
-                        GIF_CONTENT_LOADER.loadSprite(id, optional.get()));
+                output.add(id, () -> GIF_CONTENT_LOADER.loadSprite(id, optional.get()));
             }
         });
     }
@@ -72,7 +72,7 @@ public class GifPathSpriteSource implements SpriteSource {
     }
 
 
-    public static final SpriteResourceLoader GIF_CONTENT_LOADER = (ResourceLocation id, Resource resource) -> {
+    public static final AnimatedStripTexture.SpriteLoadFunc GIF_CONTENT_LOADER = (ResourceLocation id, Resource resource) -> {
         try (InputStream inputStream = resource.open();
              ImageInputStream imageStream = ImageIO.createImageInputStream(inputStream)) {
 
@@ -93,11 +93,17 @@ public class GifPathSpriteSource implements SpriteSource {
             AnimationMetadataSection anim = buildAnimationMeta(frameTicks, w, h, frames.size());
 
             FrameSize size = new FrameSize(w, h);
-            ResourceMetadata meta = new ResourceMetadata.Builder()
-                    .put(AnimationMetadataSection.SERIALIZER, anim)
-                    .build();
+            ResourceMetadata meta = new ResourceMetadata(){
+                @Override
+                public <T> Optional<T> getSection(MetadataSectionSerializer<T> serializer) {
+                    if(serializer == AnimationMetadataSection.SERIALIZER){
+                        return Optional.of((T)anim);
+                    }
+                    return Optional.empty();
+                }
+            };
 
-            return new SpriteContents(id, size, strip, meta);
+            return new SpriteContents(id, size, strip, anim);
         } catch (IllegalArgumentException | IOException e) {
             VistaMod.LOGGER.error("unable to build animated strip for {}", id, e);
         }

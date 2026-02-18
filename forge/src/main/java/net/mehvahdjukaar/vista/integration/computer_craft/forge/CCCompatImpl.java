@@ -1,13 +1,11 @@
-package net.mehvahdjukaar.vista.integration.computer_craft.neoforge;
+package net.mehvahdjukaar.vista.integration.computer_craft.forge;
 
 
 import dan200.computercraft.api.ForgeComputerCraftAPI;
 import net.mehvahdjukaar.vista.VistaMod;
-import net.mehvahdjukaar.vista.integration.computer_craft.CCCompat;
 import net.mehvahdjukaar.vista.integration.computer_craft.SignalProjectorPeripheral;
 import net.mehvahdjukaar.vista.integration.computer_craft.ViewFinderPeripheral;
-import net.mehvahdjukaar.vista.neoforge.VistaForge;
-import net.minecraft.client.renderer.texture.HttpTexture;
+import net.mehvahdjukaar.vista.forge.VistaForge;
 import net.minecraft.core.Direction;
 import net.neoforged.neoforge.capabilities.BlockCapability;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;

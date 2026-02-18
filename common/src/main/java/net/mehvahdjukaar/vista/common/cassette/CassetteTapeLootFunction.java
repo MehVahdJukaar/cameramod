@@ -13,7 +13,7 @@ public class CassetteTapeLootFunction implements LootItemFunction {
     public static final MapCodec<CassetteTapeLootFunction> CODEC = MapCodec.unit((new CassetteTapeLootFunction()));
 
     @Override
-    public LootItemFunctionType<? extends LootItemFunction> getType() {
+    public LootItemFunctionType getType() {
         return VistaMod.CASSETTE_TAPE_LOOT_FUNCTION.get();
     }
 

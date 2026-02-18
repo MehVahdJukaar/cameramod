@@ -15,7 +15,7 @@ public interface IBroadcastProvider {
     default void ensureLinked(Level level, BlockPos pos) {
         if (level instanceof ServerLevel sl) {
             BroadcastManager.getInstance(sl)
-                    .linkFeed(this.getUUID(), new GlobalPos(sl.dimension(), pos));
+                    .linkFeed(this.getUUID(), GlobalPos.of(sl.dimension(), pos));
         }
     }
 
