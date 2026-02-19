@@ -1,9 +1,8 @@
 package net.mehvahdjukaar.vista.integration.iris;
 
-import net.irisshaders.iris.Iris;
-import net.irisshaders.iris.shadows.ShadowRenderer;
 import net.irisshaders.iris.pipeline.VanillaRenderingPipeline;
 import net.irisshaders.iris.pipeline.WorldRenderingPipeline;
+import net.irisshaders.iris.shadows.ShadowRenderer;
 import net.irisshaders.iris.uniforms.CapturedRenderingState;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigBuilder;
 import net.minecraft.client.Minecraft;
@@ -13,7 +12,6 @@ import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
 import org.joml.Vector3d;
 
-import javax.swing.plaf.PanelUI;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.function.Supplier;
@@ -27,8 +25,8 @@ public class IrisCompat {
     private static Supplier<Boolean> irisShaderPacksOff;
 
     @Nullable
-    public static WorldRenderingPipeline getModifiedPipeline(){
-        return  VISTA_RENDERING.get() && irisShaderPacksOff.get() ? VISTA_PIPELINE : null;
+    public static WorldRenderingPipeline getModifiedPipeline() {
+        return VISTA_RENDERING.get() && irisShaderPacksOff.get() ? VISTA_PIPELINE : null;
     }
 
     public static Runnable decorateRendererWithoutShaderPacks(Runnable renderTask) {
@@ -73,7 +71,7 @@ public class IrisCompat {
     private static final Field VANILLA_PIPELINE_FIELD = Arrays.stream(LevelRenderer.class.getDeclaredFields())
             .filter(f -> f.getType().equals(WorldRenderingPipeline.class))
             .findFirst()
-            .map(p->{
+            .map(p -> {
                 p.setAccessible(true);
                 return p;
             })
