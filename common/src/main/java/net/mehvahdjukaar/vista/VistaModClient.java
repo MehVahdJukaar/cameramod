@@ -2,12 +2,11 @@ package net.mehvahdjukaar.vista;
 
 import com.google.common.collect.MapMaker;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import net.mehvahdjukaar.ml_classes.DynamicTextureRenderer;
 import net.mehvahdjukaar.moonlight.api.client.CoreShaderContainer;
 import net.mehvahdjukaar.moonlight.api.misc.EventCalled;
 import net.mehvahdjukaar.moonlight.api.platform.ClientHelper;
-import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
-import net.mehvahdjukaar.ml_classes.DynamicTextureRenderer;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.mehvahdjukaar.vista.client.VistaDynamicResources;
 import net.mehvahdjukaar.vista.client.renderer.TvBlockEntityRenderer;
@@ -15,6 +14,7 @@ import net.mehvahdjukaar.vista.client.renderer.ViewFinderBlockEntityRenderer;
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import net.mehvahdjukaar.vista.client.textures.CassetteTexturesManager;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
+import net.mehvahdjukaar.vista.common.cassette.CassetteItem;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
@@ -36,7 +36,7 @@ import java.util.function.Function;
 
 public class VistaModClient {
 
-    private static final ResourceLocation SHULKER_SHEET = ResourceLocation.withDefaultNamespace("textures/atlas/shulker_boxes.png");
+    private static final ResourceLocation SHULKER_SHEET = new ResourceLocation("textures/atlas/shulker_boxes.png");
 
     public static final CoreShaderContainer POSTERIZE_SHADER = new CoreShaderContainer(GameRenderer::getPositionTexColorShader);
     public static final CoreShaderContainer CAMERA_VIEW_SHADER = new CoreShaderContainer(GameRenderer::getRendertypeEntitySolidShader);
@@ -86,13 +86,13 @@ public class VistaModClient {
 
         ClientHelper.addClientReloadListener(() -> CassetteTexturesManager.INSTANCE, VistaMod.res("gif_manager"));
 
-        RegHelper.registerDynamicResourceProvider(new VistaDynamicResources());
+        new VistaDynamicResources().register();
     }
 
     private static void registerItemColors(ClientHelper.ItemColorEvent event) {
         event.register((itemStack, i) -> {
             if (i == 1) {
-                var tape = itemStack.get(VistaMod.CASSETTE_TAPE_COMPONENT.get());
+                var tape = CassetteItem.getCassette(itemStack);
                 if (tape == null) return -1;
                 return tape.value().color();
             }

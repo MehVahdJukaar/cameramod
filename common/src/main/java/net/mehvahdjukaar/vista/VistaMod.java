@@ -1,10 +1,12 @@
 package net.mehvahdjukaar.vista;
 
 import com.mojang.serialization.Codec;
+import net.mehvahdjukaar.moonlight.api.fluids.SoftFluidRegistry;
 import net.mehvahdjukaar.moonlight.api.misc.EventCalled;
 import net.mehvahdjukaar.moonlight.api.misc.RegSupplier;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
+import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.vista.common.BroadcastManager;
 import net.mehvahdjukaar.vista.common.ModLootOverrides;
 import net.mehvahdjukaar.vista.common.cassette.CassetteItem;
@@ -57,10 +59,6 @@ public class VistaMod {
         return new ResourceLocation(MOD_ID, name);
     }
 
-    public static final WorldSavedDataType<BroadcastManager> VIEWFINDER_CONNECTION =
-            RegHelper.registerWorldSavedData(res("viewfinder_connection"), BroadcastManager::create,
-                    BroadcastManager.CODEC, BroadcastManager.STREAM_CODEC, false);
-
     public static final ResourceKey<Registry<CassetteTape>> CASSETTE_TAPE_REGISTRY_KEY =
             ResourceKey.createRegistryKey(res("cassette_tape"));
 
@@ -93,10 +91,6 @@ public class VistaMod {
             RegHelper.registerBlockWithItem(VistaMod.res("wave_collector"), //wideband reciver, wideband listener, signal harvester
                     () -> new SignalProjectorBlock(BlockBehaviour.Properties.copy(Blocks.COBBLESTONE)));
 
-    public static final RegSupplier<BlockEntityType<SignalProjectorBlockEntity>> SIGNAL_PROJECTOR_TILE =
-            RegHelper.registerBlockEntityType(VistaMod.res("wave_collector"),
-                    SignalProjectorBlockEntity::new,
-                    SIGNAL_PROJECTOR);
 
     public static final Supplier<CassetteItem> CASSETTE = RegHelper.registerItem(res("cassette"),
             () -> new CassetteItem(new Item.Properties()
@@ -108,13 +102,6 @@ public class VistaMod {
                     .rarity(Rarity.RARE)
                     .stacksTo(1)));
 
-
-    public static final Supplier<DataComponentType<Holder<CassetteTape>>> CASSETTE_TAPE_COMPONENT = RegHelper.registerDataComponent(
-            res("cassette_tape"), () ->
-                    DataComponentType.<Holder<CassetteTape>>builder()
-                            .persistent(CassetteTape.CODEC)
-                            .networkSynchronized(CassetteTape.STREAM_CODEC)
-                            .build());
 
     public static final IAttachmentType<Boolean, EnderMan> ENDERMAN_CAP = RegHelper.registerDataAttachment(
             res("angered_from_tv"),
@@ -144,7 +131,7 @@ public class VistaMod {
             Registries.ITEM, new ResourceLocation("c", "glass_panes"));
 
     public static final Supplier<Item> SOJOURN_MUSIC_DISC = RegHelper.registerItem(res("music_disc_sojourn"),
-            () -> PlatHelper.newRecordItem(13, SOJOURN_DISC_SONG,
+            () -> PlatHelper.newMusicDisc(13, SOJOURN_DISC_SOUND,
                     new Item.Properties().stacksTo(1).rarity(Rarity.RARE), 159)
     );
 
@@ -198,29 +185,21 @@ public class VistaMod {
         }
     }
 
-    private static final TagKey<Item> C_MUSIC_DISCS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(
-            "c", "music_discs"));
+    private static final TagKey<Item> C_MUSIC_DISCS = TagKey.create(Registries.ITEM,
+            new ResourceLocation("c", "music_discs"));
 
     private static void addItemsToTabs(RegHelper.ItemToTabEvent event) {
         event.add(CreativeModeTabs.REDSTONE_BLOCKS, TV.get());
         event.add(CreativeModeTabs.REDSTONE_BLOCKS, VIEWFINDER.get());
-        CreativeModeTab.ItemDisplayParameters parameters = event.getParameters();
-        for (var v : parameters.holders().lookupOrThrow(CASSETTE_TAPE_REGISTRY_KEY).listElements().toList()) {
+        var ra = Utils.hackyGetRegistryAccess();
+        for (var v : ra.lookupOrThrow(CASSETTE_TAPE_REGISTRY_KEY).listElements().toList()) {
             if (v.is(SUPPORTER_TAPES_TAG)) continue;
             ItemStack stack = CASSETTE.get().getDefaultInstance();
-            stack.set(CASSETTE_TAPE_COMPONENT.get(), v);
+            CassetteItem.setCassette(stack, v);
             event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, stack);
         }
         event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, HOLLOW_CASSETTE.get());
         event.addAfter(CreativeModeTabs.TOOLS_AND_UTILITIES, i -> i.is(C_MUSIC_DISCS), SOJOURN_MUSIC_DISC.get());
-
-        if (CompatHandler.COMPUTER_CRAFT) {
-            //   event.add(CreativeModeTabs.FUNCTIONAL_BLOCKS, SIGNAL_PROJECTOR.get());
-        } else {
-            if (event.getTab().hasAnyItems()) {
-                // event.add(CreativeModeTabs.OP_BLOCKS, SIGNAL_PROJECTOR.get());
-            }
-        }
 
         CompatHandler.addItemsToTabs(event);
     }
