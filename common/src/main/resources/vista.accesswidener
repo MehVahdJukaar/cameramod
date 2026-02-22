@@ -10,8 +10,6 @@ accessible field net/minecraft/client/renderer/GameRenderer renderDistance F
 
 accessible method net/minecraft/client/Camera setPosition (Lnet/minecraft/world/phys/Vec3;)V
 accessible method net/minecraft/client/Camera setRotation (FF)V
-accessible method net/minecraft/client/Camera getMaxZoom (F)F
-accessible method net/minecraft/client/Camera move (FFF)V
 
 #Render system state
 accessible field com/mojang/blaze3d/systems/RenderSystem savedProjectionMatrix Lorg/joml/Matrix4f;
@@ -48,11 +46,7 @@ mutable field net/minecraft/client/renderer/GameRenderer mainCamera Lnet/minecra
 #setup render
 accessible field net/minecraft/client/renderer/LevelRenderer capturedFrustum Lnet/minecraft/client/renderer/culling/Frustum;
 accessible field net/minecraft/client/renderer/LevelRenderer lastViewDistance I
-accessible field net/minecraft/client/renderer/LevelRenderer lastCameraSectionY I
-accessible field net/minecraft/client/renderer/LevelRenderer lastCameraSectionX I
-accessible field net/minecraft/client/renderer/LevelRenderer lastCameraSectionZ I
 accessible field net/minecraft/client/renderer/LevelRenderer viewArea Lnet/minecraft/client/renderer/ViewArea;
-accessible field net/minecraft/client/renderer/LevelRenderer sectionRenderDispatcher Lnet/minecraft/client/renderer/chunk/SectionRenderDispatcher;
 accessible field net/minecraft/client/renderer/LevelRenderer prevCamX D
 accessible field net/minecraft/client/renderer/LevelRenderer prevCamY D
 accessible field net/minecraft/client/renderer/LevelRenderer prevCamZ D
@@ -62,7 +56,12 @@ accessible field net/minecraft/client/renderer/LevelRenderer prevCamRotY D
 mutable field net/minecraft/client/renderer/LevelRenderer frustumPoints [Lorg/joml/Vector4f;
 mutable field net/minecraft/client/renderer/LevelRenderer frustumPos Lorg/joml/Vector3d;
 accessible field net/minecraft/client/renderer/LevelRenderer frustumPos Lorg/joml/Vector3d;
-accessible field net/minecraft/client/renderer/LevelRenderer visibleSections Lit/unimi/dsi/fastutil/objects/ObjectArrayList;
-mutable field net/minecraft/client/renderer/LevelRenderer visibleSections Lit/unimi/dsi/fastutil/objects/ObjectArrayList;
 accessible method net/minecraft/client/renderer/LevelRenderer captureFrustum (Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;DDDLnet/minecraft/client/renderer/culling/Frustum;)V
 accessible class net/minecraft/client/renderer/LevelRenderer$RenderChunkStorage
+accessible field net/minecraft/client/renderer/LevelRenderer renderChunkStorage Ljava/util/concurrent/atomic/AtomicReference;
+accessible field net/minecraft/client/renderer/LevelRenderer lastCameraChunkX I
+accessible field net/minecraft/client/renderer/LevelRenderer lastCameraChunkY I
+accessible field net/minecraft/client/renderer/LevelRenderer lastCameraChunkZ I
+accessible field net/minecraft/client/renderer/LevelRenderer lastCameraX D
+accessible field net/minecraft/client/renderer/LevelRenderer lastCameraY D
+accessible field net/minecraft/client/renderer/LevelRenderer lastCameraZ D

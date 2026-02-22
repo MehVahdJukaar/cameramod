@@ -1,20 +1,20 @@
 package net.mehvahdjukaar.vista.forge;
 
-import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.mehvahdjukaar.vista.client.renderer.FeedConnectionDebugRenderer;
 import net.mehvahdjukaar.vista.client.ui.ViewFinderHud;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
-import net.minecraftforge.client.event.ComputeFovModifierEvent;
-import net.minecraftforge.client.event.InputEvent;
-import net.minecraftforge.client.event.RenderLevelStageEvent;
+import net.minecraftforge.client.event.*;
+import net.minecraftforge.client.gui.overlay.ForgeGui;
+import net.minecraftforge.client.gui.overlay.IGuiOverlay;
+import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -31,9 +31,10 @@ public class VistaForgeClient {
         }
     }
 
+
     @SubscribeEvent
     public static void onClientEndTick(TickEvent.ClientTickEvent event) {
-       if(event.phase == TickEvent.Phase.END) VistaModClient.onClientTick(Minecraft.getInstance());
+        if (event.phase == TickEvent.Phase.END) VistaModClient.onClientTick(Minecraft.getInstance());
     }
 
     @SubscribeEvent
@@ -42,9 +43,17 @@ public class VistaForgeClient {
     }
 
     @SubscribeEvent
-    public static void onAddGuiLayers(RegisterGuiLayersEvent event) {
-        event.registerBelow(VanillaGuiLayers.CAMERA_OVERLAYS, VistaMod.res("viewfinder"),
-                ViewFinderHud.INSTANCE);
+    public static void onAddGuiLayers(RegisterGuiOverlaysEvent event) {
+        event.registerBelow(VanillaGuiOverlay.SPYGLASS.id(), "viewfinder", new Hud());
+    }
+
+
+    public static class Hud extends ViewFinderHud implements IGuiOverlay {
+
+        @Override
+        public void render(ForgeGui forgeGui, GuiGraphics arg, float f, int i, int j) {
+            this.render(arg, f);
+        }
     }
 
     @SubscribeEvent

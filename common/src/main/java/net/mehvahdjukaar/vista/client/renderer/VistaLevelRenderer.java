@@ -14,7 +14,6 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.*;
-import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
@@ -23,7 +22,6 @@ import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
@@ -37,8 +35,8 @@ import static net.minecraft.client.Minecraft.ON_OSX;
 
 public class VistaLevelRenderer {
 
-    private static final Set<SectionOcclusionGraph> MANAGED_GRAPHS = new WeakHashSet<>();
-    private static final AtomicReference<SectionOcclusionGraph> MC_OWN_GRAPH = new AtomicReference<>(null);
+    private static final Set<LevelRenderer.RenderChunkStorage> MANAGED_GRAPHS = new WeakHashSet<>();
+    private static final AtomicReference<LevelRenderer.RenderChunkStorage> MC_OWN_GRAPH = new AtomicReference<>(null);
     private static final DummyCamera DUMMY_CAMERA = new DummyCamera();
 
     private static ViewFinderBlockEntity renderingLiveFeedVF = null;
@@ -101,8 +99,8 @@ public class VistaLevelRenderer {
 
             feedCameraState.apply(mc.levelRenderer);
 
-            MANAGED_GRAPHS.add(feedCameraState.getOcclusionGraph());
-            MC_OWN_GRAPH.set(oldCameraState.getOcclusionGraph());
+            MANAGED_GRAPHS.add(feedCameraState.getChunkStorage());
+            MC_OWN_GRAPH.set(oldCameraState.getChunkStorage());
 
             // already wrapped outside; don't double-wrap this or it fucks everything over omg.
             renderLevel(mc, canvas, camera, fov);
@@ -231,7 +229,7 @@ public class VistaLevelRenderer {
 
         clientLevel.getProfiler().push("camera");
 
-        SectionOcclusionGraph graph = lr.sectionOcclusionGraph;
+        var graph = lr.renderChunkStorage;
 
 
         // Get player's exact coordinates
@@ -355,6 +353,8 @@ public class VistaLevelRenderer {
 
     //very ugly because these can be called on another thread
 
+    //TODO: add back
+    /*
     public static void onChunkLoaded(ChunkPos chunkPos, SectionOcclusionGraph sectionOcclusionGraph) {
         if (CompatHandler.SODIUM) return;
         for (SectionOcclusionGraph graph : MANAGED_GRAPHS) {
@@ -379,5 +379,5 @@ public class VistaLevelRenderer {
         if (old != null && old != sectionOcclusionGraph) {
             old.onSectionCompiled(renderSection);
         }
-    }
+    }*/
 }

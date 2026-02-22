@@ -182,12 +182,14 @@ public class DynamicTextureRenderer {
             RenderSystem.disableBlend();
             RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
             RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1);
-            BufferBuilder bufferBuilder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-            bufferBuilder.addVertex(pose, 0.0f, 16, 0).setUv(0, 0);
-            bufferBuilder.addVertex(pose, 16, 16, 0).setUv(1, 0);
-            bufferBuilder.addVertex(pose, 16, 0.0f, 0).setUv(1, 1);
-            bufferBuilder.addVertex(pose, 0.0f, 0.0f, 0).setUv(0, 1);
-            BufferUploader.drawWithShader(bufferBuilder.buildOrThrow());
+            BufferBuilder bufferBuilder = Tesselator.getInstance().getBuilder();
+            bufferBuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+            var mat = pose.pose();
+            bufferBuilder.vertex(mat, 0.0f, 16, 0).uv(0, 0).endVertex();
+            bufferBuilder.vertex(mat, 16, 16, 0).uv(1, 0).endVertex();
+            bufferBuilder.vertex(mat, 16, 0.0f, 0).uv(1, 1).endVertex();
+            bufferBuilder.vertex(mat, 0.0f, 0.0f, 0).uv(0, 1).endVertex();
+            BufferUploader.drawWithShader(bufferBuilder.end());
         });
     }
 
@@ -232,7 +234,7 @@ public class DynamicTextureRenderer {
         RenderSystem.setProjectionMatrix(matrix4f, VertexSorting.ORTHOGRAPHIC_Z);
 
         //model view stuff
-        var posestack = RenderSystem.getModelViewStack();
+        PoseStack posestack = RenderSystem.getModelViewStack();
         posestack.pushMatrix();
         posestack.set(new Matrix4f().identity());
 

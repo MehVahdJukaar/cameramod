@@ -1,15 +1,17 @@
 package net.mehvahdjukaar.vista.client.video_source;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
 import net.mehvahdjukaar.vista.common.cassette.CassetteItem;
+import net.mehvahdjukaar.vista.common.cassette.HollowCassetteItem;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.UUID;
 
 public interface IVideoSource {
 
@@ -34,10 +36,11 @@ public interface IVideoSource {
     static IVideoSource create(ItemStack stack) {
         //we could have also implemented in the item but its better separation like this
         if (stack.getItem() instanceof CassetteItem) {
-            var tape = stack.get(VistaMod.CASSETTE_TAPE_COMPONENT.get());
+            var tape = CassetteItem.getCassette(stack);
             if (tape != null) return new CassetteTapeVideoSource(tape);
-        } else if (stack.has(VistaMod.LINKED_FEED_COMPONENT.get())) {
-            return new BroadcastVideoSource(stack.get(VistaMod.LINKED_FEED_COMPONENT.get()));
+        } else {
+            UUID id = HollowCassetteItem.getLinkedFeed(stack);
+            if (id != null) return new BroadcastVideoSource(id);
         }
         return EMPTY;
     }

@@ -168,7 +168,7 @@ public class TVBlockEntity extends ItemDisplayTile {
         }
 
         //add item
-        var result = super.interactWithPlayerItem(player, handIn, stack, slot);
+        var result = super.interact(player, handIn, slot);
         if (result.consumesAction() && isEmpty && powered && this.connectedTvsAmount >=3 &&
                 player instanceof ServerPlayer sp) {
             //advancement

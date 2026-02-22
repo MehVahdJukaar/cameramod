@@ -55,7 +55,7 @@ public class VistaFabricClient {
 
     }
 
-    private static void onRenderHud(GuiGraphics graphics, DeltaTracker partialTicks) {
+    private static void onRenderHud(GuiGraphics guiGraphics, float v) {
         ViewFinderHud.INSTANCE.render(graphics, partialTicks);
     }
 

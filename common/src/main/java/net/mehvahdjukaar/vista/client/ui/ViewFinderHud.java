@@ -4,23 +4,19 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
-import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.LayeredDraw;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 
-public class ViewFinderHud implements LayeredDraw.Layer {
+public class ViewFinderHud   {
 
     private static final ResourceLocation BAR_SPRITE = VistaMod.res("hud/bar");
     private static final ResourceLocation INDICATOR_SPRITE = VistaMod.res("hud/indicator");
     private static final ResourceLocation LOCKED_INDICATOR_SPRITE = VistaMod.res("hud/lock");
     private static final ResourceLocation OVERLAY = VistaMod.res("textures/gui/viewfinder_scope.png");
-
-    public static final ViewFinderHud INSTANCE = new ViewFinderHud();
 
     protected final Minecraft mc;
 
@@ -30,11 +26,9 @@ public class ViewFinderHud implements LayeredDraw.Layer {
         this.mc = Minecraft.getInstance();
     }
 
-    @Override
-    public void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
+    public void render(GuiGraphics graphics, float deltaTicks) {
         if (mc.options.hideGui) return;
 
-        float deltaTicks = deltaTracker.getGameTimeDeltaTicks();
         this.scopeScale = Mth.lerp(0.5F * deltaTicks, this.scopeScale, 1.125F);
 
         if (ViewFinderController.isActive()) {
@@ -46,7 +40,7 @@ public class ViewFinderHud implements LayeredDraw.Layer {
             int screenHeight = graphics.guiHeight();
 
             renderSpyglassOverlay(graphics, this.scopeScale);
-            renderBar(graphics, screenWidth, screenHeight, tile.getZoomLevel(), deltaTracker.getGameTimeDeltaPartialTick(false));
+            renderBar(graphics, screenWidth, screenHeight, tile.getZoomLevel(), deltaTicks);
         }
     }
 

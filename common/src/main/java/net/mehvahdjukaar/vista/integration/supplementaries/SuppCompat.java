@@ -9,7 +9,7 @@ public class SuppCompat {
 
     public static ResourceLocation getShaderForItem(Item item) {
         String shaderForItem = MobHeadShadersManager.INSTANCE.getShaderForItem(item);
-        return shaderForItem == null ? null : ResourceLocation.parse(shaderForItem);
+        return shaderForItem == null ? null : new ResourceLocation(shaderForItem);
     }
 
     public static boolean isFunny() {

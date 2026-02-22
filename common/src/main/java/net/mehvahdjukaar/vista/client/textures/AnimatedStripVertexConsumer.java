@@ -15,20 +15,20 @@ public class AnimatedStripVertexConsumer implements VertexConsumer {
     }
 
     @Override
-    public VertexConsumer setUv(float u, float v) {
-        this.delegate.setUv(this.stripData.getU(u, frameIndex), this.stripData.getV(v, frameIndex));
+    public VertexConsumer uv(float u, float v) {
+        this.delegate.uv(this.stripData.getU(u, frameIndex), this.stripData.getV(v, frameIndex));
         return this;
     }
 
     @Override
-    public VertexConsumer addVertex(float x, float y, float z) {
-        this.delegate.addVertex(x, y, z);
+    public VertexConsumer vertex(double x, double y, double z) {
+        this.delegate.vertex(x, y, z);
         return this;
     }
 
     @Override
-    public VertexConsumer setColor(int red, int green, int blue, int alpha) {
-        this.delegate.setColor(red, green, blue, alpha);
+    public VertexConsumer color(int red, int green, int blue, int alpha) {
+        this.delegate.color(red, green, blue, alpha);
         return this;
     }
 
@@ -45,8 +45,8 @@ public class AnimatedStripVertexConsumer implements VertexConsumer {
     }
 
     @Override
-    public VertexConsumer setNormal(float normalX, float normalY, float normalZ) {
-        this.delegate.setNormal(normalX, normalY, normalZ);
+    public VertexConsumer normal(float normalX, float normalY, float normalZ) {
+        this.delegate.normal(normalX, normalY, normalZ);
         return this;
     }
 

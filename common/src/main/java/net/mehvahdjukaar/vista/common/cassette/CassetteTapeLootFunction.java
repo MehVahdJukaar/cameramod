@@ -36,7 +36,7 @@ public class CassetteTapeLootFunction implements LootItemFunction {
     public ItemStack apply(ItemStack stack, LootContext context) {
 
         Level level = context.getLevel();
-        var holders = level.registryAccess().lookupOrThrow(VistaMod.CASSETTE_TAPE_REGISTRY_KEY)
+        var holders = level.registryAccess().lookupOrThrow(CassetteTape.REGISTRY_KEY)
                 .listElements()
                 .filter(h -> !h.is(VistaMod.SUPPORTER_TAPES_TAG))
                 .toList();
