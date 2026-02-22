@@ -1,12 +1,12 @@
 package net.mehvahdjukaar.vista.client.renderer;
 
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.SectionOcclusionGraph;
 import net.minecraft.client.renderer.ViewArea;
-import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.concurrent.atomic.AtomicReference;
 
 public class LevelRendererCameraState {
 
@@ -21,8 +21,7 @@ public class LevelRendererCameraState {
     @Nullable
     private ViewArea viewArea; //same as the actual one as this doesnt change actualy. unless we want to add it in the fufture to make far away cameras load
     private int lastViewDistance;
-    private SectionOcclusionGraph sectionOcclusionGraph;
-    private ObjectArrayList<SectionRenderDispatcher.RenderSection> visibleSections = new ObjectArrayList<>(10000);
+    private AtomicReference<LevelRenderer.RenderChunkStorage> renderChunkStorage;
 
     private LevelRendererCameraState() {
     }
@@ -51,7 +50,6 @@ public class LevelRendererCameraState {
         this.prevCamZ = lr.prevCamZ;
         this.prevCamRotX = lr.prevCamRotX;
         this.prevCamRotY = lr.prevCamRotY;
-        this.visibleSections = lr.visibleSections;
     }
 
     public static LevelRendererCameraState capture(LevelRenderer lr) {
@@ -63,7 +61,6 @@ public class LevelRendererCameraState {
     public void apply(LevelRenderer lr) {
       //  lr.viewArea = this.viewArea;
         lr.sectionOcclusionGraph = this.sectionOcclusionGraph;
-        lr.visibleSections = this.visibleSections;
         lr.lastViewDistance = this.lastViewDistance;
         lr.lastCameraSectionX = this.lastCameraSectionX;
         lr.lastCameraSectionY = this.lastCameraSectionY;

@@ -45,7 +45,6 @@ mutable field net/minecraft/client/Minecraft mainRenderTarget Lcom/mojang/blaze3
 accessible field net/minecraft/client/renderer/GameRenderer mainCamera Lnet/minecraft/client/Camera;
 mutable field net/minecraft/client/renderer/GameRenderer mainCamera Lnet/minecraft/client/Camera;
 
-#TODO cleanup these
 #setup render
 accessible field net/minecraft/client/renderer/LevelRenderer capturedFrustum Lnet/minecraft/client/renderer/culling/Frustum;
 accessible field net/minecraft/client/renderer/LevelRenderer lastViewDistance I
@@ -57,8 +56,6 @@ accessible field net/minecraft/client/renderer/LevelRenderer sectionRenderDispat
 accessible field net/minecraft/client/renderer/LevelRenderer prevCamX D
 accessible field net/minecraft/client/renderer/LevelRenderer prevCamY D
 accessible field net/minecraft/client/renderer/LevelRenderer prevCamZ D
-accessible field net/minecraft/client/renderer/LevelRenderer sectionOcclusionGraph Lnet/minecraft/client/renderer/SectionOcclusionGraph;
-mutable field net/minecraft/client/renderer/LevelRenderer sectionOcclusionGraph Lnet/minecraft/client/renderer/SectionOcclusionGraph;
 accessible method net/minecraft/client/renderer/LevelRenderer applyFrustum (Lnet/minecraft/client/renderer/culling/Frustum;)V
 accessible field net/minecraft/client/renderer/LevelRenderer prevCamRotX D
 accessible field net/minecraft/client/renderer/LevelRenderer prevCamRotY D
@@ -68,40 +65,4 @@ accessible field net/minecraft/client/renderer/LevelRenderer frustumPos Lorg/jom
 accessible field net/minecraft/client/renderer/LevelRenderer visibleSections Lit/unimi/dsi/fastutil/objects/ObjectArrayList;
 mutable field net/minecraft/client/renderer/LevelRenderer visibleSections Lit/unimi/dsi/fastutil/objects/ObjectArrayList;
 accessible method net/minecraft/client/renderer/LevelRenderer captureFrustum (Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;DDDLnet/minecraft/client/renderer/culling/Frustum;)V
-
-
-
-#grap
-accessible field net/minecraft/client/renderer/SectionOcclusionGraph needsFullUpdate Z
-accessible class net/minecraft/client/renderer/SectionOcclusionGraph$GraphState
-accessible class net/minecraft/client/renderer/SectionOcclusionGraph$GraphEvents
-accessible field net/minecraft/client/renderer/SectionOcclusionGraph$GraphState events Lnet/minecraft/client/renderer/SectionOcclusionGraph$GraphEvents;
-accessible field net/minecraft/client/renderer/SectionOcclusionGraph$GraphState storage Lnet/minecraft/client/renderer/SectionOcclusionGraph$GraphStorage;
-accessible field net/minecraft/client/renderer/SectionOcclusionGraph currentGraph Ljava/util/concurrent/atomic/AtomicReference;
-accessible field net/minecraft/client/renderer/SectionOcclusionGraph nextGraphEvents Ljava/util/concurrent/atomic/AtomicReference;
-accessible field net/minecraft/client/renderer/SectionOcclusionGraph needsFrustumUpdate Ljava/util/concurrent/atomic/AtomicBoolean;
-accessible class net/minecraft/client/renderer/SectionOcclusionGraph$Node
-accessible method net/minecraft/client/renderer/SectionOcclusionGraph initializeQueueForFullUpdate (Lnet/minecraft/client/Camera;Ljava/util/Queue;)V
-accessible method net/minecraft/client/renderer/SectionOcclusionGraph runUpdates (Lnet/minecraft/client/renderer/SectionOcclusionGraph$GraphStorage;Lnet/minecraft/world/phys/Vec3;Ljava/util/Queue;ZLjava/util/function/Consumer;)V
-extendable method net/minecraft/client/renderer/SectionOcclusionGraph runUpdates (Lnet/minecraft/client/renderer/SectionOcclusionGraph$GraphStorage;Lnet/minecraft/world/phys/Vec3;Ljava/util/Queue;ZLjava/util/function/Consumer;)V
-accessible field net/minecraft/client/renderer/SectionOcclusionGraph$Node section Lnet/minecraft/client/renderer/chunk/SectionRenderDispatcher$RenderSection;
-accessible field net/minecraft/client/renderer/SectionOcclusionGraph$GraphStorage sectionToNodeMap Lnet/minecraft/client/renderer/SectionOcclusionGraph$SectionToNodeMap;
-accessible method net/minecraft/client/renderer/SectionOcclusionGraph$SectionToNodeMap put (Lnet/minecraft/client/renderer/chunk/SectionRenderDispatcher$RenderSection;Lnet/minecraft/client/renderer/SectionOcclusionGraph$Node;)V
-accessible field net/minecraft/client/renderer/SectionOcclusionGraph fullUpdateTask Ljava/util/concurrent/Future;
-accessible field net/minecraft/client/renderer/SectionOcclusionGraph viewArea Lnet/minecraft/client/renderer/ViewArea;
-accessible field net/minecraft/client/renderer/SectionOcclusionGraph$GraphEvents sectionsToPropagateFrom Ljava/util/concurrent/BlockingQueue;
-accessible field net/minecraft/client/renderer/SectionOcclusionGraph$GraphEvents chunksWhichReceivedNeighbors Lit/unimi/dsi/fastutil/longs/LongSet;
-accessible method net/minecraft/client/renderer/SectionOcclusionGraph$Node setDirections (BLnet/minecraft/core/Direction;)V
-accessible field net/minecraft/client/renderer/SectionOcclusionGraph$Node directions B
-accessible field net/minecraft/client/renderer/SectionOcclusionGraph DIRECTIONS [Lnet/minecraft/core/Direction;
-accessible method net/minecraft/client/renderer/SectionOcclusionGraph$Node hasSourceDirection (I)Z
-accessible field net/minecraft/client/renderer/SectionOcclusionGraph CEILED_SECTION_DIAGONAL D
-accessible method net/minecraft/client/renderer/ViewArea getRenderSectionAt (Lnet/minecraft/core/BlockPos;)Lnet/minecraft/client/renderer/chunk/SectionRenderDispatcher$RenderSection;
-accessible class net/minecraft/client/renderer/SectionOcclusionGraph$Node
-accessible method net/minecraft/client/renderer/SectionOcclusionGraph$Node hasDirection (Lnet/minecraft/core/Direction;)Z
-accessible method net/minecraft/client/renderer/SectionOcclusionGraph$Node hasSourceDirections ()Z
-accessible method net/minecraft/client/renderer/SectionOcclusionGraph$Node addSourceDirection (Lnet/minecraft/core/Direction;)V
-accessible field net/minecraft/client/renderer/SectionOcclusionGraph$Node step I
-accessible class net/minecraft/client/renderer/SectionOcclusionGraph$Node
-accessible method net/minecraft/client/renderer/SectionOcclusionGraph$Node <init> (Lnet/minecraft/client/renderer/chunk/SectionRenderDispatcher$RenderSection;Lnet/minecraft/core/Direction;I)V
-
+accessible class net/minecraft/client/renderer/LevelRenderer$RenderChunkStorage

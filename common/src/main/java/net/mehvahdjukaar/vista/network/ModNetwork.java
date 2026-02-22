@@ -16,6 +16,8 @@ public class ModNetwork {
                         ServerBoundSyncSignalProjectorPacket::new)
                 .register(NetworkDir.PLAY_TO_CLIENT, ClientBoundControlViewFinderPacket.class,
                         ClientBoundControlViewFinderPacket::new)
+                .register(NetworkDir.PLAY_TO_CLIENT, ClientBoundSyncBroadcastManagerPacket.class,
+                        ClientBoundSyncBroadcastManagerPacket::fromBuffer)
 
                 .build();
 
