@@ -93,11 +93,6 @@ public class VistaMod {
             RegHelper.registerBlockWithItem(VistaMod.res("wave_collector"), //wideband reciver, wideband listener, signal harvester
                     () -> new SignalProjectorBlock(BlockBehaviour.Properties.copy(Blocks.COBBLESTONE)));
 
-    public static final RegSupplier<BlockEntityType<SignalProjectorBlockEntity>> SIGNAL_PROJECTOR_TILE =
-            RegHelper.registerBlockEntityType(VistaMod.res("wave_collector"),
-                    SignalProjectorBlockEntity::new,
-                    SIGNAL_PROJECTOR);
-
     public static final Supplier<CassetteItem> CASSETTE = RegHelper.registerItem(res("cassette"),
             () -> new CassetteItem(new Item.Properties()
                     .rarity(Rarity.RARE)
@@ -109,21 +104,15 @@ public class VistaMod {
                     .stacksTo(1)));
 
 
-    public static final Supplier<DataComponentType<Holder<CassetteTape>>> CASSETTE_TAPE_COMPONENT = RegHelper.registerDataComponent(
-            res("cassette_tape"), () ->
-                    DataComponentType.<Holder<CassetteTape>>builder()
-                            .persistent(CassetteTape.CODEC)
-                            .networkSynchronized(CassetteTape.STREAM_CODEC)
-                            .build());
-
     public static final IAttachmentType<Boolean, EnderMan> ENDERMAN_CAP = RegHelper.registerDataAttachment(
             res("angered_from_tv"),
             () -> RegHelper.AttachmentBuilder.create(() -> Boolean.FALSE).persistent(Codec.BOOL),
             EnderMan.class
     );
 
-    public static final Supplier<LootItemConditionType> TV_ENDERMAN_CONDITION = RegHelper.registerLootCondition(
-            VistaMod.res("angered_from_tv"), () -> AngeredFromTvCondition.CODEC
+    public static final Supplier<LootItemConditionType> TV_ENDERMAN_CONDITION = RegHelper.register(
+            VistaMod.res("angered_from_tv"), ()-> new LootItemConditionType(AngeredFromTvCondition.SERIALIZER),
+            Registries.LOOT_CONDITION_TYPE
     );
 
     public static final RegSupplier<SoundEvent> CASSETTE_INSERT_SOUND = RegHelper.registerSound(res("block.television.insert"));

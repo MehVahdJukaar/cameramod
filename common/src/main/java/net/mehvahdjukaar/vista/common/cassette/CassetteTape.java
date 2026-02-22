@@ -25,16 +25,6 @@ public record CassetteTape(ResourceLocation assetId, int color, Optional<Holder<
             ).apply(instance, CassetteTape::new));
 
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, CassetteTape> DIRECT_STREAM_CODEC =
-            StreamCodec.composite(ResourceLocation.STREAM_CODEC, CassetteTape::assetId,
-                    ByteBufCodecs.VAR_INT, CassetteTape::color,
-                    ByteBufCodecs.optional(SoundEvent.STREAM_CODEC), CassetteTape::soundEvent,
-                    ByteBufCodecs.optional(ByteBufCodecs.VAR_INT), CassetteTape::soundDuration,
-                    CassetteTape::new);
-
-
     public static final Codec<Holder<CassetteTape>> CODEC = RegistryFileCodec.create(VistaMod.CASSETTE_TAPE_REGISTRY_KEY, DIRECT_CODEC);
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, Holder<CassetteTape>> STREAM_CODEC = ByteBufCodecs.holder(
-            VistaMod.CASSETTE_TAPE_REGISTRY_KEY, DIRECT_STREAM_CODEC);
 }

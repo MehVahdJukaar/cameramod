@@ -13,6 +13,9 @@ accessible method net/minecraft/client/Camera setRotation (FF)V
 accessible method net/minecraft/client/Camera getMaxZoom (F)F
 accessible method net/minecraft/client/Camera move (FFF)V
 
+accessible class net/minecraft/client/renderer/LevelRenderer$RenderChunkStorage
+accessible field net/minecraft/client/renderer/LevelRenderer renderChunkStorage Ljava/util/concurrent/atomic/AtomicReference;
+
 #Render system state
 accessible field com/mojang/blaze3d/systems/RenderSystem savedProjectionMatrix Lorg/joml/Matrix4f;
 accessible field com/mojang/blaze3d/systems/RenderSystem savedVertexSorting Lcom/mojang/blaze3d/vertex/VertexSorting;
