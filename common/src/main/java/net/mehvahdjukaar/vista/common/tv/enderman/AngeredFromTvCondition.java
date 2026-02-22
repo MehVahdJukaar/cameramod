@@ -37,8 +37,7 @@ public class AngeredFromTvCondition implements LootItemCondition {
     public boolean test(LootContext lootContext) {
         Entity entity = lootContext.getParam(LootContextParams.THIS_ENTITY);
         if (entity instanceof EnderMan em) {
-            Boolean wasAngry = VistaMod.ENDERMAN_CAP.getOrNull(em);
-            return wasAngry != null && wasAngry;
+            return ((ITVAngeredEnderman) em).vista$isAngry();
         }
         return false;
     }

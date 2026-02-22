@@ -1,10 +1,12 @@
 package net.mehvahdjukaar.vista.common.cassette;
 
 import net.mehvahdjukaar.moonlight.api.resources.assets.LangBuilder;
+import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
@@ -29,14 +31,14 @@ public class CassetteItem extends Item {
         return super.getTooltipImage(stack);
     }
 
-    public static CassetteTape getCassette(ItemStack stack) {
+    @Nullable
+    public static Holder<CassetteTape> getCassette(ItemStack stack) {
         var tag = stack.getTagElement("cassette_tape");
         if (tag != null) {
-            var registry = VistaMod.CASSETTE_TAPE_REGISTRY.get();
-            var holder = registry.getHolder(ResourceLocation.tryParse(tag.getAsString())).orElse(null);
-            if (holder != null) {
-                return holder.value();
-            }
+            var registry = Utils.hackyGetRegistry(VistaMod.CASSETTE_TAPE_REGISTRY_KEY);
+            return registry.getHolder(ResourceKey.create(
+                    VistaMod.CASSETTE_TAPE_REGISTRY_KEY,
+                    ResourceLocation.tryParse(tag.getAsString()))).orElse(null);
         }
         return null;
     }

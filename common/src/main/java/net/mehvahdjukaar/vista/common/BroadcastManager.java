@@ -10,6 +10,7 @@ import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.common.cassette.IBroadcastProvider;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.UUIDUtil;
+import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
@@ -19,7 +20,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-@SuppressWarnings("unchecked")
 public final class BroadcastManager extends WorldSavedData {
 
     public static BroadcastManager create(ServerLevel serverLevel) {
@@ -181,11 +181,6 @@ public final class BroadcastManager extends WorldSavedData {
     }
 
     /* -------------------- WORLD DATA -------------------- */
-
-    @Override
-    public WorldSavedDataType<BroadcastManager> getType() {
-        return VistaMod.VIEWFINDER_CONNECTION;
-    }
 
     public static BroadcastManager getInstance(Level level) {
         return VistaMod.VIEWFINDER_CONNECTION.getData(level);
