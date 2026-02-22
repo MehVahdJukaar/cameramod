@@ -2,17 +2,20 @@ package net.mehvahdjukaar.vista.common;
 
 import com.google.common.collect.HashBiMap;
 import com.mojang.serialization.Codec;
-import net.mehvahdjukaar.moonlight.api.misc.WorldSavedData;
-import net.mehvahdjukaar.moonlight.api.misc.WorldSavedDataType;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
-import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.supplementaries.client.GlobeManager;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.common.cassette.IBroadcastProvider;
+import net.mehvahdjukaar.vista.network.ClientBoundSyncBroadcastManagerPacket;
+import net.mehvahdjukaar.vista.network.ModNetwork;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.UUIDUtil;
-import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.saveddata.SavedData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -20,7 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-public final class BroadcastManager extends WorldSavedData {
+public final class BroadcastManager extends SavedData {
 
     public static BroadcastManager create(ServerLevel serverLevel) {
         return new BroadcastManager();
@@ -37,21 +40,6 @@ public final class BroadcastManager extends WorldSavedData {
                             },
                             storage -> storage.snapshot
                     );
-
-    public static final StreamCodec<RegistryFriendlyByteBuf, BroadcastManager> STREAM_CODEC =
-            (StreamCodec) ByteBufCodecs.map(
-                    i -> new HashMap<>(),
-                    UUIDUtil.STREAM_CODEC,
-                    GlobalPos.STREAM_CODEC
-            ).map(
-                    map -> {
-                        BroadcastManager storage = new BroadcastManager();
-                        map.forEach((uuid, pos) -> storage.addFeedInternal(uuid, pos, true));
-                        storage.publishSnapshot();
-                        return storage;
-                    },
-                    storage -> new HashMap<>(storage.snapshot)
-            );
 
     /* -------------------- STATE -------------------- */
 
@@ -159,10 +147,6 @@ public final class BroadcastManager extends WorldSavedData {
 
     @Nullable
     public IBroadcastProvider getBroadcast(@NotNull UUID feedId, boolean clientSide) {
-        if(feedId == null){
-            int aa = 1;
-            return null;
-        }
         GlobalPos pos = snapshot.get(feedId);
         if (pos == null) return null;
 
@@ -182,8 +166,55 @@ public final class BroadcastManager extends WorldSavedData {
 
     /* -------------------- WORLD DATA -------------------- */
 
-    public static BroadcastManager getInstance(Level level) {
-        return VistaMod.VIEWFINDER_CONNECTION.getData(level);
+    public static final String DATA_NAME = "broadcast_manager";
+
+    //generate new from seed
+    public BroadcastManager(long seed) {
+    }
+
+    //from tag
+    public BroadcastManager(CompoundTag tag) {
+    }
+
+    @Override
+    public CompoundTag save(CompoundTag nbt) {
+
+        Tag dataTag = CODEC.encodeStart(NbtOps.INSTANCE, this)
+                .getOrThrow(false, s -> {
+                    throw new IllegalStateException("Failed to encode BroadcastManager: " + s);
+                });
+        nbt.put(DATA_NAME, dataTag);
+        return nbt;
+    }
+
+    //data received from network is stored here
+    private static final BroadcastManager CLIENT_SIDE_INSTANCE = new BroadcastManager();
+
+    @Nullable
+    public static BroadcastManager getInstance(Level world) {
+        if (world instanceof ServerLevel server) {
+            return world.getServer().overworld().getDataStorage().computeIfAbsent(BroadcastManager::new,
+                    () -> new BroadcastManager(server.getSeed()),
+                    DATA_NAME);
+        } else {
+            return CLIENT_SIDE_INSTANCE;
+        }
+    }
+
+    public static void set(ServerLevel level, BroadcastManager pData) {
+        level.getServer().overworld().getDataStorage().set(DATA_NAME, pData);
+    }
+
+    public void setClientData(Map<UUID, GlobalPos> data) {
+        synchronized (lock) {
+            uuidToPos.clear();
+            uuidToPos.putAll(data);
+            publishSnapshot();
+        }
+    }
+
+    public void sync() {
+        ModNetwork.CHANNEL.sendToAllClientPlayers(new ClientBoundSyncBroadcastManagerPacket(this.snapshot));
     }
 
 }

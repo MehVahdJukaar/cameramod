@@ -234,7 +234,7 @@ public class DynamicTextureRenderer {
         RenderSystem.setProjectionMatrix(matrix4f, VertexSorting.ORTHOGRAPHIC_Z);
 
         //model view stuff
-        var posestack = RenderSystem.getModelViewStack();
+        PoseStack posestack = RenderSystem.getModelViewStack();
         posestack.pushMatrix();
         posestack.set(new Matrix4f().identity());
 

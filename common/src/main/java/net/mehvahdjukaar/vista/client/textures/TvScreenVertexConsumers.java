@@ -127,35 +127,53 @@ public class TvScreenVertexConsumers {
 
 
     private static final VertexConsumer EMPTY_VC = new VertexConsumer() {
+
+
         @Override
-        public VertexConsumer addVertex(float x, float y, float z) {
+        public VertexConsumer vertex(double d, double e, double f) {
             return this;
         }
 
         @Override
-        public VertexConsumer setColor(int red, int green, int blue, int alpha) {
+        public VertexConsumer color(int i, int j, int k, int l) {
             return this;
         }
 
         @Override
-        public VertexConsumer setUv(float u, float v) {
+        public VertexConsumer uv(float f, float g) {
             return this;
         }
 
         @Override
-        public VertexConsumer setUv1(int u, int v) {
+        public VertexConsumer overlayCoords(int i, int j) {
             return this;
         }
 
         @Override
-        public VertexConsumer setUv2(int u, int v) {
+        public VertexConsumer uv2(int i, int j) {
             return this;
         }
 
         @Override
-        public VertexConsumer setNormal(float normalX, float normalY, float normalZ) {
+        public VertexConsumer normal(float f, float g, float h) {
             return this;
         }
+
+        @Override
+        public void endVertex() {
+
+        }
+
+        @Override
+        public void defaultColor(int i, int j, int k, int l) {
+
+        }
+
+        @Override
+        public void unsetDefaultColor() {
+
+        }
+
     };
 
 }

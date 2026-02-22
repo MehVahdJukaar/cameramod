@@ -12,10 +12,10 @@ public class ModNetwork {
         CHANNEL = ChannelHandler.builder(VistaMod.MOD_ID)
                 .register(NetworkDir.PLAY_TO_SERVER,ServerBoundSyncViewFinderPacket.class,
                         ServerBoundSyncViewFinderPacket::new)
-                .register(NetworkDir.PLAY_TO_SERVER, ServerBoundSyncSignalProjectorPacket.class,
-                        ServerBoundSyncSignalProjectorPacket::new)
                 .register(NetworkDir.PLAY_TO_CLIENT, ClientBoundControlViewFinderPacket.class,
                         ClientBoundControlViewFinderPacket::new)
+                .register(NetworkDir.PLAY_TO_CLIENT, ClientBoundSyncBroadcastManagerPacket.class,
+                        ClientBoundSyncBroadcastManagerPacket::fromBuffer)
 
                 .build();
 

@@ -35,9 +35,9 @@ public class CassetteItem extends Item {
     public static Holder<CassetteTape> getCassette(ItemStack stack) {
         var tag = stack.getTagElement("cassette_tape");
         if (tag != null) {
-            var registry = Utils.hackyGetRegistry(VistaMod.CASSETTE_TAPE_REGISTRY_KEY);
+            var registry = Utils.hackyGetRegistry(CassetteTape.REGISTRY_KEY);
             return registry.getHolder(ResourceKey.create(
-                    VistaMod.CASSETTE_TAPE_REGISTRY_KEY,
+                    CassetteTape.REGISTRY_KEY,
                     ResourceLocation.tryParse(tag.getAsString()))).orElse(null);
         }
         return null;
@@ -59,7 +59,7 @@ public class CassetteItem extends Item {
 
     public static void assignCustomCassette(ItemStack stack, Level level, String name) {
         //supporters cassettes
-        for (var h : level.registryAccess().registryOrThrow(VistaMod.CASSETTE_TAPE_REGISTRY_KEY).getTagOrEmpty(VistaMod.SUPPORTER_TAPES_TAG)) {
+        for (var h : level.registryAccess().registryOrThrow(CassetteTape.REGISTRY_KEY).getTagOrEmpty(VistaMod.SUPPORTER_TAPES_TAG)) {
             var key = h.unwrapKey().get();
             if (key.location().getPath().equals(name)) {
                 setCassette(stack, h);

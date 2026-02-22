@@ -4,27 +4,18 @@ import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.sugar.Local;
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
-import net.mehvahdjukaar.vista.integration.iris.IrisCompat;
 import net.minecraft.client.Camera;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.SectionOcclusionGraph;
-import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.level.ChunkPos;
-import org.joml.Matrix4f;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(LevelRenderer.class)
 public class LevelRendererMixin {
-
-    @Shadow
-    public SectionOcclusionGraph sectionOcclusionGraph;
 
     @ModifyReturnValue(method = "shouldShowEntityOutlines", at = @At(value = "RETURN"))
     public boolean vista$disableEntityOutlines(boolean original) {
@@ -59,6 +50,8 @@ public class LevelRendererMixin {
         }
     }
 
+    //TODO: add back
+    /*
     @Inject(method = "onChunkLoaded", at = @At("HEAD"))
     public void vista$onChunkLoaded(ChunkPos chunkPos, CallbackInfo ci) {
         VistaLevelRenderer.onChunkLoaded(chunkPos, this.sectionOcclusionGraph);
@@ -67,5 +60,5 @@ public class LevelRendererMixin {
     @Inject(method = "addRecentlyCompiledSection", at = @At("HEAD"))
     public void vista$onRecentlyCompiledSection(SectionRenderDispatcher.RenderSection renderSection, CallbackInfo ci) {
         VistaLevelRenderer.onRecentlyCompiledSection(renderSection, this.sectionOcclusionGraph);
-    }
+    }*/
 }

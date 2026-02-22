@@ -28,7 +28,6 @@ public class CompatHandler {
 
 
     public static void addItemsToTabs(RegHelper.ItemToTabEvent event) {
-        if (EXPOSURE) event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, ExposureCompat.PICTURE_TAPE.get());
     }
 
     public static void addConfigs(ConfigBuilder builder) {

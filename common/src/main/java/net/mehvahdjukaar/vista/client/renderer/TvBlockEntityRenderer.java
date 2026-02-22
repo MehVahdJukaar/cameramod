@@ -78,14 +78,13 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
         Vec2 screenCenter = blockEntity.getScreenBlockCenter();
 
-        if
-        (lod.isPlaneCulled(dir, 0.5f, screenSize / 16f * 1.5f, 0f)) return;
+        if (lod.isPlaneCulled(dir, 0.5f, screenSize / 16f * 1.5f, 0f)) return;
 
         int connectedW = blockEntity.getConnectedCount();
         if (connectedW == 1 && !lod.isMedium()) {
             return;
         }
-        if(connectedW == 2 && !lod.isFar()) {
+        if (connectedW == 2 && !lod.isFar()) {
             return;
         }
 
@@ -147,12 +146,13 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
                              int lu, int lv, Vector3f normal) {
         //not chained because of MC263524
-        builder.addVertex(poseStack.last().pose(), x, y, 0);
-        builder.setColor(1.0f, 1.0f, 1.0f, 1.0f);
-        builder.setUv(u, v);
-        builder.setOverlay(OverlayTexture.NO_OVERLAY);
-        builder.setUv2(lu, lv);
-        builder.setNormal(normal.x, normal.y, normal.z);
+        builder.vertex(poseStack.last().pose(), x, y, 0);
+        builder.color(1.0f, 1.0f, 1.0f, 1.0f);
+        builder.uv(u, v);
+        builder.overlayCoords(OverlayTexture.NO_OVERLAY);
+        builder.uv2(lu, lv);
+        builder.normal(normal.x, normal.y, normal.z);
+        builder.endVertex();
     }
 
 

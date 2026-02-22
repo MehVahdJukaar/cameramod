@@ -1,13 +1,14 @@
 package net.mehvahdjukaar.vista.forge;
 
-import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.common.cassette.CassetteTape;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.registries.DataPackRegistryEvent;
 
 import java.lang.ref.WeakReference;
 
@@ -25,6 +26,13 @@ public class VistaForge {
         modBus = new WeakReference<>(bus);
         VistaMod.init();
         MinecraftForge.EVENT_BUS.register(this);
+
+
+        bus.addListener(VistaForge::registerDataPackRegistry);
+    }
+
+    public static void registerDataPackRegistry(DataPackRegistryEvent.NewRegistry event) {
+        event.dataPackRegistry(CassetteTape.REGISTRY_KEY, CassetteTape.DIRECT_CODEC, CassetteTape.DIRECT_CODEC);
     }
 
     @SubscribeEvent

@@ -13,8 +13,6 @@ import net.mehvahdjukaar.vista.common.cassette.CassetteItem;
 import net.mehvahdjukaar.vista.common.cassette.CassetteTape;
 import net.mehvahdjukaar.vista.common.cassette.CassetteTapeLootFunction;
 import net.mehvahdjukaar.vista.common.cassette.HollowCassetteItem;
-import net.mehvahdjukaar.vista.common.projector.SignalProjectorBlock;
-import net.mehvahdjukaar.vista.common.projector.SignalProjectorBlockEntity;
 import net.mehvahdjukaar.vista.common.tv.TVBlock;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.common.tv.TVItem;
@@ -59,12 +57,6 @@ public class VistaMod {
         return new ResourceLocation(MOD_ID, name);
     }
 
-    public static final ResourceKey<Registry<CassetteTape>> CASSETTE_TAPE_REGISTRY_KEY =
-            ResourceKey.createRegistryKey(res("cassette_tape"));
-
-    static {
-        RegHelper.registerDataPackRegistry(CASSETTE_TAPE_REGISTRY_KEY, CassetteTape.DIRECT_CODEC, CassetteTape.DIRECT_CODEC);
-    }
 
     public static final ResourceLocation CINEMA_ADVANCEMENT = res("absolute_cinema");
 
@@ -115,7 +107,7 @@ public class VistaMod {
                     Registries.LOOT_FUNCTION_TYPE);
 
     public static final TagKey<CassetteTape> SUPPORTER_TAPES_TAG = TagKey.create(
-            CASSETTE_TAPE_REGISTRY_KEY, res("supporter_tapes"));
+            CassetteTape.REGISTRY_KEY, res("supporter_tapes"));
 
     public static final TagKey<Item> GLASS_PANES_TAG = TagKey.create(
             Registries.ITEM, new ResourceLocation("c", "glass_panes"));
@@ -182,7 +174,7 @@ public class VistaMod {
         event.add(CreativeModeTabs.REDSTONE_BLOCKS, TV.get());
         event.add(CreativeModeTabs.REDSTONE_BLOCKS, VIEWFINDER.get());
         var ra = Utils.hackyGetRegistryAccess();
-        for (var v : ra.lookupOrThrow(CASSETTE_TAPE_REGISTRY_KEY).listElements().toList()) {
+        for (var v : ra.lookupOrThrow(CassetteTape.REGISTRY_KEY).listElements().toList()) {
             if (v.is(SUPPORTER_TAPES_TAG)) continue;
             ItemStack stack = CASSETTE.get().getDefaultInstance();
             CassetteItem.setCassette(stack, v);

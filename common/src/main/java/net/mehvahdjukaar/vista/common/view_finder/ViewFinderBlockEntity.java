@@ -121,7 +121,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     public InteractionResult tryInteracting(Player player, InteractionHand hand, ItemStack stack,
                                             BlockPos pos) {
         if (player.isSecondaryUseActive() || this.isEmpty()) {
-            InteractionResult itemAdd = this.interactWithPlayerItem(player, hand, stack);
+            InteractionResult itemAdd = this.interact(player, hand);
             if (itemAdd.consumesAction()) {
                 return itemAdd;
             }

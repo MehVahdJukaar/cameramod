@@ -6,6 +6,7 @@ import mezz.jei.api.ingredients.subtypes.ISubtypeInterpreter;
 import mezz.jei.api.ingredients.subtypes.UidContext;
 import mezz.jei.api.registration.ISubtypeRegistration;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.common.cassette.CassetteItem;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
@@ -29,12 +30,12 @@ public class JEICompat implements IModPlugin {
 
         @Override
         public Object getSubtypeData(ItemStack stack, UidContext uidContext) {
-            return stack.get(VistaMod.CASSETTE_TAPE_COMPONENT.get());
+            return CassetteItem.getCassette(stack);
         }
 
         @Override
         public String getLegacyStringSubtypeInfo(ItemStack stack, UidContext uidContext) {
-            Object component = stack.get(VistaMod.CASSETTE_TAPE_COMPONENT.get());
+            Object component = CassetteItem.getCassette(stack);
             return component == null ? "" : component.toString();
         }
     }
