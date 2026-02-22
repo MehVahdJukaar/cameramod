@@ -182,11 +182,6 @@ public final class BroadcastManager extends WorldSavedData {
 
     /* -------------------- WORLD DATA -------------------- */
 
-    @Override
-    public WorldSavedDataType<BroadcastManager> getType() {
-        return VistaMod.VIEWFINDER_CONNECTION;
-    }
-
     public static BroadcastManager getInstance(Level level) {
         return VistaMod.VIEWFINDER_CONNECTION.getData(level);
     }
