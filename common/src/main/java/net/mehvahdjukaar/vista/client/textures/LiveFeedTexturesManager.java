@@ -8,8 +8,8 @@ import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
-import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
 import net.mehvahdjukaar.ml_classes.DynamicTextureRenderer;
+import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.AdaptiveUpdateScheduler;
@@ -121,7 +121,7 @@ public class LiveFeedTexturesManager {
         Minecraft mc = Minecraft.getInstance();
 
         ClientLevel level = mc.level;
-        if (!mc.isGameLoadFinished() || level == null) return;
+        if (level == null) return;
         if (mc.isPaused()) return;
 
         Runnable runTask = () -> {

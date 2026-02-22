@@ -235,8 +235,8 @@ public class DynamicTextureRenderer {
 
         //model view stuff
         PoseStack posestack = RenderSystem.getModelViewStack();
-        posestack.pushMatrix();
-        posestack.set(new Matrix4f().identity());
+        posestack.pushPose();
+        posestack.setIdentity();
 
         //apply new model view transformation
         RenderSystem.applyModelViewMatrix();
@@ -248,8 +248,8 @@ public class DynamicTextureRenderer {
         drawFunction.accept(guiGraphics);
         guiGraphics.flush();
 
-        //reset stuff
-        posestack.popMatrix();
+        //reset stuffusual
+        posestack.popPose();
         //reset model view
         RenderSystem.applyModelViewMatrix();
 

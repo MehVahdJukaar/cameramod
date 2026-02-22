@@ -1,9 +1,9 @@
 package net.mehvahdjukaar.vista.common.view_finder;
 
 import net.mehvahdjukaar.ml_classes.IOneUserInteractable;
+import net.mehvahdjukaar.ml_classes.MthUtils;
 import net.mehvahdjukaar.ml_classes.TileOrEntityTarget;
 import net.mehvahdjukaar.moonlight.api.block.ItemDisplayTile;
-import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
 import net.mehvahdjukaar.vista.client.video_source.LiveFeedVideoSource;

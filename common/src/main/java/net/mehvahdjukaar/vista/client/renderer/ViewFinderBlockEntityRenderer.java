@@ -126,7 +126,7 @@ public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFi
 
             ResourceLocation emissiveTexture = VistaModClient.VIEW_FINDER_LENS_EMISSIVE_TEXTURES.apply(lens.getItem());
             if (emissiveTexture != null) {
-                VertexConsumer emissiveBuilder = bufferSource.getBuffer(RenderType.breezeEyes(emissiveTexture));
+                VertexConsumer emissiveBuilder = bufferSource.getBuffer(RenderType.eyes(emissiveTexture));
                 //int eyeLight = LightTexture.pack(LightTexture.FULL_BLOCK, LightTexture.sky(packedLight));
                 this.model.render(poseStack, emissiveBuilder, packedLight, packedOverlay);
             }

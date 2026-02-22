@@ -1,12 +1,7 @@
 package net.mehvahdjukaar.vista.common.tv;
 
-import com.mojang.serialization.MapCodec;
-import net.mehvahdjukaar.ml_classes.Direction2D;
-import net.mehvahdjukaar.ml_classes.IOptionalEntityBlock;
-import net.mehvahdjukaar.ml_classes.Rect2D;
-import net.mehvahdjukaar.ml_classes.Vec2i;
+import net.mehvahdjukaar.ml_classes.*;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
-import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.tv.connection.GridAccessor;
 import net.mehvahdjukaar.vista.common.tv.connection.GridTile;
@@ -15,7 +10,6 @@ import net.mehvahdjukaar.vista.common.tv.connection.RectSelection;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EquipmentSlot;

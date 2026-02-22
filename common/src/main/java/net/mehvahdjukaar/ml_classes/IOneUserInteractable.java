@@ -47,11 +47,16 @@ public interface IOneUserInteractable {
     default boolean isCloseEnoughToUse(Entity e, BlockPos myPos) {
         double maxDistance = 8.0;
         if (e instanceof Player p) {
-            return p.canInteractWithBlock(myPos, maxDistance);
+            return canInteractWithBlock(p, myPos, maxDistance);
         } else {
             double currentDist = (new AABB(myPos)).distanceToSqr(e.getEyePosition());
             return currentDist < maxDistance * maxDistance;
         }
+    }
+
+    static boolean canInteractWithBlock(Player p, BlockPos pos, double distance) {
+        double d = 4.5 + distance;
+        return (new AABB(pos)).distanceToSqr(p.getEyePosition()) < d * d;
     }
 
 }

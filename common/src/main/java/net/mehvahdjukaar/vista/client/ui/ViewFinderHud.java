@@ -11,7 +11,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 
-public class ViewFinderHud   {
+public class ViewFinderHud {
 
     private static final ResourceLocation BAR_SPRITE = VistaMod.res("hud/bar");
     private static final ResourceLocation INDICATOR_SPRITE = VistaMod.res("hud/indicator");
@@ -52,19 +52,22 @@ public class ViewFinderHud   {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
     }
 
+    private void blitSprite(GuiGraphics g, ResourceLocation sprite, int x, int y, int width, int height) {
+        g.blit(sprite, x, y, 0, 0, width, height, width, height);
+    }
 
     private void renderBar(GuiGraphics graphics, int screenWidth, int screenHeight, int zoomLevel, float partialTicks) {
         int xpBarLeft = screenWidth / 2 - 91;
 
         int xpBarTop = screenHeight - 32 + 3;
-        graphics.blitSprite(BAR_SPRITE, xpBarLeft + 1, xpBarTop - 1 + 4, 180, 8);
+        blitSprite(graphics, BAR_SPRITE, xpBarLeft + 1, xpBarTop - 1 + 4, 180, 8);
 
         int zoomOffset = (zoomLevel - 1) * 4;
 
         if (ViewFinderController.isLocked()) {
-            graphics.blitSprite(LOCKED_INDICATOR_SPRITE, xpBarLeft + zoomOffset, xpBarTop + 1, 9, 11);
+            blitSprite(graphics, LOCKED_INDICATOR_SPRITE, xpBarLeft + zoomOffset, xpBarTop + 1, 9, 11);
         } else {
-            graphics.blitSprite(INDICATOR_SPRITE, xpBarLeft + zoomOffset, xpBarTop + 5, 11, 7);
+            blitSprite(graphics, INDICATOR_SPRITE, xpBarLeft + zoomOffset, xpBarTop + 5, 11, 7);
         }
 
         int color = 0xff8800;

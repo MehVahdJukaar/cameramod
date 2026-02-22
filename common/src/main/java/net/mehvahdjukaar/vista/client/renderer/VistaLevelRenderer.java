@@ -162,7 +162,7 @@ public class VistaLevelRenderer {
         Vec3 cameraPos = camera.getPosition();
         lr.prepareCullFrustum(cameraPos, cameraMatrix, projMatrix);
 
-        lr.renderLevel(deltaTracker, false, camera, gr,
+        lr.renderLevel(poseStack, deltaTracker, false, camera, gr,
                 gr.lightTexture(), cameraMatrix, projMatrix);
 
         Matrix4f modelViewMatrix = RenderSystem.getModelViewMatrix();

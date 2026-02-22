@@ -2,6 +2,7 @@ package net.mehvahdjukaar.vista.client.renderer;
 
 import com.mojang.blaze3d.shaders.FogShape;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexSorting;
 import net.minecraft.client.renderer.ShaderInstance;
 import org.joml.Matrix4f;
@@ -15,7 +16,7 @@ public record RenderSystemState(
         Matrix4f lastSavedProj,
         VertexSorting vertexSorting,
         VertexSorting lastSavedVertexSorting,
-        Matrix4fStack modelViewStack,
+        PoseStack modelViewStack,
         int[] shaderTextures,
         float[] shaderColor,
         float glintAlpha,
@@ -35,12 +36,7 @@ public record RenderSystemState(
         Matrix4f lastSavedProj = new Matrix4f(RenderSystem.savedProjectionMatrix);
         VertexSorting lastVertexSorting = RenderSystem.getVertexSorting();
         VertexSorting lastSavedVertexSorting = RenderSystem.savedVertexSorting;
-        Matrix4fStack modelViewStack = null;
-        try {
-            modelViewStack = (Matrix4fStack) RenderSystem.modelViewStack.clone();
-        } catch (CloneNotSupportedException e) {
-            throw new RuntimeException(e);
-        }
+        PoseStack modelViewStack = RenderSystem.modelViewStack;
         int[] textures = RenderSystem.shaderTextures.clone();
         float[] shaderColor = RenderSystem.getShaderColor().clone();
         float glintAlpha = RenderSystem.getShaderGlintAlpha();
@@ -58,7 +54,7 @@ public record RenderSystemState(
     }
 
     public void apply() {
-        if (modelViewMatrix != null) RenderSystem.modelViewStack.set(modelViewStack);
+        if (modelViewMatrix != null) RenderSystem.modelViewStack = (modelViewStack);
         RenderSystem.setProjectionMatrix(projMatrix, vertexSorting);
         RenderSystem.getModelViewMatrix().set(modelViewMatrix);
         RenderSystem.setTextureMatrix(textureMatrix);

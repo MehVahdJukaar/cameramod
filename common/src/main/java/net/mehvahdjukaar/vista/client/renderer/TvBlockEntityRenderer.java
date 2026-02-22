@@ -3,7 +3,7 @@ package net.mehvahdjukaar.vista.client.renderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
-import net.mehvahdjukaar.moonlight.api.client.util.LOD;
+import net.mehvahdjukaar.ml_classes.LOD;
 import net.mehvahdjukaar.moonlight.api.misc.ForgeOverride;
 import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;

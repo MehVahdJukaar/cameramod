@@ -13,7 +13,7 @@ accessible method net/minecraft/client/Camera setRotation (FF)V
 
 accessible class net/minecraft/client/renderer/LevelRenderer$RenderChunkStorage
 accessible field net/minecraft/client/renderer/LevelRenderer renderChunkStorage Ljava/util/concurrent/atomic/AtomicReference;
-
+mutable field com/mojang/blaze3d/systems/RenderSystem modelViewStack Lcom/mojang/blaze3d/vertex/PoseStack;
 #Render system state
 accessible field com/mojang/blaze3d/systems/RenderSystem savedProjectionMatrix Lorg/joml/Matrix4f;
 accessible field com/mojang/blaze3d/systems/RenderSystem savedVertexSorting Lcom/mojang/blaze3d/vertex/VertexSorting;
@@ -61,7 +61,6 @@ mutable field net/minecraft/client/renderer/LevelRenderer frustumPos Lorg/joml/V
 accessible field net/minecraft/client/renderer/LevelRenderer frustumPos Lorg/joml/Vector3d;
 accessible method net/minecraft/client/renderer/LevelRenderer captureFrustum (Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;DDDLnet/minecraft/client/renderer/culling/Frustum;)V
 accessible class net/minecraft/client/renderer/LevelRenderer$RenderChunkStorage
-accessible field net/minecraft/client/renderer/LevelRenderer renderChunkStorage Ljava/util/concurrent/atomic/AtomicReference;
 accessible field net/minecraft/client/renderer/LevelRenderer lastCameraChunkX I
 accessible field net/minecraft/client/renderer/LevelRenderer lastCameraChunkY I
 accessible field net/minecraft/client/renderer/LevelRenderer lastCameraChunkZ I
