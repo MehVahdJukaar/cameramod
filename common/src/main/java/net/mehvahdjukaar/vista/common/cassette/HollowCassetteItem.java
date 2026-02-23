@@ -1,12 +1,12 @@
 package net.mehvahdjukaar.vista.common.cassette;
 
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
-import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.common.BroadcastManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.Item;
@@ -28,13 +28,15 @@ public class HollowCassetteItem extends Item {
     }
 
     @Nullable
-    public static UUID getLinkedFeed(ItemStack stack){
-        if(!stack.hasTag())return null;
-        return stack.getOrCreateTag().getUUID("linked_feed");
+    public static UUID getLinkedFeed(ItemStack stack) {
+        if (!stack.hasTag()) return null;
+        CompoundTag orCreateTag = stack.getOrCreateTag();
+        if (!orCreateTag.hasUUID("linked_feed")) return null;
+        return orCreateTag.getUUID("linked_feed");
     }
 
-    public static void setLinkedFeed(ItemStack stack, UUID id){
-        stack.getOrCreateTag().putUUID("linked_feed",id);
+    public static void setLinkedFeed(ItemStack stack, UUID id) {
+        stack.getOrCreateTag().putUUID("linked_feed", id);
     }
 
     @Override
@@ -55,7 +57,7 @@ public class HollowCassetteItem extends Item {
     @Override
     public boolean isFoil(ItemStack stack) {
         return super.isFoil(stack) ||
-               getLinkedFeed(stack) != null;
+                getLinkedFeed(stack) != null;
     }
 
 
@@ -65,7 +67,7 @@ public class HollowCassetteItem extends Item {
         UUID feedId = getLinkedFeed(itemStack);
         if (feedId != null) {
             if (PlatHelper.getPhysicalSide().isClient()) {
-             if(level == null)    level = VistaModClient.getLocalLevel();
+                if (level == null) level = VistaModClient.getLocalLevel();
                 BroadcastManager connection = BroadcastManager.getInstance(level);
                 if (connection == null) return;
                 GlobalPos gp = connection.getBroadcastOriginById(feedId);

@@ -90,7 +90,7 @@ public class IrisCompat {
     }
 
     private record OldRenderState(
-            Matrix4fc gbufferModelView,
+            Matrix4f gbufferModelView,
             Matrix4fc gbufferProjection,
             Vector3d fogColor,
             float fogDensity,
