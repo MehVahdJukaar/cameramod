@@ -1,8 +1,6 @@
 package net.mehvahdjukaar.vista.mixins.fabric;
 
-import net.irisshaders.iris.mixin.MixinLevelRenderer;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
-import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiGraphics;
 import org.spongepowered.asm.mixin.Mixin;
@@ -18,14 +16,8 @@ public class GuiMixin {
         if (ViewFinderController.isActive()) ci.cancel();
     }
 
-    @Inject(method = "renderExperienceLevel", at = @At("HEAD"), cancellable = true)
-    public void vista$cancelXPLevel(GuiGraphics guiGraphics, DeltaTracker deltaTracker, CallbackInfo ci) {
-        if (ViewFinderController.isActive()) ci.cancel();
-    }
-
-
-    @Inject(method = "renderItemHotbar", at = @At("HEAD"), cancellable = true)
-    public void vista$cancelHotbar(GuiGraphics guiGraphics, DeltaTracker deltaTracker, CallbackInfo ci) {
+    @Inject(method = "renderHotbar", at = @At("HEAD"), cancellable = true)
+    public void vista$cancelHotbar(float f, GuiGraphics guiGraphics, CallbackInfo ci) {
         if (ViewFinderController.isActive()) ci.cancel();
     }
 

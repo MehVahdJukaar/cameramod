@@ -1,7 +1,6 @@
 package net.mehvahdjukaar.vista.fabric;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientWorldEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
@@ -14,7 +13,6 @@ import net.mehvahdjukaar.vista.client.textures.GifPathSpriteSource;
 import net.mehvahdjukaar.vista.client.ui.ViewFinderHud;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.mixins.fabric.SpriteSourcesAccessor;
-import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.world.phys.Vec3;
@@ -23,11 +21,13 @@ public class VistaFabricClient {
 
     public static void init() {
         ClientTickEvents.END_CLIENT_TICK.register(VistaModClient::onClientTick);
-        HudRenderCallback.EVENT.register(VistaFabricClient::onRenderHud);
+        ViewFinderHud hud = new ViewFinderHud();
+        HudRenderCallback.EVENT.register(hud::render);
 
+        /*
         ClientWorldEvents.AFTER_CLIENT_WORLD_CHANGE.register((minecraft, clientLevel) -> {
             VistaModClient.onLevelLoaded(clientLevel);
-        });
+        });*/
 
         ClientPlayConnectionEvents.DISCONNECT .register((clientPacketListener, minecraft) -> {
             VistaModClient.onClientDisconnect();
@@ -54,10 +54,5 @@ public class VistaFabricClient {
 
 
     }
-
-    private static void onRenderHud(GuiGraphics guiGraphics, float v) {
-        ViewFinderHud.INSTANCE.render(graphics, partialTicks);
-    }
-
 
 }

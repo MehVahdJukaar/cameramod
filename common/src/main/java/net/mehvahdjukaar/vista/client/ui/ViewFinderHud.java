@@ -22,7 +22,7 @@ public class ViewFinderHud {
 
     private float scopeScale;
 
-    protected ViewFinderHud() {
+    public ViewFinderHud() {
         this.mc = Minecraft.getInstance();
     }
 

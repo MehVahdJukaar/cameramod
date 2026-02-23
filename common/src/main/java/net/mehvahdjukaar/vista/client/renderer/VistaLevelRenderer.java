@@ -215,7 +215,10 @@ public class VistaLevelRenderer {
                 ViewFinderBlockEntity.NEAR_PLANE, depthFar);
     }
 
-
+    public static boolean setupRender(LevelRenderer lr, Camera camera, Frustum frustum, boolean hasCapturedFrustum, boolean isSpectator) {
+        return false;
+    }
+/*
     //mixin called stuff
     //Modified version of setup renderer which updates stuff less
     public static boolean setupRender(LevelRenderer lr, Camera camera, Frustum frustum, boolean hasCapturedFrustum, boolean isSpectator) {
@@ -361,7 +364,7 @@ public class VistaLevelRenderer {
         }
 
     }
-
+*/
     //very ugly because these can be called on another thread
 
     //TODO: add back
