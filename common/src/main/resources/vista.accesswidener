@@ -67,3 +67,9 @@ accessible field net/minecraft/client/renderer/LevelRenderer lastCameraChunkZ I
 accessible field net/minecraft/client/renderer/LevelRenderer lastCameraX D
 accessible field net/minecraft/client/renderer/LevelRenderer lastCameraY D
 accessible field net/minecraft/client/renderer/LevelRenderer lastCameraZ D
+accessible field net/minecraft/client/renderer/LevelRenderer renderChunksInFrustum Lit/unimi/dsi/fastutil/objects/ObjectArrayList;
+accessible field net/minecraft/client/renderer/LevelRenderer chunkRenderDispatcher Lnet/minecraft/client/renderer/chunk/ChunkRenderDispatcher;
+accessible field net/minecraft/client/renderer/LevelRenderer needsFullRenderChunkUpdate B
+accessible field net/minecraft/client/renderer/LevelRenderer nextFullUpdateMillis Ljava/util/concurrent/atomic/AtomicBoolean;
+
+

@@ -10,10 +10,14 @@ import net.mehvahdjukaar.vista.client.textures.LiveFeedTexture;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
+import net.minecraft.Util;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.*;
+import net.minecraft.client.renderer.FogRenderer;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.client.renderer.PostChain;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
@@ -158,12 +162,16 @@ public class VistaLevelRenderer {
 
         Quaternionf cameraRotation = camera.rotation().conjugate(new Quaternionf());
         Matrix4f cameraMatrix = (new Matrix4f()).rotation(cameraRotation);
+        PoseStack cameraPose = new PoseStack();
+        cameraPose.mulPoseMatrix(cameraMatrix);
         //this below is what actually renders everything
         Vec3 cameraPos = camera.getPosition();
-        lr.prepareCullFrustum(cameraPos, cameraMatrix, projMatrix);
+        lr.prepareCullFrustum(cameraPose, cameraPos, projMatrix);
 
-        lr.renderLevel(poseStack, deltaTracker, false, camera, gr,
-                gr.lightTexture(), cameraMatrix, projMatrix);
+        float partialTicks = mc.isPaused() ? 0 : mc.getDeltaFrameTime();
+
+        lr.renderLevel(poseStack, partialTicks, Util.getNanos(), false, camera, gr,
+                gr.lightTexture(), cameraMatrix);
 
         Matrix4f modelViewMatrix = RenderSystem.getModelViewMatrix();
 
@@ -209,7 +217,7 @@ public class VistaLevelRenderer {
 
 
     //mixin called stuff
-
+    //Modified version of setup renderer which updates stuff less
     public static boolean setupRender(LevelRenderer lr, Camera camera, Frustum frustum, boolean hasCapturedFrustum, boolean isSpectator) {
         if (!isRenderingLiveFeed()) {
             return false;
@@ -244,19 +252,22 @@ public class VistaLevelRenderer {
         int cameraSectionZ = SectionPos.posToSectionCoord(playerZ);
 
         // If the camera has moved to a new section, update the renderer's tracking and reposition the view area
-        if (lr.lastCameraSectionX != cameraSectionX ||
-                lr.lastCameraSectionY != cameraSectionY ||
-                lr.lastCameraSectionZ != cameraSectionZ) {
+        if (lr.lastCameraChunkX != cameraSectionX ||
+                lr.lastCameraChunkY != cameraSectionY ||
+                lr.lastCameraChunkZ != cameraSectionZ) {
 
-            lr.lastCameraSectionX = cameraSectionX;
-            lr.lastCameraSectionY = cameraSectionY;
-            lr.lastCameraSectionZ = cameraSectionZ;
+            lr.lastCameraChunkX = cameraSectionX;
+            lr.lastCameraChunkY = cameraSectionY;
+            lr.lastCameraChunkZ = cameraSectionZ;
+            lr.lastCameraX = playerX;
+            lr.lastCameraY = playerY;
+            lr.lastCameraZ = playerZ;
 
             lr.viewArea.repositionCamera(playerX, playerZ);
         }
 
         // Update the section render dispatcher with the camera position
-        lr.sectionRenderDispatcher.setCamera(cameraPosition);
+        lr.chunkRenderDispatcher.setCamera(cameraPosition);
 
         clientLevel.getProfiler().popPush("cull");
         minecraft.getProfiler().popPush("culling");
@@ -343,7 +354,7 @@ public class VistaLevelRenderer {
 
         //lr.viewArea = new ViewArea(lr.sectionRenderDispatcher, level, mc.options.getEffectiveRenderDistance(), lr);
         lr.sectionOcclusionGraph.waitAndReset(lr.viewArea);
-        lr.visibleSections.clear();
+        lr.renderChunksInFrustum.clear();
         Entity entity = mc.getCameraEntity();
         if (entity != null) {
             lr.viewArea.repositionCamera(entity.getX(), entity.getZ());

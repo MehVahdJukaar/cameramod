@@ -23,7 +23,10 @@ public class LevelRendererCameraState {
     @Nullable
     private ViewArea viewArea; //same as the actual one as this doesnt change actualy. unless we want to add it in the fufture to make far away cameras load
     private int lastViewDistance;
-    private final AtomicReference<LevelRenderer.RenderChunkStorage> renderChunkStorage = new AtomicReference<>();;
+    private LevelRenderer.RenderChunkStorage renderChunkStorage;
+    private boolean needsFullRenderChunkUpdate = false;
+    private long nextFullUpdateMillis = 0;
+
 
     private LevelRendererCameraState() {
     }
@@ -32,7 +35,7 @@ public class LevelRendererCameraState {
         var instance = new LevelRendererCameraState();
         Minecraft mc = Minecraft.getInstance();
         LevelRenderer lr = mc.levelRenderer;
-        instance.renderChunkStorage.set(new LevelRenderer.RenderChunkStorage(lr.viewArea.chunks.length));
+        instance.renderChunkStorage = new LevelRenderer.RenderChunkStorage(lr.viewArea.chunks.length);
 
         return instance;
     }
@@ -40,7 +43,7 @@ public class LevelRendererCameraState {
     public void copyFrom(LevelRenderer lr) {
        // this.viewArea = lr.viewArea;
         this.lastViewDistance = lr.lastViewDistance;
-        this.renderChunkStorage.set(lr.renderChunkStorage.get());
+        this.renderChunkStorage = lr.renderChunkStorage.get();
         this.lastCameraChunkX = lr.lastCameraChunkX;
         this.lastCameraChunkY = lr.lastCameraChunkY;
         this.lastCameraChunkZ = lr.lastCameraChunkZ;
@@ -52,6 +55,8 @@ public class LevelRendererCameraState {
         this.prevCamZ = lr.prevCamZ;
         this.prevCamRotX = lr.prevCamRotX;
         this.prevCamRotY = lr.prevCamRotY;
+        this .needsFullRenderChunkUpdate = lr.needsFullRenderChunkUpdate;
+        this.nextFullUpdateMillis = lr.nextFullUpdateMillis.get();
     }
 
     public static LevelRendererCameraState capture(LevelRenderer lr) {
@@ -62,7 +67,7 @@ public class LevelRendererCameraState {
 
     public void apply(LevelRenderer lr) {
       //  lr.viewArea = this.viewArea;
-        lr.renderChunkStorage.set(this.renderChunkStorage.get());
+        lr.renderChunkStorage.set(this.renderChunkStorage);
         lr.lastViewDistance = this.lastViewDistance;
         lr.lastCameraChunkX = this.lastCameraChunkX;
         lr.lastCameraChunkY = this.lastCameraChunkY;
@@ -75,9 +80,11 @@ public class LevelRendererCameraState {
         lr.prevCamZ = this.prevCamZ;
         lr.prevCamRotX = this.prevCamRotX;
         lr.prevCamRotY = this.prevCamRotY;
+        lr.needsFullRenderChunkUpdate = this.needsFullRenderChunkUpdate;
+        lr.nextFullUpdateMillis.set(this.nextFullUpdateMillis);
     }
 
     public LevelRenderer.RenderChunkStorage getChunkStorage () {
-        return this.renderChunkStorage.get();
+        return this.renderChunkStorage;
     }
 }
