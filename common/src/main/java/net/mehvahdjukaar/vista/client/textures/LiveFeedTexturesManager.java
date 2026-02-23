@@ -225,10 +225,10 @@ public class LiveFeedTexturesManager {
         shaderInstance.apply();
         BufferBuilder bufferBuilder = RenderSystem.renderThreadTesselator().getBuilder();
         bufferBuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.BLIT_SCREEN);
-        bufferBuilder.vertex(0.0F, 0.0F, 0.0F).color(-1).endVertex();
-        bufferBuilder.vertex(1.0F, 0.0F, 0.0F).color(-1).endVertex();
-        bufferBuilder.vertex(1.0F, 1.0F, 0.0F).color(-1).endVertex();
-        bufferBuilder.vertex(0.0F, 1.0F, 0.0F).color(-1).endVertex();
+        bufferBuilder.vertex(0.0F, 0.0F, 0.0F).uv(0,0).color(-1).endVertex();
+        bufferBuilder.vertex(1.0F, 0.0F, 0.0F).uv(1,0).color(-1).endVertex();
+        bufferBuilder.vertex(1.0F, 1.0F, 0.0F).uv(1,1).color(-1).endVertex();
+        bufferBuilder.vertex(0.0F, 1.0F, 0.0F).uv(0,1).color(-1).endVertex();
         BufferUploader.draw(bufferBuilder.end());
         shaderInstance.clear();
         GlStateManager._depthMask(true);

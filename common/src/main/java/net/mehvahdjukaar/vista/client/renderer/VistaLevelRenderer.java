@@ -216,7 +216,10 @@ public class VistaLevelRenderer {
     }
 
     public static boolean setupRender(LevelRenderer lr, Camera camera, Frustum frustum, boolean hasCapturedFrustum, boolean isSpectator) {
-        return false;
+        if (!isRenderingLiveFeed()) {
+            return false;
+        }
+        return true;
     }
 /*
     //mixin called stuff
