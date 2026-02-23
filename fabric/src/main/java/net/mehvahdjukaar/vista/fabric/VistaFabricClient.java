@@ -5,6 +5,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.fabricmc.fabric.api.event.client.player.ClientPreAttackCallback;
+import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
@@ -34,7 +35,7 @@ public class VistaFabricClient {
         });
 
         WorldRenderEvents.AFTER_ENTITIES.register(worldRenderContext -> {
-            if (ClientConfigs.rendersDebug()) {
+            if (ClientConfigs.rendersDebug() ) {
                 Vec3 camera = worldRenderContext.camera().getPosition();
                 FeedConnectionDebugRenderer.INSTANCE.render(worldRenderContext.matrixStack(),
                         Minecraft.getInstance().renderBuffers().bufferSource(),

@@ -94,6 +94,6 @@ public class ClientConfigs {
     }
 
     public static boolean rendersDebug() {
-        return RENDER_DEBUG.get();
+        return RENDER_DEBUG.get()|| PlatHelper.isDev();
     }
 }

@@ -25,10 +25,6 @@ import java.util.UUID;
 
 public final class BroadcastManager extends SavedData {
 
-    public static BroadcastManager create(ServerLevel serverLevel) {
-        return new BroadcastManager();
-    }
-
     public static final Codec<BroadcastManager> CODEC =
             Codec.unboundedMap(UUIDUtil.STRING_CODEC, GlobalPos.CODEC)
                     .xmap(

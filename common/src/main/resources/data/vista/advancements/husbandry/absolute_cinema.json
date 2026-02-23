@@ -2,7 +2,7 @@
   "parent": "minecraft:husbandry/root",
   "display": {
     "icon": {
-      "id": "vista:television"
+      "item": "vista:television"
     },
     "title": {
       "translate": "advancements.husbandry.vista.absolute_cinema.title"
