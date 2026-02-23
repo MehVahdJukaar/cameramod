@@ -1,6 +1,6 @@
 {
-  "vertex": "vista:posterize",
-  "fragment": "vista:posterize",
+  "vertex": "vista_posterize",
+  "fragment": "vista_posterize",
   "attributes": [ "Position" ],
   "samplers": [
     { "name": "DiffuseSampler" }

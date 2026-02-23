@@ -44,7 +44,7 @@ import java.util.function.Supplier;
 
 public class LiveFeedTexturesManager {
 
-    private static final ResourceLocation POSTERIZE_FRAGMENT_SHADER = VistaMod.res("posterize");
+    private static final String POSTERIZE_FRAGMENT_SHADER = "vista_posterize";
     private static final BiMap<FeedKey, ResourceLocation> LIVE_FEED_LOCATIONS = HashBiMap.create();
     @VisibleForDebug
     public static final Map<UUID, RollingBuffer<Long>> UPDATE_TIMES = new HashMap<>();
@@ -225,10 +225,10 @@ public class LiveFeedTexturesManager {
         shaderInstance.apply();
         BufferBuilder bufferBuilder = RenderSystem.renderThreadTesselator().getBuilder();
         bufferBuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.BLIT_SCREEN);
-        bufferBuilder.vertex(0.0F, 0.0F, 0.0F).endVertex();
-        bufferBuilder.vertex(1.0F, 0.0F, 0.0F).endVertex();
-        bufferBuilder.vertex(1.0F, 1.0F, 0.0F).endVertex();
-        bufferBuilder.vertex(0.0F, 1.0F, 0.0F).endVertex();
+        bufferBuilder.vertex(0.0F, 0.0F, 0.0F).color(-1).endVertex();
+        bufferBuilder.vertex(1.0F, 0.0F, 0.0F).color(-1).endVertex();
+        bufferBuilder.vertex(1.0F, 1.0F, 0.0F).color(-1).endVertex();
+        bufferBuilder.vertex(0.0F, 1.0F, 0.0F).color(-1).endVertex();
         BufferUploader.draw(bufferBuilder.end());
         shaderInstance.clear();
         GlStateManager._depthMask(true);

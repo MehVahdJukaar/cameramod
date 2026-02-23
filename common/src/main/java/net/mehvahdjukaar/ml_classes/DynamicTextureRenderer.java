@@ -74,6 +74,7 @@ public class DynamicTextureRenderer {
                             newText.redraw();
                             f.complete(newText);
                         } catch (Throwable t) {
+                            VistaMod.LOGGER.error("Failed to create dynamic texture for id {}", key, t);
                             f.completeExceptionally(t);
                             TEXTURE_CACHE.invalidate(key);
                         }

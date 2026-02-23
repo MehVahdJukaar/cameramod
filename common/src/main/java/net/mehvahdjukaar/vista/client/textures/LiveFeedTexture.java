@@ -30,7 +30,7 @@ public class LiveFeedTexture extends RenderTargetDynamicTexture {
 
     private final LevelRendererCameraState rendererState = LevelRendererCameraState.createNew();
     @Nullable
-    private final ResourceLocation postFragment;
+    private final String postFragment;
     @Nullable
     private ResourceLocation postChainID;
     private PostChain postChain;
@@ -45,7 +45,7 @@ public class LiveFeedTexture extends RenderTargetDynamicTexture {
 
     public LiveFeedTexture(ResourceLocation resourceLocation, int size,
                            @NotNull Consumer<LiveFeedTexture> textureDrawingFunction,
-                           UUID id, @Nullable ResourceLocation postFragment) {
+                           UUID id, @Nullable String postFragment) {
         super(resourceLocation, size, textureDrawingFunction);
         this.associatedUUID = id;
         this.postChainID = null;
@@ -117,12 +117,12 @@ public class LiveFeedTexture extends RenderTargetDynamicTexture {
                 postChain.addTempTarget("swap", getWidth(), getHeight());
             }
             if (postFragment != null) {
-                postChain.addPass(postFragment.toString(), canvasTarget, swapTarget);
+                postChain.addPass(postFragment, canvasTarget, swapTarget);
                 //swap back
-                postChain.addPass("vista:blit_flip_y", swapTarget, canvasTarget);
+                postChain.addPass("vista_blit_flip_y", swapTarget, canvasTarget);
             } else {
                 postChain.addPass("blit", canvasTarget, swapTarget);
-                postChain.addPass("vista:blit_flip_y", swapTarget, canvasTarget);
+                postChain.addPass("vista_blit_flip_y", swapTarget, canvasTarget);
             }
             for (PostPass postPass : postChain.passes) {
                 postPass.setOrthoMatrix(postChain.shaderOrthoMatrix);

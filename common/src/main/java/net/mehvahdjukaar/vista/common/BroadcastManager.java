@@ -186,7 +186,6 @@ public final class BroadcastManager extends SavedData {
     //data received from network is stored here
     private static final BroadcastManager CLIENT_SIDE_INSTANCE = new BroadcastManager();
 
-    @Nullable
     public static BroadcastManager getInstance(Level world) {
         if (world instanceof ServerLevel server) {
             return world.getServer().overworld().getDataStorage().computeIfAbsent(BroadcastManager::new,

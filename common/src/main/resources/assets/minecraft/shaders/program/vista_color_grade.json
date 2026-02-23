@@ -5,7 +5,7 @@
     "dstrgb": "zero"
   },
   "vertex": "sobel",
-  "fragment": "vista:color_grade",
+  "fragment": "vista_color_grade",
   "attributes": [ "Position" ],
   "samplers": [
     { "name": "DiffuseSampler" }
