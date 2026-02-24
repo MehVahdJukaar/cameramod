@@ -46,6 +46,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
 
     private int zoom = 1;
     private boolean locked = false;
+    private boolean detectorOutlinesEnabled = true;
 
     //not saved
     @Nullable
@@ -83,6 +84,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
         this.pitch = tag.getFloat("pitch");
         this.locked = tag.getBoolean("locked");
         this.zoom = tag.getInt("zoom");
+        this.detectorOutlinesEnabled = !tag.contains("detectorOutlinesEnabled") || tag.getBoolean("detectorOutlinesEnabled");
         this.ensureLinked(level, getBlockPos());
     }
 
@@ -100,6 +102,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
         tag.putFloat("pitch", this.pitch);
         tag.putBoolean("locked", this.locked);
         tag.putInt("zoom", this.zoom);
+        tag.putBoolean("detectorOutlinesEnabled", this.detectorOutlinesEnabled);
     }
 
     @Override
@@ -110,7 +113,20 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     @Override
     public boolean canPlaceItem(int index, ItemStack stack) {
         return this.isEmpty() && stack.is(VistaMod.GLASS_PANES_TAG) ||
+                EntityDetectorHelper.isDetectorFilterItem(stack) ||
                 (CompatHandler.SUPPLEMENTARIES && SuppCompat.getShaderForItem(stack.getItem()) != null);
+    }
+
+    public boolean hasEntityDetectorFilter() {
+        return EntityDetectorHelper.isDetectorFilterItem(this.getDisplayedItem());
+    }
+
+    public boolean areDetectorOutlinesEnabled() {
+        return detectorOutlinesEnabled;
+    }
+
+    public void toggleDetectorOutlinesEnabled() {
+        this.detectorOutlinesEnabled = !this.detectorOutlinesEnabled;
     }
 
     @Override

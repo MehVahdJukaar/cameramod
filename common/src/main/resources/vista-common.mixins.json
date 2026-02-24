@@ -5,7 +5,6 @@
   "package": "net.mehvahdjukaar.vista.mixins",
   "mixins": [
     "AnvilMenuMixin",
-    "CompatIrisDhCompat",
     "EndermanMixin",
     "PlayerMixin"
   ],
@@ -18,8 +17,10 @@
     "GameRendererMixin",
     "ItemRendererMixin",
     "KeyboardHandlerMixin",
+    "LevelRendererAccessorMixin",
     "LevelRendererMixin",
     "LocalPlayerMixin",
+    "MinecraftMixin",
     "MouseHandlerMixin"
   ],
   "injectors": {

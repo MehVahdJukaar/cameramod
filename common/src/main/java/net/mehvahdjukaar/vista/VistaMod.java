@@ -163,22 +163,23 @@ public class VistaMod {
         }
 
         //TODO:
-        //check update rate when multiple view finders are queried
-        //change view distance based off fov
-        //change update rate based off tv size
         //wrech and cannon for when facing same axis
         // view finder rotation bug wirh wrench?
         //pause not working with multiple tvs
         //change update range to be higher!!!
+        //cassettes dont go back in right tv
         //lenses shaders for view finder
         //aurora with snow and sleeping fox cabin
         //check if view are sections are not duplicated
+        //frustum shenanigans
         //amendments mixed pot not saving on servers
         //divining rod can use maybe has on the block container of a chunk
         //no adjusted frustum causing to clip through blocks when placed next to it
+        //view finder scroll bug
         //creative only cassette that targets a video
         //turn table rotation thing
         //ball item
+        //jittery scroll
         //turn on sound
         //player holding hands like when using explosure cameera and cannons
         //shader when you wear a tv. fnaf
@@ -187,6 +188,7 @@ public class VistaMod {
         //check turn table
         //cannon maoeuvering sound
         //view finder maneuvering sound
+        //tv glitch shader
         //exposure compat
 
         CommonConfigs.init();

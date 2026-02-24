@@ -146,13 +146,15 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
                              float u, float v,
 
                              int lu, int lv, Vector3f normal) {
-        //not chained because of MC263524
-        builder.addVertex(poseStack.last().pose(), x, y, 0);
-        builder.setColor(1.0f, 1.0f, 1.0f, 1.0f);
-        builder.setUv(u, v);
-        builder.setOverlay(OverlayTexture.NO_OVERLAY);
-        builder.setUv2(lu, lv);
-        builder.setNormal(normal.x, normal.y, normal.z);
+        Vector3f pos = poseStack.last().pose().transformPosition(new Vector3f(x, y, 0));
+        builder.addVertex(
+            pos.x, pos.y, pos.z,
+            0xFFFFFFFF,
+            u, v,
+            OverlayTexture.NO_OVERLAY,
+            (lv << 16) | (lu & 0xFFFF),
+            normal.x, normal.y, normal.z
+        );
     }
 
 

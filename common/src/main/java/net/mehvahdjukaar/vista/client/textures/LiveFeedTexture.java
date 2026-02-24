@@ -3,7 +3,7 @@ package net.mehvahdjukaar.vista.client.textures;
 import com.google.gson.JsonSyntaxException;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.mehvahdjukaar.texture_renderer.RenderableDynamicTexture;
+import net.mehvahdjukaar.texture_renderer.RenderTargetDynamicTexture;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.CrtOverlay;
 import net.mehvahdjukaar.vista.client.SlidingWindowCounter;
@@ -22,7 +22,7 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-public class LiveFeedTexture extends RenderableDynamicTexture {
+public class LiveFeedTexture extends RenderTargetDynamicTexture {
 
     private static final ResourceLocation EMPTY_PIPELINE = VistaMod.res("shaders/post/empty.json");
 

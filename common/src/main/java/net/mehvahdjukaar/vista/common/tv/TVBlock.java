@@ -15,20 +15,26 @@ import net.mehvahdjukaar.vista.common.tv.connection.RectSelection;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Equipable;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.RedStoneWireBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockBehaviour.BlockStateBase;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
@@ -37,14 +43,37 @@ import net.minecraft.world.phys.Vec2;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, Equipable, IOptionalEntityBlock {
 
     public static final MapCodec<TVBlock> CODEC = simpleCodec(TVBlock::new);
     public static final EnumProperty<PowerState> POWER_STATE = EnumProperty.create("powered", PowerState.class);
     public static final EnumProperty<TVType> CONNECTION = EnumProperty.create("connection", TVType.class);
+
+        private static final Set<Block> REDSTONE_FEEDBACK_BLACKLIST = Set.of(
+            Blocks.REDSTONE_LAMP,
+            Blocks.NOTE_BLOCK,
+            Blocks.PISTON,
+            Blocks.STICKY_PISTON,
+            Blocks.DISPENSER,
+            Blocks.DROPPER,
+            Blocks.IRON_DOOR,
+            Blocks.IRON_TRAPDOOR,
+            Blocks.COPPER_BULB,
+            Blocks.EXPOSED_COPPER_BULB,
+            Blocks.WEATHERED_COPPER_BULB,
+            Blocks.OXIDIZED_COPPER_BULB,
+            Blocks.WAXED_COPPER_BULB,
+            Blocks.WAXED_EXPOSED_COPPER_BULB,
+            Blocks.WAXED_WEATHERED_COPPER_BULB,
+            Blocks.WAXED_OXIDIZED_COPPER_BULB
+        );
 
     public TVBlock(Properties properties) {
         super(properties.lightLevel(state -> state.getValue(POWER_STATE).isOn() ? 3 : 0));
@@ -117,16 +146,14 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
 
     @Override
     public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
-        boolean powered = context.getLevel().hasNeighborSignal(context.getClickedPos());
         Direction facing = context.getHorizontalDirection().getOpposite();
-        TVType type = CommonConfigs.MAX_CONNECTED_TV_SIZE.get() > 1 ?
-                getTypeFromNeighbors(context.getLevel(), context.getClickedPos(), facing)
-                        : TVType.SINGLE ;
+        TVType type = context.isSecondaryUseActive()
+            ? TVType.SINGLE
+            : getTypeFromNeighbors(context.getLevel(), context.getClickedPos(), facing);
+        BlockState placedState = this.defaultBlockState().setValue(FACING, facing).setValue(CONNECTION, type);
+        boolean powered = hasExternalInputPower(context.getLevel(), context.getClickedPos(), placedState, null);
 
-        return this.defaultBlockState()
-                .setValue(POWER_STATE, PowerState.direct(powered))
-                .setValue(FACING, facing)
-                .setValue(CONNECTION, type);
+        return placedState.setValue(POWER_STATE, PowerState.direct(powered));
     }
 
     private TVType getTypeFromNeighbors(Level level, BlockPos clickedPos, Direction facing) {
@@ -171,6 +198,45 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
     }
 
     @Override
+    protected boolean isSignalSource(BlockState state) {
+        return true;
+    }
+
+    @Override
+    protected int getSignal(BlockState state, BlockGetter blockGetter, BlockPos pos, Direction direction) {
+        if (!(blockGetter instanceof Level level)) return 0;
+        TVBlockEntity master = resolveSignalSourceTile(level, pos, state);
+        return master != null && master.emitsEntityDetectorSignal() ? 15 : 0;
+    }
+
+    @Nullable
+    private TVBlockEntity resolveSignalSourceTile(Level level, BlockPos pos, BlockState state) {
+        TVBlockEntity master = getMasterBlockEntity(level, pos, state);
+        if (master != null) return master;
+
+        if (!(state.getBlock() instanceof TVBlock)) return null;
+
+        Direction facing = state.getValue(FACING);
+        TVGridAccess gridAccess = new TVGridAccess(level, pos, state);
+        Rect2D tvRect = RectFinder.findMaxRect(gridAccess, Vec2i.ZERO, false);
+
+        var iter = tvRect.iteratePoints();
+        while (iter.hasNext()) {
+            Vec2i p = iter.next();
+            BlockPos candidatePos = MthUtils.relativePos(pos, facing, p.x(), p.y(), 0);
+            if (level.getBlockEntity(candidatePos) instanceof TVBlockEntity tv) {
+                return tv;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    protected int getDirectSignal(BlockState state, BlockGetter blockGetter, BlockPos pos, Direction direction) {
+        return this.getSignal(state, blockGetter, pos, direction);
+    }
+
+    @Override
     public boolean shouldHaveBlockEntity(BlockStateBase state) {
         TVType conn = state.getValue(CONNECTION);
         return conn == TVType.SINGLE || conn == TVType.BOTTOM_LEFT;
@@ -185,19 +251,120 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
     protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean movedByPiston) {
         super.neighborChanged(state, level, pos, neighborBlock, neighborPos, movedByPiston);
         if (neighborBlock == this) return;
-        boolean powered = level.hasNeighborSignal(pos);
-        PowerState oldPower = state.getValue(POWER_STATE);
+
+        TVBlockEntity masterTile = getMasterBlockEntity(level, pos, state);
+        BlockPos rootPos = masterTile != null ? masterTile.getBlockPos() : pos;
+        BlockState rootState = level.getBlockState(rootPos);
+        if (!(rootState.getBlock() instanceof TVBlock)) return;
+
+        boolean powered = hasExternalInputPower(level, rootPos, rootState, masterTile);
+        PowerState oldPower = rootState.getValue(POWER_STATE);
         PowerState newPower = PowerState.direct(powered);
         if (newPower != oldPower)
-            level.setBlock(pos, state.setValue(POWER_STATE, newPower),
+            level.setBlock(rootPos, rootState.setValue(POWER_STATE, newPower),
                     Block.UPDATE_KNOWN_SHAPE | Block.UPDATE_CLIENTS | Block.UPDATE_NONE);
+
         if (oldPower.isOn() != newPower.isOn()) {
-            //update neighbors
-            TVGridAccess gridAccess = new TVGridAccess(level, pos, state);
+            TVGridAccess gridAccess = new TVGridAccess(level, rootPos, rootState);
             Rect2D old = RectFinder.findMaxRect(gridAccess, Vec2i.ZERO, false);
             gridAccess.transform(old, old, null);
             gridAccess.applyChanges();
         }
+    }
+
+    private boolean hasExternalInputPower(Level level, BlockPos tvPos, BlockState tvState, @Nullable TVBlockEntity masterTile) {
+        if (!(tvState.getBlock() instanceof TVBlock)) return false;
+
+        Direction facing = tvState.getValue(FACING);
+        TVGridAccess gridAccess = new TVGridAccess(level, tvPos, tvState);
+        Rect2D tvRect = RectFinder.findMaxRect(gridAccess, Vec2i.ZERO, false);
+        boolean isEmitting = masterTile != null && masterTile.emitsEntityDetectorSignal();
+
+        var iter = tvRect.iteratePoints();
+        while (iter.hasNext()) {
+            Vec2i p = iter.next();
+            BlockPos currentTvPos = MthUtils.relativePos(tvPos, facing, p.x(), p.y(), 0);
+            if (hasExternalInputPowerAtPos(level, currentTvPos, isEmitting)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasExternalInputPowerAtPos(Level level, BlockPos tvPos, boolean isEmitting) {
+        for (Direction dir : Direction.values()) {
+            BlockPos neighborPos = tvPos.relative(dir);
+            BlockState neighborState = level.getBlockState(neighborPos);
+
+            if (neighborState.getBlock() instanceof TVBlock) {
+                continue;
+            }
+
+            if (isEmitting && REDSTONE_FEEDBACK_BLACKLIST.contains(neighborState.getBlock())) {
+                continue;
+            }
+
+            int signal;
+            if (neighborState.is(Blocks.REDSTONE_WIRE)) {
+                signal = neighborState.getValue(RedStoneWireBlock.POWER);
+                if (isEmitting && signal > 0 && !wireNetworkHasExternalSource(level, neighborPos)) {
+                    continue;
+                }
+            } else {
+                signal = level.getSignal(neighborPos, dir.getOpposite());
+            }
+
+            if (signal > 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean wireNetworkHasExternalSource(Level level, BlockPos startWirePos) {
+        Deque<BlockPos> open = new ArrayDeque<>();
+        Set<BlockPos> visited = new HashSet<>();
+        open.add(startWirePos);
+
+        while (!open.isEmpty() && visited.size() < 128) {
+            BlockPos current = open.removeFirst();
+            if (!visited.add(current)) continue;
+
+            BlockState wireState = level.getBlockState(current);
+            if (!wireState.is(Blocks.REDSTONE_WIRE)) continue;
+
+            if (hasNonTvPowerSource(level, current)) {
+                return true;
+            }
+
+            for (Direction horizontal : Direction.Plane.HORIZONTAL) {
+                BlockPos next = current.relative(horizontal);
+                if (!visited.contains(next) && level.getBlockState(next).is(Blocks.REDSTONE_WIRE)) {
+                    open.add(next);
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private boolean hasNonTvPowerSource(Level level, BlockPos wirePos) {
+        for (Direction dir : Direction.values()) {
+            BlockPos sourcePos = wirePos.relative(dir);
+            BlockState sourceState = level.getBlockState(sourcePos);
+            if (sourceState.is(Blocks.REDSTONE_WIRE)) {
+                continue;
+            }
+            if (sourceState.getBlock() instanceof TVBlock) {
+                continue;
+            }
+
+            int signal = level.getSignal(sourcePos, dir.getOpposite());
+            if (signal > 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -209,7 +376,14 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
     @Override
     protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
         super.onPlace(state, level, pos, oldState, movedByPiston);
-        if (!state.is(oldState.getBlock())) this.enlargeConnection(state, level, pos);
+    }
+
+    @Override
+    public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
+        super.setPlacedBy(level, pos, state, placer, stack);
+        if (level.isClientSide) return;
+        if (placer != null && placer.isShiftKeyDown()) return;
+        this.enlargeConnection(state, level, pos);
     }
 
     private void enlargeConnection(BlockState tvState, Level level, BlockPos pos) {

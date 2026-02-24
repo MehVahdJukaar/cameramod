@@ -106,7 +106,7 @@ public class ViewFinderController {
 
 
         // lerp camera
-        Vec3 targetCameraPos = centerCannonPos.add(0, 0.5, 0);
+        Vec3 targetCameraPos = centerCannonPos;
         float targetYRot = camera.getYRot() + accumulatedYaw;
         float targetXRot = Mth.clamp(camera.getXRot() + accumulatedPitch, -90, 90);
 

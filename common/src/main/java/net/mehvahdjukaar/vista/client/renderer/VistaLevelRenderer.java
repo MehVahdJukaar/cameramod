@@ -3,13 +3,22 @@ package net.mehvahdjukaar.vista.client.renderer;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.BufferUploader;
+import org.joml.Vector4f;
 import net.mehvahdjukaar.moonlight.api.misc.WeakHashSet;
 import net.mehvahdjukaar.moonlight.core.client.DummyCamera;
 import net.mehvahdjukaar.vista.VistaPlatStuff;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexture;
+import net.mehvahdjukaar.vista.common.view_finder.EntityDetectorHelper;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
+import net.mehvahdjukaar.vista.mixins.LevelRendererAccessorMixin;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -26,11 +35,14 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.lwjgl.opengl.GL11C;
 
+import java.lang.reflect.Method;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -43,6 +55,7 @@ public class VistaLevelRenderer {
     private static final DummyCamera DUMMY_CAMERA = new DummyCamera();
 
     private static ViewFinderBlockEntity renderingLiveFeedVF = null;
+    private static boolean renderDetectorOutlines = false;
 
     public static boolean isRenderingLiveFeed() {
         return renderingLiveFeedVF != null;
@@ -52,11 +65,16 @@ public class VistaLevelRenderer {
         return renderingLiveFeedVF == vf;
     }
 
+    public static boolean shouldRenderLiveFeedOutlines() {
+        return renderDetectorOutlines;
+    }
+
     public static void clear() {
         DUMMY_CAMERA.entity = null;
         MC_OWN_GRAPH.set(null);
         MANAGED_GRAPHS.clear();
         renderingLiveFeedVF = null;
+        renderDetectorOutlines = false;
     }
 
     public static void render(LiveFeedTexture text, ViewFinderBlockEntity tile) {
@@ -86,13 +104,14 @@ public class VistaLevelRenderer {
             float partialTicks = mc.getTimer().getGameTimeDeltaTicks();
             setupSceneCamera(tile, camera, partialTicks);
 
+            tryEnableStencil(canvas);
             canvas.bindWrite(true);
             RenderSystem.viewport(0, 0, canvas.width, canvas.height);
 
             text.applyPostChain();
 
-            // use camera fov
-            float fov = tile.getFOV();
+            // use same FOV basis as player camera preview, then apply viewfinder zoom modifier
+            float fov = (float) mc.options.fov().get() * tile.getFOVModifier();
 
             mc.gameRenderer.renderDistance = Math.min(oldRenderDistance, calculateRenderDistance(fov));
 
@@ -126,8 +145,8 @@ public class VistaLevelRenderer {
 
             // restore old render state
             oldRenderState.apply();
-            // clear depth only; clearing color here causes visible world/water popping
-            RenderSystem.clear(GL11C.GL_DEPTH_BUFFER_BIT, ON_OSX);
+            // clear depth + stencil; clearing color here causes visible world/water popping
+            RenderSystem.clear(GL11C.GL_DEPTH_BUFFER_BIT | GL11C.GL_STENCIL_BUFFER_BIT, ON_OSX);
 
             // swap back
             renderingLiveFeedVF = null;
@@ -145,6 +164,20 @@ public class VistaLevelRenderer {
     private static Integer calculateRenderDistance(float fov) {
         //TODO: improve
         return ClientConfigs.RENDER_DISTANCE.get();
+    }
+
+    private static void tryEnableStencil(RenderTarget canvas) {
+        try {
+            Method isStencil = canvas.getClass().getMethod("isStencilEnabled");
+            Object enabled = isStencil.invoke(canvas);
+            if (enabled instanceof Boolean b && b) {
+                return;
+            }
+
+            Method enableStencil = canvas.getClass().getMethod("enableStencil");
+            enableStencil.invoke(canvas);
+        } catch (Throwable ignored) {
+        }
     }
 
 
@@ -167,14 +200,126 @@ public class VistaLevelRenderer {
         Vec3 cameraPos = camera.getPosition();
         lr.prepareCullFrustum(cameraPos, cameraMatrix, projMatrix);
 
-        lr.renderLevel(deltaTracker, false, camera, gr,
-                gr.lightTexture(), cameraMatrix, projMatrix);
+        List<Entity> detectedEntities = List.of();
+        if (renderingLiveFeedVF != null && mc.level != null && renderingLiveFeedVF.hasEntityDetectorFilter()
+            && renderingLiveFeedVF.areDetectorOutlinesEnabled()) {
+            detectedEntities = EntityDetectorHelper.getDetectedEntities(renderingLiveFeedVF, mc.level);
+            renderDetectorOutlines = false;
+        }
+
+        try {
+            lr.renderLevel(deltaTracker, false, camera, gr,
+                    gr.lightTexture(), cameraMatrix, projMatrix);
+
+            if (!detectedEntities.isEmpty()) {
+                renderDetectedEntityOverlay(mc, camera, detectedEntities);
+            }
+        } finally {
+            renderDetectorOutlines = false;
+        }
 
         Matrix4f modelViewMatrix = RenderSystem.getModelViewMatrix();
 
         VistaPlatStuff.dispatchRenderStageAfterLevel(mc, poseStack, camera, modelViewMatrix, projMatrix);
         gr.resetProjectionMatrix(oldProjectionMatrix);
     }
+
+
+
+    private static int renderDetectedEntityOverlay(Minecraft mc, Camera camera, List<Entity> detectedEntities) {
+        if (detectedEntities.isEmpty()) return 0;
+
+        Vec3 camPos = camera.getPosition();
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        // FORCE disable depth test to ensure it renders on top
+        RenderSystem.disableDepthTest();
+        RenderSystem.depthMask(false);
+        RenderSystem.lineWidth(6.0F); // Very thick lines for visibility
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
+
+        Tesselator tesselator = Tesselator.getInstance();
+        BufferBuilder bufferBuilder = tesselator.begin(VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
+        
+        PoseStack poseStack = new PoseStack();
+        poseStack.pushPose();
+
+        // Apply Camera Rotation (Inverse) so lines align with view
+        poseStack.mulPose(camera.rotation().conjugate(new Quaternionf()));
+
+        // Translate to camera relative coordinates
+        poseStack.translate(-camPos.x, -camPos.y, -camPos.z);
+        Matrix4f matrix = poseStack.last().pose();
+
+        int rendered = 0;
+        for (Entity entity : detectedEntities) {
+            if (entity == null || entity.isRemoved()) continue;
+
+            AABB box = entity.getBoundingBox().inflate(0.1);
+            float minX = (float) box.minX;
+            float minY = (float) box.minY;
+            float minZ = (float) box.minZ;
+            float maxX = (float) box.maxX;
+            float maxY = (float) box.maxY;
+            float maxZ = (float) box.maxZ;
+
+            int r = 255; // PURE RED (int)
+            int g = 0;
+            int b = 0;
+            int a = 255;
+
+            // Draw Box Lines Manually (12 edges)
+            // Bottom Face
+            vertex(bufferBuilder, matrix, minX, minY, minZ, r, g, b, a);
+            vertex(bufferBuilder, matrix, maxX, minY, minZ, r, g, b, a);
+            vertex(bufferBuilder, matrix, maxX, minY, minZ, r, g, b, a);
+            vertex(bufferBuilder, matrix, maxX, minY, maxZ, r, g, b, a);
+            vertex(bufferBuilder, matrix, maxX, minY, maxZ, r, g, b, a);
+            vertex(bufferBuilder, matrix, minX, minY, maxZ, r, g, b, a);
+            vertex(bufferBuilder, matrix, minX, minY, maxZ, r, g, b, a);
+            vertex(bufferBuilder, matrix, minX, minY, minZ, r, g, b, a);
+            // Top Face
+            vertex(bufferBuilder, matrix, minX, maxY, minZ, r, g, b, a);
+            vertex(bufferBuilder, matrix, maxX, maxY, minZ, r, g, b, a);
+            vertex(bufferBuilder, matrix, maxX, maxY, minZ, r, g, b, a);
+            vertex(bufferBuilder, matrix, maxX, maxY, maxZ, r, g, b, a);
+            vertex(bufferBuilder, matrix, maxX, maxY, maxZ, r, g, b, a);
+            vertex(bufferBuilder, matrix, minX, maxY, maxZ, r, g, b, a);
+            vertex(bufferBuilder, matrix, minX, maxY, maxZ, r, g, b, a);
+            vertex(bufferBuilder, matrix, minX, maxY, minZ, r, g, b, a);
+            // Vertical Edges
+            vertex(bufferBuilder, matrix, minX, minY, minZ, r, g, b, a);
+            vertex(bufferBuilder, matrix, minX, maxY, minZ, r, g, b, a);
+            vertex(bufferBuilder, matrix, maxX, minY, minZ, r, g, b, a);
+            vertex(bufferBuilder, matrix, maxX, maxY, minZ, r, g, b, a);
+            vertex(bufferBuilder, matrix, maxX, minY, maxZ, r, g, b, a);
+            vertex(bufferBuilder, matrix, maxX, maxY, maxZ, r, g, b, a);
+            vertex(bufferBuilder, matrix, minX, minY, maxZ, r, g, b, a);
+            vertex(bufferBuilder, matrix, minX, maxY, maxZ, r, g, b, a);
+            
+            rendered++;
+        }
+        
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        BufferUploader.drawWithShader(bufferBuilder.buildOrThrow());
+        
+        poseStack.popPose();
+        RenderSystem.lineWidth(1.0F);
+        RenderSystem.enableDepthTest();
+        RenderSystem.depthMask(true);
+        
+        return rendered;
+    }
+
+    private static void vertex(VertexConsumer consumer, Matrix4f matrix, float x, float y, float z, int r, int g, int b, int a) {
+        Vector4f vec = new Vector4f(x, y, z, 1.0F);
+        vec.mul(matrix);
+        // Using addVertex and setColor based on observed mappings
+        consumer.addVertex(vec.x, vec.y, vec.z).setColor(r, g, b, a);
+    }
+
+
 
     @SuppressWarnings("ConstantConditions")
     private static void setupSceneCamera(ViewFinderBlockEntity tile, Camera dummyCamera, float partialTicks) {

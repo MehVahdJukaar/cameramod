@@ -39,6 +39,18 @@ public class VistaRenderTypes extends RenderType {
         RenderSystem.defaultBlendFunc();
     });
 
+    protected static final TransparencyStateShard ADDITIVE_ALPHA_BLENDING = new TransparencyStateShard("vista:additive_alpha", () -> {
+        RenderSystem.enableBlend();
+        RenderSystem.blendFuncSeparate(
+                GlStateManager.SourceFactor.ONE,
+                GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA,
+                GlStateManager.SourceFactor.ONE,
+                GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+    }, () -> {
+        RenderSystem.disableBlend();
+        RenderSystem.defaultBlendFunc();
+    });
+
 
     public static final Function<ResourceLocation, RenderType> ENTITY_DIFFERENCE_EMISSIVE = Util.memoize((resourceLocation) -> {
         CompositeState compositeState = RenderType.CompositeState.builder()
@@ -52,6 +64,19 @@ public class VistaRenderTypes extends RenderType {
         return create("entity_difference_emissive", DefaultVertexFormat.NEW_ENTITY,
                 VertexFormat.Mode.QUADS, 1536, true, true, compositeState);
     });
+
+        public static final Function<ResourceLocation, RenderType> ENTITY_ADDITIVE_TRANSLUCENT = Util.memoize((resourceLocation) -> {
+        CompositeState compositeState = RenderType.CompositeState.builder()
+            .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_SHADER)
+            .setTextureState(new RenderStateShard.TextureStateShard(resourceLocation, false, false))
+            .setTransparencyState(ADDITIVE_ALPHA_BLENDING)
+            .setLightmapState(LIGHTMAP)
+            .setCullState(NO_CULL)
+            .setOverlayState(OVERLAY)
+            .createCompositeState(true);
+        return create("vista_entity_additive_translucent", DefaultVertexFormat.NEW_ENTITY,
+            VertexFormat.Mode.QUADS, 1536, true, true, compositeState);
+        });
 
     private record CrtKey(ResourceLocation texture, float frameW, float frameH, int scale,
                           IntAnimationState turnOnAnim, IntAnimationState staticAnim,

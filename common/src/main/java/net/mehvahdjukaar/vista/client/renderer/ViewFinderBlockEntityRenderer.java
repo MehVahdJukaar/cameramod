@@ -73,6 +73,10 @@ public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFi
                             MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
 
         boolean isControlledByLocalInstance = ViewFinderController.isActiveFor(tile);
+                boolean isLiveFeedSourceCamera = VistaLevelRenderer.isViewFinderRenderingLiveFeed(tile);
+                if (isControlledByLocalInstance || isLiveFeedSourceCamera) {
+                        return;
+                }
 
         poseStack.pushPose();
         poseStack.translate(0.5, 0.5, 0.5);
@@ -110,8 +114,7 @@ public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFi
         this.model.render(poseStack, builder, packedLight, packedOverlay);
 
         ItemStack lens = tile.getDisplayedItem();
-        if (!isControlledByLocalInstance && !lens.isEmpty() &&
-                !VistaLevelRenderer.isViewFinderRenderingLiveFeed(tile)) {
+        if (!lens.isEmpty()) {
 
             this.base.visible = false;
             this.legsVisual.visible = false;
