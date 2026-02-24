@@ -1,5 +1,6 @@
 package net.mehvahdjukaar.vista.client.renderer;
 
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.ViewArea;
@@ -31,7 +32,8 @@ public class LevelRendererCameraState {
     private boolean needsFrustumUpdate = false;
     private long nextFullUpdateMillis = 0;
     private Future<?> lastFullRenderChunkUpdate = null;
-    private  BlockingQueue<ChunkRenderDispatcher.RenderChunk> recentlyCompiledChunks = new LinkedBlockingQueue<>();
+    private BlockingQueue<ChunkRenderDispatcher.RenderChunk> recentlyCompiledChunks = new LinkedBlockingQueue<>();
+    private ObjectArrayList<LevelRenderer.RenderChunkInfo> renderChunksInFrustum = new ObjectArrayList<>(10000);
 
     private LevelRendererCameraState() {
     }
@@ -46,7 +48,7 @@ public class LevelRendererCameraState {
     }
 
     public void copyFrom(LevelRenderer lr) {
-       // this.viewArea = lr.viewArea;
+        // this.viewArea = lr.viewArea;
         this.lastViewDistance = lr.lastViewDistance;
         this.renderChunkStorage = lr.renderChunkStorage.get();
         this.lastCameraChunkX = lr.lastCameraChunkX;
@@ -60,11 +62,12 @@ public class LevelRendererCameraState {
         this.prevCamZ = lr.prevCamZ;
         this.prevCamRotX = lr.prevCamRotX;
         this.prevCamRotY = lr.prevCamRotY;
-        this .needsFullRenderChunkUpdate = lr.needsFullRenderChunkUpdate;
+        this.needsFullRenderChunkUpdate = lr.needsFullRenderChunkUpdate;
         this.nextFullUpdateMillis = lr.nextFullUpdateMillis.get();
         this.needsFrustumUpdate = lr.needsFrustumUpdate.get();
         this.lastFullRenderChunkUpdate = lr.lastFullRenderChunkUpdate;
-        this .recentlyCompiledChunks = lr.recentlyCompiledChunks;
+        this.recentlyCompiledChunks = lr.recentlyCompiledChunks;
+        this.renderChunksInFrustum = lr.renderChunksInFrustum;
     }
 
     public static LevelRendererCameraState capture(LevelRenderer lr) {
@@ -74,7 +77,7 @@ public class LevelRendererCameraState {
     }
 
     public void apply(LevelRenderer lr) {
-      //  lr.viewArea = this.viewArea;
+        //  lr.viewArea = this.viewArea;
         lr.renderChunkStorage.set(this.renderChunkStorage);
         lr.lastViewDistance = this.lastViewDistance;
         lr.lastCameraChunkX = this.lastCameraChunkX;
@@ -93,6 +96,7 @@ public class LevelRendererCameraState {
         lr.needsFrustumUpdate.set(this.needsFrustumUpdate);
         lr.lastFullRenderChunkUpdate = this.lastFullRenderChunkUpdate;
         lr.recentlyCompiledChunks = this.recentlyCompiledChunks;
+        lr.renderChunksInFrustum = this.renderChunksInFrustum;
     }
 
     public BlockingQueue<ChunkRenderDispatcher.RenderChunk> getRecentlyCompiledStorage() {

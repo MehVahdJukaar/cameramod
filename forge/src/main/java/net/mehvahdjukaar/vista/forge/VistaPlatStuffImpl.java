@@ -16,7 +16,7 @@ public class VistaPlatStuffImpl {
                 mc.levelRenderer, poseStack, projMatrix,
                 mc.levelRenderer.getTicks(), camera,
                 mc.levelRenderer.getFrustum());
-GameRenderer
+
         mc.getProfiler().pop();
 
     }

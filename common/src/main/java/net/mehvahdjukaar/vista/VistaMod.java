@@ -66,7 +66,7 @@ public class VistaMod {
             res("television"), TVBlockEntity::new, TV);
 
     public static final Supplier<Block> VIEWFINDER = RegHelper.registerBlockWithItem(res("viewfinder"),
-            () -> new ViewFinderBlock(Block.Properties.of().strength(1.5f).noOcclusion()));
+            () -> new ViewFinderBlock(Block.Properties.of().strength(1.5f).forceSolidOff().noOcclusion()));
 
     public static final Supplier<BlockEntityType<ViewFinderBlockEntity>> VIEWFINDER_TILE = RegHelper.registerBlockEntityType(
             res("viewfinder"), ViewFinderBlockEntity::new, VIEWFINDER);

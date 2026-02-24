@@ -26,7 +26,6 @@ import net.minecraft.core.SectionPos;
 import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix3f;
@@ -230,7 +229,7 @@ public class VistaLevelRenderer {
 
         Minecraft mc = Minecraft.getInstance();
         Level level = mc.level;
-        Vec3 vec3 = camera.getPosition();
+        Vec3 cameraPos = camera.getPosition();
         if (mc.options.getEffectiveRenderDistance() != lr.lastViewDistance) {
             //lr.allChanged();
         }
@@ -249,17 +248,17 @@ public class VistaLevelRenderer {
             lr.lastCameraChunkX = sectionX;
             lr.lastCameraChunkY = sectionY;
             lr.lastCameraChunkZ = sectionZ;
-            lr.viewArea.repositionCamera(playerX, playerZ);
+            //lr.viewArea.repositionCamera(playerX, playerZ);
         }
 
-        lr.chunkRenderDispatcher.setCamera(vec3);
+        lr.chunkRenderDispatcher.setCamera(cameraPos);
         level.getProfiler().popPush("cull");
         mc.getProfiler().popPush("culling");
         BlockPos blockPos = camera.getBlockPosition();
-        double g = Math.floor(vec3.x / (double) 8.0F);
-        double h = Math.floor(vec3.y / (double) 8.0F);
-        double l = Math.floor(vec3.z / (double) 8.0F);
-        lr.needsFullRenderChunkUpdate = lr.needsFullRenderChunkUpdate || g != lr.prevCamX || h != lr.prevCamY || l != lr.prevCamZ;
+        double cameraSectionX = Math.floor(cameraPos.x / (double) 8.0F);
+        double cameraSectionY = Math.floor(cameraPos.y / (double) 8.0F);
+        double cameraSectionZ = Math.floor(cameraPos.z / (double) 8.0F);
+        lr.needsFullRenderChunkUpdate = lr.needsFullRenderChunkUpdate || cameraSectionX != lr.prevCamX || cameraSectionY != lr.prevCamY || cameraSectionZ != lr.prevCamZ;
         lr.nextFullUpdateMillis.updateAndGet((lx) -> {
             if (lx > 0L && System.currentTimeMillis() > lx) {
                 lr.needsFullRenderChunkUpdate = true;
@@ -268,9 +267,9 @@ public class VistaLevelRenderer {
                 return lx;
             }
         });
-        lr.prevCamX = g;
-        lr.prevCamY = h;
-        lr.prevCamZ = l;
+        lr.prevCamX = cameraSectionX;
+        lr.prevCamY = cameraSectionY;
+        lr.prevCamZ = cameraSectionZ;
         mc.getProfiler().popPush("update");
         boolean smartCull = mc.smartCull;
         if (isSpectator && level.getBlockState(blockPos).isSolidRender(level, blockPos)) {
@@ -278,21 +277,23 @@ public class VistaLevelRenderer {
         }
 
         if (!hasCapturedFrustum) {
-            if (lr.needsFullRenderChunkUpdate || true) {
+            if (lr.needsFullRenderChunkUpdate  ) {
                 mc.getProfiler().push("full_update_schedule");
                 lr.needsFullRenderChunkUpdate = false;
+                lr.lastFullRenderChunkUpdate = Util.backgroundExecutor().submit(() -> {
                     Queue<LevelRenderer.RenderChunkInfo> queue = Queues.newArrayDeque();
                     lr.initializeQueueForFullUpdate(camera, queue);
                     LevelRenderer.RenderChunkStorage renderChunkStorage = new LevelRenderer.RenderChunkStorage(lr.viewArea.chunks.length);
-                    lr.updateRenderChunks(renderChunkStorage.renderChunks, renderChunkStorage.renderInfoMap, vec3, queue, smartCull);
+                    lr.updateRenderChunks(renderChunkStorage.renderChunks, renderChunkStorage.renderInfoMap, cameraPos, queue, smartCull);
                     lr.renderChunkStorage.set(renderChunkStorage);
                     lr.needsFrustumUpdate.set(true);
+                });
                 mc.getProfiler().pop();
             }
 
             LevelRenderer.RenderChunkStorage renderChunkStorage = lr.renderChunkStorage.get();
             if (!lr.recentlyCompiledChunks.isEmpty()) {
-                /*
+
                 mc.getProfiler().push("partial_update");
                 Queue<LevelRenderer.RenderChunkInfo> queue = Queues.newArrayDeque();
 
@@ -304,14 +305,14 @@ public class VistaLevelRenderer {
                     }
                 }
 
-                lr.updateRenderChunks(renderChunkStorage.renderChunks, renderChunkStorage.renderInfoMap, vec3, queue, smartCull);
+                lr.updateRenderChunks(renderChunkStorage.renderChunks, renderChunkStorage.renderInfoMap, cameraPos, queue, smartCull);
                 lr.needsFrustumUpdate.set(true);
-                mc.getProfiler().pop();*/
+                mc.getProfiler().pop();
             }
 
             double floorCameraPitch = Math.floor((camera.getXRot() / 2.0F));
             double floorCameraYaw = Math.floor((camera.getYRot() / 2.0F));
-            if (lr.needsFrustumUpdate.compareAndSet(true, false) || floorCameraPitch != lr.prevCamRotX || floorCameraYaw != lr.prevCamRotY) {
+            if ( lr.needsFrustumUpdate.compareAndSet(true, false) || floorCameraPitch != lr.prevCamRotX || floorCameraYaw != lr.prevCamRotY) {
                 //frustum = (new Frustum(frustum)).offsetToFullyIncludeCameraCube(8);
                 lr.applyFrustum(frustum);
                 lr.prevCamRotX = floorCameraPitch;
@@ -322,169 +323,157 @@ public class VistaLevelRenderer {
         mc.getProfiler().pop();
         return true;
     }
-/*
-    //mixin called stuff
-    //Modified version of setup renderer which updates stuff less
-    public static boolean setupRender(LevelRenderer lr, Camera camera, Frustum frustum, boolean hasCapturedFrustum, boolean isSpectator) {
-        if (!isRenderingLiveFeed()) {
-            return false;
-        }
 
-        if (CompatHandler.SODIUM) return false; //?? todo: give this a custom impl that follows what sodium does
-
-        Vec3 cameraPosition = camera.getPosition();
-        Minecraft minecraft = Minecraft.getInstance();
-        ClientLevel clientLevel = minecraft.level;
-
-        // Check if the effective render distance has changed; if so, mark all chunks as needing update
-        //TODO: change
-        if (minecraft.options.getEffectiveRenderDistance() != lr.lastViewDistance) {
-            viewAreaStuffChanged(lr); //never invalidate
-        }
-
-        clientLevel.getProfiler().push("camera");
-
-        var graph = lr.renderChunkStorage;
-
-
-        // Get player's exact coordinates
-        Entity cameraEntity = camera.entity; //mc.player
-        double playerX = cameraEntity.getX();
-        double playerY = cameraEntity.getY();
-        double playerZ = cameraEntity.getZ();
-
-        // Convert world coordinates to section (chunk) coordinates
-        int cameraSectionX = SectionPos.posToSectionCoord(playerX);
-        int cameraSectionY = SectionPos.posToSectionCoord(playerY);
-        int cameraSectionZ = SectionPos.posToSectionCoord(playerZ);
-
-        // If the camera has moved to a new section, update the renderer's tracking and reposition the view area
-        if (lr.lastCameraChunkX != cameraSectionX ||
-                lr.lastCameraChunkY != cameraSectionY ||
-                lr.lastCameraChunkZ != cameraSectionZ) {
-
-            lr.lastCameraChunkX = cameraSectionX;
-            lr.lastCameraChunkY = cameraSectionY;
-            lr.lastCameraChunkZ = cameraSectionZ;
-            lr.lastCameraX = playerX;
-            lr.lastCameraY = playerY;
-            lr.lastCameraZ = playerZ;
-
-            lr.viewArea.repositionCamera(playerX, playerZ);
-        }
-
-        // Update the section render dispatcher with the camera position
-        lr.chunkRenderDispatcher.setCamera(cameraPosition);
-
-        clientLevel.getProfiler().popPush("cull");
-        minecraft.getProfiler().popPush("culling");
-
-        // Camera's block position (rounded to nearest block)
-        BlockPos cameraBlockPos = camera.getBlockPosition();
-
-        Player player = minecraft.player;
-        // Compute camera position in 8-block "units" for occlusion checks
-        double cameraUnitX = Math.floor(player.getX() / 8.0);
-        double cameraUnitY = Math.floor(player.getY() / 8.0);
-        double cameraUnitZ = Math.floor(player.getZ() / 8.0);
-
-        // If the camera has moved to a new 8-block unit, invalidate the occlusion graph
-        if (cameraUnitX != lr.prevCamX ||
-                cameraUnitY != lr.prevCamY ||
-                cameraUnitZ != lr.prevCamZ) {
-            //this should never triger for us since the camera never moves
-            graph.invalidate(); //needs full update
-            //update graph if player itself moved so we discard stale far away sections
-        }
-
-        // Store current 8-block unit for future comparisons
-        lr.prevCamX = cameraUnitX;
-        lr.prevCamY = cameraUnitY;
-        lr.prevCamZ = cameraUnitZ;
-
-        minecraft.getProfiler().popPush("update");
-
-        // If the frustum has not already been captured
-        if (!hasCapturedFrustum) {
-            boolean smartCulling = minecraft.smartCull;
-
-            // Disable smart culling for spectators inside solid blocks
-            if (isSpectator && clientLevel.getBlockState(cameraBlockPos).isSolidRender(clientLevel, cameraBlockPos)) {
-                //    smartCulling = false;
+    /*
+        //mixin called stuff
+        //Modified version of setup renderer which updates stuff less
+        public static boolean setupRender(LevelRenderer lr, Camera camera, Frustum frustum, boolean hasCapturedFrustum, boolean isSpectator) {
+            if (!isRenderingLiveFeed()) {
+                return false;
             }
 
-            // Adjust entity view scale based on render distance and scaling option
-            double entityViewScale = Mth.clamp( //TODO: change these
-                    (double) minecraft.options.getEffectiveRenderDistance() / 8.0, 1.0, 2.5
-            ) * minecraft.options.entityDistanceScaling().get();
-            Entity.setViewScale(entityViewScale);
+            if (CompatHandler.SODIUM) return false; //?? todo: give this a custom impl that follows what sodium does
 
-            minecraft.getProfiler().push("section_occlusion_graph");
+            Vec3 cameraPosition = camera.getPosition();
+            Minecraft minecraft = Minecraft.getInstance();
+            ClientLevel clientLevel = minecraft.level;
 
-            // Update occlusion graph to determine which sections are visible
-            //needs full update should be performed when new chunks came into view (our camera moved too much compared to the vista cam)
-            graph.update(smartCulling, camera, frustum, lr.visibleSections);
+            // Check if the effective render distance has changed; if so, mark all chunks as needing update
+            //TODO: change
+            if (minecraft.options.getEffectiveRenderDistance() != lr.lastViewDistance) {
+                viewAreaStuffChanged(lr); //never invalidate
+            }
+
+            clientLevel.getProfiler().push("camera");
+
+            var graph = lr.renderChunkStorage;
+
+
+            // Get player's exact coordinates
+            Entity cameraEntity = camera.entity; //mc.player
+            double playerX = cameraEntity.getX();
+            double playerY = cameraEntity.getY();
+            double playerZ = cameraEntity.getZ();
+
+            // Convert world coordinates to section (chunk) coordinates
+            int cameraSectionX = SectionPos.posToSectionCoord(playerX);
+            int cameraSectionY = SectionPos.posToSectionCoord(playerY);
+            int cameraSectionZ = SectionPos.posToSectionCoord(playerZ);
+
+            // If the camera has moved to a new section, update the renderer's tracking and reposition the view area
+            if (lr.lastCameraChunkX != cameraSectionX ||
+                    lr.lastCameraChunkY != cameraSectionY ||
+                    lr.lastCameraChunkZ != cameraSectionZ) {
+
+                lr.lastCameraChunkX = cameraSectionX;
+                lr.lastCameraChunkY = cameraSectionY;
+                lr.lastCameraChunkZ = cameraSectionZ;
+                lr.lastCameraX = playerX;
+                lr.lastCameraY = playerY;
+                lr.lastCameraZ = playerZ;
+
+                lr.viewArea.repositionCamera(playerX, playerZ);
+            }
+
+            // Update the section render dispatcher with the camera position
+            lr.chunkRenderDispatcher.setCamera(cameraPosition);
+
+            clientLevel.getProfiler().popPush("cull");
+            minecraft.getProfiler().popPush("culling");
+
+            // Camera's block position (rounded to nearest block)
+            BlockPos cameraBlockPos = camera.getBlockPosition();
+
+            Player player = minecraft.player;
+            // Compute camera position in 8-block "units" for occlusion checks
+            double cameraUnitX = Math.floor(player.getX() / 8.0);
+            double cameraUnitY = Math.floor(player.getY() / 8.0);
+            double cameraUnitZ = Math.floor(player.getZ() / 8.0);
+
+            // If the camera has moved to a new 8-block unit, invalidate the occlusion graph
+            if (cameraUnitX != lr.prevCamX ||
+                    cameraUnitY != lr.prevCamY ||
+                    cameraUnitZ != lr.prevCamZ) {
+                //this should never triger for us since the camera never moves
+                graph.invalidate(); //needs full update
+                //update graph if player itself moved so we discard stale far away sections
+            }
+
+            // Store current 8-block unit for future comparisons
+            lr.prevCamX = cameraUnitX;
+            lr.prevCamY = cameraUnitY;
+            lr.prevCamZ = cameraUnitZ;
+
+            minecraft.getProfiler().popPush("update");
+
+            // If the frustum has not already been captured
+            if (!hasCapturedFrustum) {
+                boolean smartCulling = minecraft.smartCull;
+
+                // Disable smart culling for spectators inside solid blocks
+                if (isSpectator && clientLevel.getBlockState(cameraBlockPos).isSolidRender(clientLevel, cameraBlockPos)) {
+                    //    smartCulling = false;
+                }
+
+                // Adjust entity view scale based on render distance and scaling option
+                double entityViewScale = Mth.clamp( //TODO: change these
+                        (double) minecraft.options.getEffectiveRenderDistance() / 8.0, 1.0, 2.5
+                ) * minecraft.options.entityDistanceScaling().get();
+                Entity.setViewScale(entityViewScale);
+
+                minecraft.getProfiler().push("section_occlusion_graph");
+
+                // Update occlusion graph to determine which sections are visible
+                //needs full update should be performed when new chunks came into view (our camera moved too much compared to the vista cam)
+                graph.update(smartCulling, camera, frustum, lr.visibleSections);
+
+                minecraft.getProfiler().pop();
+
+
+                // Divide camera rotation by 2 to track significant rotation changes
+                double cameraRotXHalf = Math.floor(camera.getXRot() / 2.0);
+                double cameraRotYHalf = Math.floor(camera.getYRot() / 2.0);
+
+                // Apply frustum update if the graph changed or camera rotated significantly
+                if (graph.consumeFrustumUpdate() ||
+                        cameraRotXHalf != lr.prevCamRotX ||
+                        cameraRotYHalf != lr.prevCamRotY) {
+
+                    lr.applyFrustum(LevelRenderer.offsetFrustum(frustum));
+                    lr.prevCamRotX = cameraRotXHalf;
+                    lr.prevCamRotY = cameraRotYHalf;
+                }
+            }
 
             minecraft.getProfiler().pop();
 
+            return true;
+        }
 
-            // Divide camera rotation by 2 to track significant rotation changes
-            double cameraRotXHalf = Math.floor(camera.getXRot() / 2.0);
-            double cameraRotYHalf = Math.floor(camera.getYRot() / 2.0);
+        private static void viewAreaStuffChanged(LevelRenderer lr) {
+            Level level = Minecraft.getInstance().level;
+            Minecraft mc = Minecraft.getInstance();
 
-            // Apply frustum update if the graph changed or camera rotated significantly
-            if (graph.consumeFrustumUpdate() ||
-                    cameraRotXHalf != lr.prevCamRotX ||
-                    cameraRotYHalf != lr.prevCamRotY) {
-
-                lr.applyFrustum(LevelRenderer.offsetFrustum(frustum));
-                lr.prevCamRotX = cameraRotXHalf;
-                lr.prevCamRotY = cameraRotYHalf;
+            lr.lastViewDistance = mc.options.getEffectiveRenderDistance();
+            if (lr.viewArea != null) {
+                //    lr.viewArea.releaseAllBuffers();
             }
+
+            //    lr.sectionRenderDispatcher.blockUntilClear();
+
+            //lr.viewArea = new ViewArea(lr.sectionRenderDispatcher, level, mc.options.getEffectiveRenderDistance(), lr);
+            lr.sectionOcclusionGraph.waitAndReset(lr.viewArea);
+            lr.renderChunksInFrustum.clear();
+            Entity entity = mc.getCameraEntity();
+            if (entity != null) {
+                lr.viewArea.repositionCamera(entity.getX(), entity.getZ());
+            }
+
         }
-
-        minecraft.getProfiler().pop();
-
-        return true;
-    }
-
-    private static void viewAreaStuffChanged(LevelRenderer lr) {
-        Level level = Minecraft.getInstance().level;
-        Minecraft mc = Minecraft.getInstance();
-
-        lr.lastViewDistance = mc.options.getEffectiveRenderDistance();
-        if (lr.viewArea != null) {
-            //    lr.viewArea.releaseAllBuffers();
-        }
-
-        //    lr.sectionRenderDispatcher.blockUntilClear();
-
-        //lr.viewArea = new ViewArea(lr.sectionRenderDispatcher, level, mc.options.getEffectiveRenderDistance(), lr);
-        lr.sectionOcclusionGraph.waitAndReset(lr.viewArea);
-        lr.renderChunksInFrustum.clear();
-        Entity entity = mc.getCameraEntity();
-        if (entity != null) {
-            lr.viewArea.repositionCamera(entity.getX(), entity.getZ());
-        }
-
-    }
-*/
+    */
     //very ugly because these can be called on another thread
-    public static void onChunkLoaded(ChunkPos chunkPos, SectionOcclusionGraph sectionOcclusionGraph) {
-        if (CompatHandler.SODIUM) return;
-        for (SectionOcclusionGraph graph : MANAGED_GRAPHS) {
-            if (graph != sectionOcclusionGraph) {
-                graph.onChunkLoaded(chunkPos);
-            }
-        }
-        SectionOcclusionGraph old = MC_OWN_GRAPH.get();
-        if (old != null && old != sectionOcclusionGraph) {
-            old.onChunkLoaded(chunkPos);
-        }
-    }
-
-    public static void onRecentlyCompiledSection(ChunkRenderDispatcher.RenderChunk renderSection,
-                                                 BlockingQueue<ChunkRenderDispatcher.RenderChunk> sectionOcclusionGraph) {
+    public static void addRecentlyCompiledChunkToOtherCameras(ChunkRenderDispatcher.RenderChunk renderSection,
+                                                              BlockingQueue<ChunkRenderDispatcher.RenderChunk> sectionOcclusionGraph) {
         if (CompatHandler.SODIUM) return;
         for (var graph : MANAGED_GRAPHS) {
             if (graph != sectionOcclusionGraph) {

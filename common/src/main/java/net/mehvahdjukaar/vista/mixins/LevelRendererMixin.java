@@ -10,7 +10,6 @@ import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.chunk.ChunkRenderDispatcher;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.level.ChunkPos;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -62,6 +61,6 @@ public class LevelRendererMixin {
 
     @Inject(method = "addRecentlyCompiledChunk", at = @At("HEAD"))
     public void vista$onRecentlyCompiledSection(ChunkRenderDispatcher.RenderChunk renderChunk, CallbackInfo ci) {
-        VistaLevelRenderer.onRecentlyCompiledSection(renderChunk, this.recentlyCompiledChunks);
+        VistaLevelRenderer.addRecentlyCompiledChunkToOtherCameras(renderChunk, this.recentlyCompiledChunks);
     }
 }
