@@ -7,16 +7,25 @@ import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import net.minecraft.client.Camera;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.client.renderer.chunk.ChunkRenderDispatcher;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ChunkPos;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.util.concurrent.BlockingQueue;
+
 @Mixin(LevelRenderer.class)
 public class LevelRendererMixin {
+
+    @Shadow
+    @Final
+    public BlockingQueue<ChunkRenderDispatcher.RenderChunk> recentlyCompiledChunks;
 
     @ModifyReturnValue(method = "shouldShowEntityOutlines", at = @At(value = "RETURN"))
     public boolean vista$disableEntityOutlines(boolean original) {
@@ -51,15 +60,8 @@ public class LevelRendererMixin {
         }
     }
 
-    //TODO: add back
-    /*
-    @Inject(method = "onChunkLoaded", at = @At("HEAD"))
-    public void vista$onChunkLoaded(ChunkPos chunkPos, CallbackInfo ci) {
-        VistaLevelRenderer.onChunkLoaded(chunkPos, this.sectionOcclusionGraph);
+    @Inject(method = "addRecentlyCompiledChunk", at = @At("HEAD"))
+    public void vista$onRecentlyCompiledSection(ChunkRenderDispatcher.RenderChunk renderChunk, CallbackInfo ci) {
+        VistaLevelRenderer.onRecentlyCompiledSection(renderChunk, this.recentlyCompiledChunks);
     }
-
-    @Inject(method = "addRecentlyCompiledSection", at = @At("HEAD"))
-    public void vista$onRecentlyCompiledSection(SectionRenderDispatcher.RenderSection renderSection, CallbackInfo ci) {
-        VistaLevelRenderer.onRecentlyCompiledSection(renderSection, this.sectionOcclusionGraph);
-    }*/
 }

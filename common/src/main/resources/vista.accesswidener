@@ -71,3 +71,13 @@ accessible field net/minecraft/client/renderer/LevelRenderer renderChunksInFrust
 accessible field net/minecraft/client/renderer/LevelRenderer chunkRenderDispatcher Lnet/minecraft/client/renderer/chunk/ChunkRenderDispatcher;
 accessible field net/minecraft/client/renderer/LevelRenderer needsFullRenderChunkUpdate Z
 accessible field net/minecraft/client/renderer/LevelRenderer nextFullUpdateMillis Ljava/util/concurrent/atomic/AtomicLong;
+accessible class net/minecraft/client/renderer/LevelRenderer$RenderChunkInfo
+accessible method net/minecraft/client/renderer/LevelRenderer updateRenderChunks (Ljava/util/LinkedHashSet;Lnet/minecraft/client/renderer/LevelRenderer$RenderInfoMap;Lnet/minecraft/world/phys/Vec3;Ljava/util/Queue;Z)V
+accessible method net/minecraft/client/renderer/LevelRenderer initializeQueueForFullUpdate (Lnet/minecraft/client/Camera;Ljava/util/Queue;)V
+accessible field net/minecraft/client/renderer/LevelRenderer needsFrustumUpdate Ljava/util/concurrent/atomic/AtomicBoolean;
+accessible class net/minecraft/client/renderer/LevelRenderer$RenderChunkInfo
+accessible field net/minecraft/client/renderer/LevelRenderer recentlyCompiledChunks Ljava/util/concurrent/BlockingQueue;
+accessible field net/minecraft/client/renderer/LevelRenderer$RenderChunkInfo chunk Lnet/minecraft/client/renderer/chunk/ChunkRenderDispatcher$RenderChunk;
+accessible field net/minecraft/client/renderer/LevelRenderer lastFullRenderChunkUpdate Ljava/util/concurrent/Future;
+mutable field net/minecraft/client/renderer/LevelRenderer recentlyCompiledChunks Ljava/util/concurrent/BlockingQueue;
+accessible method net/minecraft/client/renderer/LevelRenderer$RenderInfoMap get (Lnet/minecraft/client/renderer/chunk/ChunkRenderDispatcher$RenderChunk;)Lnet/minecraft/client/renderer/LevelRenderer$RenderChunkInfo;

@@ -1,8 +1,10 @@
 package net.mehvahdjukaar.vista.client.renderer;
 
+import com.google.common.collect.Queues;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
 import net.mehvahdjukaar.moonlight.api.misc.WeakHashSet;
 import net.mehvahdjukaar.moonlight.core.client.DummyCamera;
 import net.mehvahdjukaar.vista.VistaPlatStuff;
@@ -13,34 +15,35 @@ import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.minecraft.Util;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.PostChain;
+import net.minecraft.client.renderer.chunk.ChunkRenderDispatcher;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Matrix3f;
 import org.joml.Matrix4f;
-import org.joml.Quaternionf;
 import org.lwjgl.opengl.GL11C;
 
+import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static net.minecraft.client.Minecraft.ON_OSX;
 
 public class VistaLevelRenderer {
 
-    private static final Set<LevelRenderer.RenderChunkStorage> MANAGED_GRAPHS = new WeakHashSet<>();
-    private static final AtomicReference<LevelRenderer.RenderChunkStorage> MC_OWN_GRAPH = new AtomicReference<>(null);
+    private static final Set<BlockingQueue<ChunkRenderDispatcher.RenderChunk>> MANAGED_GRAPHS = new WeakHashSet<>();
+    private static final AtomicReference<BlockingQueue<ChunkRenderDispatcher.RenderChunk>> MC_OWN_GRAPH = new AtomicReference<>(null);
     private static final DummyCamera DUMMY_CAMERA = new DummyCamera();
 
     private static ViewFinderBlockEntity renderingLiveFeedVF = null;
@@ -103,8 +106,8 @@ public class VistaLevelRenderer {
 
             feedCameraState.apply(mc.levelRenderer);
 
-            MANAGED_GRAPHS.add(feedCameraState.getChunkStorage());
-            MC_OWN_GRAPH.set(oldCameraState.getChunkStorage());
+            MANAGED_GRAPHS.add(feedCameraState.getRecentlyCompiledStorage());
+            MC_OWN_GRAPH.set(oldCameraState.getRecentlyCompiledStorage());
 
             // already wrapped outside; don't double-wrap this or it fucks everything over omg.
             renderLevel(mc, canvas, camera, fov);
@@ -154,28 +157,31 @@ public class VistaLevelRenderer {
         LevelRenderer lr = mc.levelRenderer;
         Matrix4f oldProjectionMatrix = new Matrix4f(RenderSystem.getProjectionMatrix());
 
+
+        PoseStack arg = new PoseStack();
+
+        PoseStack posestack = new PoseStack();
         Matrix4f projMatrix = createProjectionMatrix(gr, target, fov);
-        //fix Y inversion
-        gr.resetProjectionMatrix(projMatrix);
+        posestack.mulPoseMatrix(projMatrix);
 
-        PoseStack poseStack = new PoseStack();
 
-        Quaternionf cameraRotation = camera.rotation().conjugate(new Quaternionf());
-        Matrix4f cameraMatrix = (new Matrix4f()).rotation(cameraRotation);
-        PoseStack cameraPose = new PoseStack();
-        cameraPose.mulPoseMatrix(cameraMatrix);
-        //this below is what actually renders everything
+        Matrix4f matrix4f = posestack.last().pose();
+        gr.resetProjectionMatrix(matrix4f);
+        //camera.setup(this.minecraft.level, (Entity)(this.minecraft.getCameraEntity() == null ? this.minecraft.player : this.minecraft.getCameraEntity()), !this.minecraft.options.getCameraType().isFirstPerson(), this.minecraft.options.getCameraType().isMirrored(), g);
+        arg.mulPose(Axis.XP.rotationDegrees(camera.getXRot()));
+        arg.mulPose(Axis.YP.rotationDegrees(camera.getYRot() + 180.0F));
+        Matrix3f matrix3f = (new Matrix3f(arg.last().normal())).invert();
+        RenderSystem.setInverseViewRotationMatrix(matrix3f);
         Vec3 cameraPos = camera.getPosition();
-        lr.prepareCullFrustum(cameraPose, cameraPos, projMatrix);
-
+        lr.prepareCullFrustum(arg, cameraPos, projMatrix);
         float partialTicks = mc.isPaused() ? 0 : mc.getDeltaFrameTime();
+        lr.renderLevel(arg, partialTicks, Util.getNanos(), false,
+                camera, gr, gr.lightTexture(), matrix4f);
 
-        lr.renderLevel(poseStack, partialTicks, Util.getNanos(), false, camera, gr,
-                gr.lightTexture(), cameraMatrix);
 
         Matrix4f modelViewMatrix = RenderSystem.getModelViewMatrix();
 
-        VistaPlatStuff.dispatchRenderStageAfterLevel(mc, poseStack, camera, modelViewMatrix, projMatrix);
+        VistaPlatStuff.dispatchRenderStageAfterLevel(mc, posestack, camera, modelViewMatrix, projMatrix);
         gr.resetProjectionMatrix(oldProjectionMatrix);
     }
 
@@ -198,27 +204,122 @@ public class VistaLevelRenderer {
         dummyCamera.setRotation(yaw, pitch);
     }
 
-    private static Matrix4f createProjectionMatrix(GameRenderer gr, RenderTarget target, float fov) {
-        Matrix4f matrix4f = new Matrix4f();
+    //Same as GameRenderer getProjectionMatrix but with custom fov and viewport size
+    private static Matrix4f createProjectionMatrix(GameRenderer gr, RenderTarget target, double fov) {
+        PoseStack poseStack = new PoseStack();
+        poseStack.last().pose().identity();
         float zoom = 1;
 
         if (zoom != 1.0F) {
             float zoomX = 0;
             float zoomY = 0;
-            matrix4f.translate(zoomX, -zoomY, 0.0F);
-            matrix4f.scale(zoom, zoom, 1.0F);
+            poseStack.translate(zoomX, -zoomY, 0.0F);
+            poseStack.scale(zoom, zoom, 1.0F);
         }
         float depthFar = gr.getDepthFar();
-
-        return matrix4f.perspective(fov * Mth.DEG_TO_RAD,
-                (float) target.width / (float) target.height,
-                ViewFinderBlockEntity.NEAR_PLANE, depthFar);
+        poseStack.last().pose().mul((new Matrix4f()).setPerspective((float) (fov * (double) ((float) Math.PI / 180F)),
+                (float) target.width / target.height, 0.05F, depthFar));
+        return poseStack.last().pose();
     }
 
     public static boolean setupRender(LevelRenderer lr, Camera camera, Frustum frustum, boolean hasCapturedFrustum, boolean isSpectator) {
         if (!isRenderingLiveFeed()) {
             return false;
         }
+        if (CompatHandler.SODIUM) return false; //?? todo: give this a custom impl that follows what sodium does
+
+        Minecraft mc = Minecraft.getInstance();
+        Level level = mc.level;
+        Vec3 vec3 = camera.getPosition();
+        if (mc.options.getEffectiveRenderDistance() != lr.lastViewDistance) {
+            //lr.allChanged();
+        }
+
+        level.getProfiler().push("camera");
+        double playerX = mc.player.getX();
+        double playerY = mc.player.getY();
+        double playerZ = mc.player.getZ();
+        int sectionX = SectionPos.posToSectionCoord(playerX);
+        int sectionY = SectionPos.posToSectionCoord(playerY);
+        int sectionZ = SectionPos.posToSectionCoord(playerZ);
+        if (lr.lastCameraChunkX != sectionX || lr.lastCameraChunkY != sectionY || lr.lastCameraChunkZ != sectionZ) {
+            lr.lastCameraX = playerX;
+            lr.lastCameraY = playerY;
+            lr.lastCameraZ = playerZ;
+            lr.lastCameraChunkX = sectionX;
+            lr.lastCameraChunkY = sectionY;
+            lr.lastCameraChunkZ = sectionZ;
+            lr.viewArea.repositionCamera(playerX, playerZ);
+        }
+
+        lr.chunkRenderDispatcher.setCamera(vec3);
+        level.getProfiler().popPush("cull");
+        mc.getProfiler().popPush("culling");
+        BlockPos blockPos = camera.getBlockPosition();
+        double g = Math.floor(vec3.x / (double) 8.0F);
+        double h = Math.floor(vec3.y / (double) 8.0F);
+        double l = Math.floor(vec3.z / (double) 8.0F);
+        lr.needsFullRenderChunkUpdate = lr.needsFullRenderChunkUpdate || g != lr.prevCamX || h != lr.prevCamY || l != lr.prevCamZ;
+        lr.nextFullUpdateMillis.updateAndGet((lx) -> {
+            if (lx > 0L && System.currentTimeMillis() > lx) {
+                lr.needsFullRenderChunkUpdate = true;
+                return 0L;
+            } else {
+                return lx;
+            }
+        });
+        lr.prevCamX = g;
+        lr.prevCamY = h;
+        lr.prevCamZ = l;
+        mc.getProfiler().popPush("update");
+        boolean smartCull = mc.smartCull;
+        if (isSpectator && level.getBlockState(blockPos).isSolidRender(level, blockPos)) {
+            //    smartCull = false;
+        }
+
+        if (!hasCapturedFrustum) {
+            if (lr.needsFullRenderChunkUpdate || true) {
+                mc.getProfiler().push("full_update_schedule");
+                lr.needsFullRenderChunkUpdate = false;
+                    Queue<LevelRenderer.RenderChunkInfo> queue = Queues.newArrayDeque();
+                    lr.initializeQueueForFullUpdate(camera, queue);
+                    LevelRenderer.RenderChunkStorage renderChunkStorage = new LevelRenderer.RenderChunkStorage(lr.viewArea.chunks.length);
+                    lr.updateRenderChunks(renderChunkStorage.renderChunks, renderChunkStorage.renderInfoMap, vec3, queue, smartCull);
+                    lr.renderChunkStorage.set(renderChunkStorage);
+                    lr.needsFrustumUpdate.set(true);
+                mc.getProfiler().pop();
+            }
+
+            LevelRenderer.RenderChunkStorage renderChunkStorage = lr.renderChunkStorage.get();
+            if (!lr.recentlyCompiledChunks.isEmpty()) {
+                /*
+                mc.getProfiler().push("partial_update");
+                Queue<LevelRenderer.RenderChunkInfo> queue = Queues.newArrayDeque();
+
+                while(!lr.recentlyCompiledChunks.isEmpty()) {
+                    ChunkRenderDispatcher.RenderChunk renderChunk = lr.recentlyCompiledChunks.poll();
+                    LevelRenderer.RenderChunkInfo renderChunkInfo = renderChunkStorage.renderInfoMap.get(renderChunk);
+                    if (renderChunkInfo != null && renderChunkInfo.chunk == renderChunk) {
+                        queue.add(renderChunkInfo);
+                    }
+                }
+
+                lr.updateRenderChunks(renderChunkStorage.renderChunks, renderChunkStorage.renderInfoMap, vec3, queue, smartCull);
+                lr.needsFrustumUpdate.set(true);
+                mc.getProfiler().pop();*/
+            }
+
+            double floorCameraPitch = Math.floor((camera.getXRot() / 2.0F));
+            double floorCameraYaw = Math.floor((camera.getYRot() / 2.0F));
+            if (lr.needsFrustumUpdate.compareAndSet(true, false) || floorCameraPitch != lr.prevCamRotX || floorCameraYaw != lr.prevCamRotY) {
+                //frustum = (new Frustum(frustum)).offsetToFullyIncludeCameraCube(8);
+                lr.applyFrustum(frustum);
+                lr.prevCamRotX = floorCameraPitch;
+                lr.prevCamRotY = floorCameraYaw;
+            }
+        }
+
+        mc.getProfiler().pop();
         return true;
     }
 /*
@@ -247,7 +348,7 @@ public class VistaLevelRenderer {
 
 
         // Get player's exact coordinates
-        Entity cameraEntity = camera.entity; //this.minecraft.player
+        Entity cameraEntity = camera.entity; //mc.player
         double playerX = cameraEntity.getX();
         double playerY = cameraEntity.getY();
         double playerZ = cameraEntity.getZ();
@@ -369,9 +470,6 @@ public class VistaLevelRenderer {
     }
 */
     //very ugly because these can be called on another thread
-
-    //TODO: add back
-    /*
     public static void onChunkLoaded(ChunkPos chunkPos, SectionOcclusionGraph sectionOcclusionGraph) {
         if (CompatHandler.SODIUM) return;
         for (SectionOcclusionGraph graph : MANAGED_GRAPHS) {
@@ -385,16 +483,17 @@ public class VistaLevelRenderer {
         }
     }
 
-    public static void onRecentlyCompiledSection(SectionRenderDispatcher.RenderSection renderSection, SectionOcclusionGraph sectionOcclusionGraph) {
+    public static void onRecentlyCompiledSection(ChunkRenderDispatcher.RenderChunk renderSection,
+                                                 BlockingQueue<ChunkRenderDispatcher.RenderChunk> sectionOcclusionGraph) {
         if (CompatHandler.SODIUM) return;
-        for (SectionOcclusionGraph graph : MANAGED_GRAPHS) {
+        for (var graph : MANAGED_GRAPHS) {
             if (graph != sectionOcclusionGraph) {
-                graph.onSectionCompiled(renderSection);
+                graph.add(renderSection);
             }
         }
-        SectionOcclusionGraph old = MC_OWN_GRAPH.get();
+        var old = MC_OWN_GRAPH.get();
         if (old != null && old != sectionOcclusionGraph) {
-            old.onSectionCompiled(renderSection);
+            old.add(renderSection);
         }
-    }*/
+    }
 }

@@ -3,9 +3,12 @@ package net.mehvahdjukaar.vista.client.renderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.ViewArea;
+import net.minecraft.client.renderer.chunk.ChunkRenderDispatcher;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class LevelRendererCameraState {
 
@@ -25,8 +28,10 @@ public class LevelRendererCameraState {
     private int lastViewDistance;
     private LevelRenderer.RenderChunkStorage renderChunkStorage;
     private boolean needsFullRenderChunkUpdate = false;
+    private boolean needsFrustumUpdate = false;
     private long nextFullUpdateMillis = 0;
-
+    private Future<?> lastFullRenderChunkUpdate = null;
+    private  BlockingQueue<ChunkRenderDispatcher.RenderChunk> recentlyCompiledChunks = new LinkedBlockingQueue<>();
 
     private LevelRendererCameraState() {
     }
@@ -57,6 +62,9 @@ public class LevelRendererCameraState {
         this.prevCamRotY = lr.prevCamRotY;
         this .needsFullRenderChunkUpdate = lr.needsFullRenderChunkUpdate;
         this.nextFullUpdateMillis = lr.nextFullUpdateMillis.get();
+        this.needsFrustumUpdate = lr.needsFrustumUpdate.get();
+        this.lastFullRenderChunkUpdate = lr.lastFullRenderChunkUpdate;
+        this .recentlyCompiledChunks = lr.recentlyCompiledChunks;
     }
 
     public static LevelRendererCameraState capture(LevelRenderer lr) {
@@ -82,9 +90,12 @@ public class LevelRendererCameraState {
         lr.prevCamRotY = this.prevCamRotY;
         lr.needsFullRenderChunkUpdate = this.needsFullRenderChunkUpdate;
         lr.nextFullUpdateMillis.set(this.nextFullUpdateMillis);
+        lr.needsFrustumUpdate.set(this.needsFrustumUpdate);
+        lr.lastFullRenderChunkUpdate = this.lastFullRenderChunkUpdate;
+        lr.recentlyCompiledChunks = this.recentlyCompiledChunks;
     }
 
-    public LevelRenderer.RenderChunkStorage getChunkStorage () {
-        return this.renderChunkStorage;
+    public BlockingQueue<ChunkRenderDispatcher.RenderChunk> getRecentlyCompiledStorage() {
+        return this.recentlyCompiledChunks;
     }
 }
