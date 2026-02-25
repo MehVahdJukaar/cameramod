@@ -2,7 +2,7 @@ package net.mehvahdjukaar.vista.integration.jei;
 
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
-import mezz.jei.api.ingredients.subtypes.ISubtypeInterpreter;
+import mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter;
 import mezz.jei.api.ingredients.subtypes.UidContext;
 import mezz.jei.api.registration.ISubtypeRegistration;
 import net.mehvahdjukaar.vista.VistaMod;
@@ -25,16 +25,12 @@ public class JEICompat implements IModPlugin {
         registration.registerSubtypeInterpreter(VistaMod.CASSETTE.get(), CassetteSubtypeInterpreter.INSTANCE);
     }
 
-    public enum CassetteSubtypeInterpreter implements ISubtypeInterpreter<ItemStack> {
+    public enum CassetteSubtypeInterpreter implements IIngredientSubtypeInterpreter<ItemStack> {
         INSTANCE;
 
-        @Override
-        public Object getSubtypeData(ItemStack stack, UidContext uidContext) {
-            return CassetteItem.getCassette(stack);
-        }
 
         @Override
-        public String getLegacyStringSubtypeInfo(ItemStack stack, UidContext uidContext) {
+        public String apply(ItemStack stack, UidContext uidContext) {
             Object component = CassetteItem.getCassette(stack);
             return component == null ? "" : component.toString();
         }
