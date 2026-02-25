@@ -1,2 +1,1 @@
-- improved pause overlay
-- added some mega hacks to make stuff work slightly better with iris. this is still mega hacky and proper stuff can only be every done by iris itself. Has been mega pain to work on this. thanks to SupperDupper for the help here
+- downgraded java to 17

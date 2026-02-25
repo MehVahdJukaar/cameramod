@@ -123,8 +123,8 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
 
         if (ClientConfigs.rendersDebug()) {
-            if (videoSource instanceof BroadcastVideoSource(UUID uuid)) {
-                renderDebug(uuid, poseStack, buffer, partialTick, blockEntity);
+            if (videoSource instanceof BroadcastVideoSource br) {
+                renderDebug(br.uuid(), poseStack, buffer, partialTick, blockEntity);
             }
         }
 
