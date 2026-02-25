@@ -159,7 +159,7 @@ public class ViewFinderController {
 
         if (scrollDelta != 0) {
             ViewFinderBlockEntity tile = access.getInternalTile();
-            int newZoom = (Math.clamp((int) (tile.getZoomLevel() + scrollDelta), 1, ViewFinderBlockEntity.MAX_ZOOM));
+            int newZoom = (Mth.clamp((int) (tile.getZoomLevel() + scrollDelta), 1, ViewFinderBlockEntity.MAX_ZOOM));
             int oldZoom = tile.getZoomLevel();
             if (newZoom != oldZoom) {
                 viewFinderZoom = newZoom;

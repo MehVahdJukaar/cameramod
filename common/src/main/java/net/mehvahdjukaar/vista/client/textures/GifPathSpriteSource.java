@@ -407,13 +407,13 @@ public class GifPathSpriteSource implements SpriteSource {
         // Ensure ticks size >= frames (GIF metadata should match, but be safe)
         if (ticks.size() < frameCount) {
             // pad with last value
-            int last = ticks.isEmpty() ? 1 : Math.max(1, ticks.getLast());
+            int last = ticks.isEmpty() ? 1 : Math.max(1, ticks.get(ticks.size()-1));
             while (ticks.size() < frameCount) ticks.add(last);
         }
 
         // Check if all frames have the same duration
         boolean uniform = true;
-        int first = Math.max(1, ticks.getFirst());
+        int first = Math.max(1, ticks.get(0));
         for (int i = 1; i < frameCount; i++) {
             if (!ticks.get(i).equals(first)) {
                 uniform = false;
