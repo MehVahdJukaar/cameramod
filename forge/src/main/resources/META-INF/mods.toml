@@ -1,3 +1,4 @@
+
 modLoader = "javafml"
 loaderVersion = "${loader_version_range}"
 
@@ -18,27 +19,18 @@ authors = "${mod_authors}"
 credits = "${mod_credits}"
 description = '''${mod_description}'''
 modUrl = "${mod_homepage}"
-itemIcon = "minecraft:painting" #catalogue icon
+itemIcon = "vista:television" #catalogue icon
 
-[[dependencies.${ mod_id }]]
-    modId = "neoforge"
-    type = "required"
-    versionRange = "${neo_version_range}"
-    ordering = "NONE"
-    side = "BOTH"
-
-[[dependencies.${ mod_id }]]
+[[dependencies.${mod_id}]]
     modId = "minecraft"
-    type = "required"
+    mandatory = true
     versionRange = "[${minecraft_min_version},${minecraft_max_version})"
     ordering = "NONE"
-    side = "BOTH"
+    side = "CLIENT"
 
-[[dependencies.${ mod_id }]]
+[[dependencies.${mod_id}]]
     modId = "moonlight"
     mandatory = true
-    versionRange = "[${moonlight_min_version},)"
+    versionRange = "[${moonlight_min_version},]"
     ordering = "NONE"
     side = "BOTH"
-
-

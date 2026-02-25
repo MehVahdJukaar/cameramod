@@ -5,12 +5,10 @@ import net.mehvahdjukaar.vista.common.cassette.CassetteTape;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
-import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.DataPackRegistryEvent;
-
-import java.lang.ref.WeakReference;
 
 import static net.mehvahdjukaar.vista.VistaMod.MOD_ID;
 
@@ -20,15 +18,11 @@ import static net.mehvahdjukaar.vista.VistaMod.MOD_ID;
 @Mod(MOD_ID)
 public class VistaForge {
 
-    public static WeakReference<IEventBus> modBus;
-
-    public VistaForge(IEventBus bus) {
-        modBus = new WeakReference<>(bus);
+    public VistaForge() {
         VistaMod.init();
         MinecraftForge.EVENT_BUS.register(this);
 
-
-        bus.addListener(VistaForge::registerDataPackRegistry);
+        FMLJavaModLoadingContext.get().getModEventBus().addListener(VistaForge::registerDataPackRegistry);
     }
 
     public static void registerDataPackRegistry(DataPackRegistryEvent.NewRegistry event) {

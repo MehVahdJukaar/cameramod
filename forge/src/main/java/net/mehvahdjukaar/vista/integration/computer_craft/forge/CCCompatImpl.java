@@ -13,7 +13,6 @@ public class CCCompatImpl {
 
 //TODO: add back
     public static void init() {
-        VistaForge.modBus.get().addListener(CCCompatImpl::registerCap);
     }
 
     public static void setup() {

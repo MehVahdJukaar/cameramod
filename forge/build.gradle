@@ -105,10 +105,10 @@ dependencies {
 
     implementation 'org.jetbrains:annotations:22.0.0'
 
-    modApi("net.mehvahdjukaar:moonlight-forge:${moonlight_version}") {
-        transitive = true
-    }
-    // modImplementation "curse.maven:selene-499980:7541535"
+  //  implementation("net.mehvahdjukaar:moonlight-forge:${moonlight_version}") {
+   //     transitive = false
+  //  }
+     modImplementation "curse.maven:selene-499980:7664875"
 
     modCompileOnly("curse.maven:exposure-871755:7033927")
     modImplementation("curse.maven:jei-238222:7057366")

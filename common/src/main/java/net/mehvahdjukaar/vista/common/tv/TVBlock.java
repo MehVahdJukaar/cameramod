@@ -109,7 +109,7 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
         Direction facing = context.getHorizontalDirection().getOpposite();
         TVType type = CommonConfigs.MAX_CONNECTED_TV_SIZE.get() > 1 ?
                 getTypeFromNeighbors(context.getLevel(), context.getClickedPos(), facing)
-                        : TVType.SINGLE ;
+                : TVType.SINGLE;
 
         return this.defaultBlockState()
                 .setValue(POWER_STATE, PowerState.direct(powered))
@@ -152,7 +152,7 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
 
         TVBlockEntity masterTile = getMasterBlockEntity(level, pos, blockState);
         if (masterTile != null) {
-            ItemStack stack =player.getItemInHand(interactionHand);
+            ItemStack stack = player.getItemInHand(interactionHand);
             return masterTile.interactWithPlayerItem(player, interactionHand, stack, 0, blockHitResult);
         }
         return super.use(blockState, level, pos, player, interactionHand, blockHitResult);
@@ -310,8 +310,15 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
                 BlockPos target = MthUtils.relativePos(pos, facing, key.x(), key.y(), 0);
                 BlockState bs = level.getBlockState(target);
                 if (bs.getBlock() instanceof TVBlock && conn != null) {
-                    level.setBlockAndUpdate(target, bs.setValue(CONNECTION, conn)
-                            .setValue(POWER_STATE, power));
+                    BlockState newState = bs.setValue(CONNECTION, conn)
+                            .setValue(POWER_STATE, power);
+                    level.setBlockAndUpdate(target, newState);
+                    //clear BE if they dont have them
+                    if (newState.getBlock() instanceof TVBlock tv) {
+                        if (!tv.shouldHaveBlockEntity(newState)) {
+                            level.removeBlockEntity(target);
+                        }
+                    }
                 }
             }
             if (finalTileRect != null) {
