@@ -2,6 +2,8 @@ package net.mehvahdjukaar.vista.mixins;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import net.minecraft.client.Camera;
@@ -10,7 +12,6 @@ import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.chunk.ChunkRenderDispatcher;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.world.entity.Entity;
-import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -18,12 +19,13 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 @Mixin(LevelRenderer.class)
 public class LevelRendererMixin {
 
     @Shadow
-    @Final
     public BlockingQueue<ChunkRenderDispatcher.RenderChunk> recentlyCompiledChunks;
 
     @ModifyReturnValue(method = "shouldShowEntityOutlines", at = @At(value = "RETURN"))
@@ -57,6 +59,12 @@ public class LevelRendererMixin {
         if (VistaLevelRenderer.setupRender((LevelRenderer) (Object) this, camera, frustum, hasCapturedFrustum, isSpectator)) {
             ci.cancel();
         }
+    }
+
+    @WrapOperation(method = "setupRender", at = @At(value = "INVOKE",
+            target = "Ljava/util/concurrent/ExecutorService;submit(Ljava/lang/Runnable;)Ljava/util/concurrent/Future;"))
+    public Future<?> vista$wrapFrustumUpdate(ExecutorService instance, Runnable runnable, Operation<Future<?>> op) {
+        return op.call(instance, VistaLevelRenderer.wrapFrustumUpdate(runnable));
     }
 
     @Inject(method = "addRecentlyCompiledChunk", at = @At("HEAD"))

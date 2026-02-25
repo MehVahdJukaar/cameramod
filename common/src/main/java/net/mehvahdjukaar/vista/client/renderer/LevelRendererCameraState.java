@@ -28,8 +28,8 @@ public class LevelRendererCameraState {
     private ViewArea viewArea; //same as the actual one as this doesnt change actualy. unless we want to add it in the fufture to make far away cameras load
     private int lastViewDistance;
     private LevelRenderer.RenderChunkStorage renderChunkStorage;
-    private boolean needsFullRenderChunkUpdate = false;
-    private boolean needsFrustumUpdate = false;
+    private boolean needsFullRenderChunkUpdate = true;
+    private boolean needsFrustumUpdate = true;
     private long nextFullUpdateMillis = 0;
     private Future<?> lastFullRenderChunkUpdate = null;
     private BlockingQueue<ChunkRenderDispatcher.RenderChunk> recentlyCompiledChunks = new LinkedBlockingQueue<>();
@@ -49,7 +49,7 @@ public class LevelRendererCameraState {
 
     public void copyFrom(LevelRenderer lr) {
         // this.viewArea = lr.viewArea;
-        this.lastViewDistance = lr.lastViewDistance;
+        //this.lastViewDistance = lr.lastViewDistance;
         this.renderChunkStorage = lr.renderChunkStorage.get();
         this.lastCameraChunkX = lr.lastCameraChunkX;
         this.lastCameraChunkY = lr.lastCameraChunkY;
@@ -79,7 +79,7 @@ public class LevelRendererCameraState {
     public void apply(LevelRenderer lr) {
         //  lr.viewArea = this.viewArea;
         lr.renderChunkStorage.set(this.renderChunkStorage);
-        lr.lastViewDistance = this.lastViewDistance;
+        //lr.lastViewDistance = this.lastViewDistance;
         lr.lastCameraChunkX = this.lastCameraChunkX;
         lr.lastCameraChunkY = this.lastCameraChunkY;
         lr.lastCameraChunkZ = this.lastCameraChunkZ;

@@ -47,6 +47,8 @@ public class VistaLevelRenderer {
 
     private static ViewFinderBlockEntity renderingLiveFeedVF = null;
 
+    private static final Object LEVEL_RENDERER_MODIFICATION = new Object();
+
     public static boolean isRenderingLiveFeed() {
         return renderingLiveFeedVF != null;
     }
@@ -109,7 +111,9 @@ public class VistaLevelRenderer {
             MC_OWN_GRAPH.set(oldCameraState.getRecentlyCompiledStorage());
 
             // already wrapped outside; don't double-wrap this or it fucks everything over omg.
-            renderLevel(mc, canvas, camera, fov);
+            synchronized (LEVEL_RENDERER_MODIFICATION) {
+                renderLevel(mc, canvas, camera, fov);
+            }
 
             // save updated feed camera state
             feedCameraState.copyFrom(mc.levelRenderer);
@@ -221,7 +225,31 @@ public class VistaLevelRenderer {
         return poseStack.last().pose();
     }
 
-    public static boolean setupRender(LevelRenderer lr, Camera camera, Frustum frustum, boolean hasCapturedFrustum, boolean isSpectator) {
+    //very ugly because these can be called on another thread
+    public static void addRecentlyCompiledChunkToOtherCameras(ChunkRenderDispatcher.RenderChunk renderSection,
+                                                              BlockingQueue<ChunkRenderDispatcher.RenderChunk> sectionOcclusionGraph) {
+        if (CompatHandler.SODIUM) return;
+        for (var graph : MANAGED_GRAPHS) {
+            if (graph != sectionOcclusionGraph) {
+                graph.add(renderSection);
+            }
+        }
+        var old = MC_OWN_GRAPH.get();
+        if (old != null && old != sectionOcclusionGraph) {
+            old.add(renderSection);
+        }
+    }
+
+    public static Runnable wrapFrustumUpdate(Runnable runnable) {
+        return () -> {
+            synchronized (LEVEL_RENDERER_MODIFICATION) {
+                runnable.run();
+            }
+        };
+    }
+
+    public static boolean setupRender(LevelRenderer lr, Camera camera, Frustum frustum, boolean hasCapturedFrustum,
+                                      boolean isSpectator) {
         if (!isRenderingLiveFeed()) {
             return false;
         }
@@ -277,17 +305,20 @@ public class VistaLevelRenderer {
         }
 
         if (!hasCapturedFrustum) {
-            if (lr.needsFullRenderChunkUpdate  ) {
+            lr.needsFullRenderChunkUpdate = true;
+
+            if (lr.needsFullRenderChunkUpdate) {
                 mc.getProfiler().push("full_update_schedule");
                 lr.needsFullRenderChunkUpdate = false;
-                lr.lastFullRenderChunkUpdate = Util.backgroundExecutor().submit(() -> {
+                //run immediately since we MUST modify our own altered level renderer states
+               // lr.lastFullRenderChunkUpdate = Util.backgroundExecutor().submit(() -> {
                     Queue<LevelRenderer.RenderChunkInfo> queue = Queues.newArrayDeque();
                     lr.initializeQueueForFullUpdate(camera, queue);
                     LevelRenderer.RenderChunkStorage renderChunkStorage = new LevelRenderer.RenderChunkStorage(lr.viewArea.chunks.length);
                     lr.updateRenderChunks(renderChunkStorage.renderChunks, renderChunkStorage.renderInfoMap, cameraPos, queue, smartCull);
                     lr.renderChunkStorage.set(renderChunkStorage);
                     lr.needsFrustumUpdate.set(true);
-                });
+
                 mc.getProfiler().pop();
             }
 
@@ -297,7 +328,7 @@ public class VistaLevelRenderer {
                 mc.getProfiler().push("partial_update");
                 Queue<LevelRenderer.RenderChunkInfo> queue = Queues.newArrayDeque();
 
-                while(!lr.recentlyCompiledChunks.isEmpty()) {
+                while (!lr.recentlyCompiledChunks.isEmpty()) {
                     ChunkRenderDispatcher.RenderChunk renderChunk = lr.recentlyCompiledChunks.poll();
                     LevelRenderer.RenderChunkInfo renderChunkInfo = renderChunkStorage.renderInfoMap.get(renderChunk);
                     if (renderChunkInfo != null && renderChunkInfo.chunk == renderChunk) {
@@ -312,7 +343,7 @@ public class VistaLevelRenderer {
 
             double floorCameraPitch = Math.floor((camera.getXRot() / 2.0F));
             double floorCameraYaw = Math.floor((camera.getYRot() / 2.0F));
-            if ( lr.needsFrustumUpdate.compareAndSet(true, false) || floorCameraPitch != lr.prevCamRotX || floorCameraYaw != lr.prevCamRotY) {
+            if (lr.needsFrustumUpdate.compareAndSet(true, false) || floorCameraPitch != lr.prevCamRotX || floorCameraYaw != lr.prevCamRotY) {
                 //frustum = (new Frustum(frustum)).offsetToFullyIncludeCameraCube(8);
                 lr.applyFrustum(frustum);
                 lr.prevCamRotX = floorCameraPitch;
@@ -471,18 +502,5 @@ public class VistaLevelRenderer {
 
         }
     */
-    //very ugly because these can be called on another thread
-    public static void addRecentlyCompiledChunkToOtherCameras(ChunkRenderDispatcher.RenderChunk renderSection,
-                                                              BlockingQueue<ChunkRenderDispatcher.RenderChunk> sectionOcclusionGraph) {
-        if (CompatHandler.SODIUM) return;
-        for (var graph : MANAGED_GRAPHS) {
-            if (graph != sectionOcclusionGraph) {
-                graph.add(renderSection);
-            }
-        }
-        var old = MC_OWN_GRAPH.get();
-        if (old != null && old != sectionOcclusionGraph) {
-            old.add(renderSection);
-        }
-    }
+
 }
