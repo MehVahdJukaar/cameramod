@@ -13,16 +13,16 @@ import net.minecraft.util.Mth;
 
 public class ViewFinderHud {
 
-    private static final ResourceLocation BAR_SPRITE = VistaMod.res("hud/bar");
-    private static final ResourceLocation INDICATOR_SPRITE = VistaMod.res("hud/indicator");
-    private static final ResourceLocation LOCKED_INDICATOR_SPRITE = VistaMod.res("hud/lock");
+    private static final ResourceLocation BAR_SPRITE = VistaMod.res("textures/gui/sprites/hud/bar.png");
+    private static final ResourceLocation INDICATOR_SPRITE = VistaMod.res("textures/gui/sprites/hud/indicator.png");
+    private static final ResourceLocation LOCKED_INDICATOR_SPRITE = VistaMod.res("textures/gui/sprites/hud/lock.png");
     private static final ResourceLocation OVERLAY = VistaMod.res("textures/gui/viewfinder_scope.png");
 
     protected final Minecraft mc;
 
     private float scopeScale;
 
-    protected ViewFinderHud() {
+    public ViewFinderHud() {
         this.mc = Minecraft.getInstance();
     }
 

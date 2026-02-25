@@ -68,13 +68,13 @@ public class VistaForgeClient {
         }
     }
 
+
     @SubscribeEvent
-    public static void onRenderGuiOverlayPre(RenderGuiLayerEvent.Pre event) {
+    public static void onRenderGuiOverlayPre(RenderGuiOverlayEvent.Pre event) {
         if (ViewFinderController.isActive()) {
-            ResourceLocation overlay = event.getName();
-            if (overlay == (VanillaGuiLayers.EXPERIENCE_BAR) ||
-                    overlay == (VanillaGuiLayers.EXPERIENCE_LEVEL) ||
-                    overlay == (VanillaGuiLayers.HOTBAR)) {
+            var overlay = event.getOverlay();
+            if (overlay == (VanillaGuiOverlay.EXPERIENCE_BAR.type()) ||
+                    overlay == (VanillaGuiOverlay.HOTBAR.type())) {
                 event.setCanceled(true);
             }
         }

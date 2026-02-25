@@ -5,6 +5,7 @@ import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -33,14 +34,14 @@ public class CassetteItem extends Item {
 
     @Nullable
     public static Holder<CassetteTape> getCassette(ItemStack stack) {
-        var tag = stack.getTagElement("cassette_tape");
-        if (tag != null) {
-            var registry = Utils.hackyGetRegistry(CassetteTape.REGISTRY_KEY);
-            return registry.getHolder(ResourceKey.create(
-                    CassetteTape.REGISTRY_KEY,
-                    ResourceLocation.tryParse(tag.getAsString()))).orElse(null);
-        }
-        return null;
+        if (!stack.hasTag()) return null;
+        CompoundTag orCreateTag = stack.getOrCreateTag();
+        if (!orCreateTag.contains("cassette_tape")) return null;
+        String tag = orCreateTag.getString("cassette_tape");
+        var registry = Utils.hackyGetRegistry(CassetteTape.REGISTRY_KEY);
+        return registry.getHolder(ResourceKey.create(
+                CassetteTape.REGISTRY_KEY,
+                ResourceLocation.tryParse(tag))).orElse(null);
     }
 
     public static void setCassette(ItemStack stack, Holder<CassetteTape> tape) {

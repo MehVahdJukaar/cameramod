@@ -4,7 +4,7 @@
         "srcrgb": "srcalpha",
         "dstrgb": "1-srcalpha"
     },
-    "vertex": "vista:blit_flip_y",
+    "vertex": "vista_blit_flip_y",
     "fragment": "blit",
     "attributes": [ "Position" ],
     "samplers": [

@@ -1,20 +1,16 @@
 package net.mehvahdjukaar.vista.fabric;
 
 import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
-import net.fabricmc.fabric.api.event.lifecycle.v1.CommonLifecycleEvents;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.registry.DynamicRegistries;
-import net.mehvahdjukaar.moonlight.api.fluids.SoftFluid;
-import net.mehvahdjukaar.moonlight.api.fluids.SoftFluidRegistry;
+import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.vista.VistaMod;
-import net.mehvahdjukaar.vista.VistaModClient;
+import net.mehvahdjukaar.vista.common.cassette.CassetteItem;
 import net.mehvahdjukaar.vista.common.cassette.CassetteTape;
-import net.minecraft.world.level.storage.loot.predicates.LootItemConditionType;
-import net.minecraft.world.level.storage.loot.predicates.LootItemConditions;
+import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.world.item.ItemStack;
+
+import static net.mehvahdjukaar.vista.VistaMod.SUPPORTER_TAPES_TAG;
 
 public class VistaFabric implements ModInitializer {
 
@@ -28,6 +24,16 @@ public class VistaFabric implements ModInitializer {
         DynamicRegistries.registerSynced(CassetteTape.REGISTRY_KEY, CassetteTape.DIRECT_CODEC, CassetteTape.DIRECT_CODEC,
                 DynamicRegistries.SyncOption.SKIP_WHEN_EMPTY);
 
+
+        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.TOOLS_AND_UTILITIES)
+                .register(entries -> {
+                    for (var v : entries.getContext().holders().lookupOrThrow(CassetteTape.REGISTRY_KEY).listElements().toList()) {
+                        if (v.is(SUPPORTER_TAPES_TAG)) continue;
+                        ItemStack stack = VistaMod.CASSETTE.get().getDefaultInstance();
+                        CassetteItem.setCassette(stack, v);
+                        entries.accept(stack);
+                    }
+                });
     }
 
 }

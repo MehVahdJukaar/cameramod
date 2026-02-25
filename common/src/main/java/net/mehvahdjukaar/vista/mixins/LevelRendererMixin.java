@@ -2,21 +2,31 @@ package net.mehvahdjukaar.vista.mixins;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import net.minecraft.client.Camera;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.client.renderer.chunk.ChunkRenderDispatcher;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.level.ChunkPos;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+
 @Mixin(LevelRenderer.class)
 public class LevelRendererMixin {
+
+    @Shadow
+    public BlockingQueue<ChunkRenderDispatcher.RenderChunk> recentlyCompiledChunks;
 
     @ModifyReturnValue(method = "shouldShowEntityOutlines", at = @At(value = "RETURN"))
     public boolean vista$disableEntityOutlines(boolean original) {
@@ -51,15 +61,14 @@ public class LevelRendererMixin {
         }
     }
 
-    //TODO: add back
-    /*
-    @Inject(method = "onChunkLoaded", at = @At("HEAD"))
-    public void vista$onChunkLoaded(ChunkPos chunkPos, CallbackInfo ci) {
-        VistaLevelRenderer.onChunkLoaded(chunkPos, this.sectionOcclusionGraph);
+    @WrapOperation(method = "setupRender", at = @At(value = "INVOKE",
+            target = "Ljava/util/concurrent/ExecutorService;submit(Ljava/lang/Runnable;)Ljava/util/concurrent/Future;"))
+    public Future<?> vista$wrapFrustumUpdate(ExecutorService instance, Runnable runnable, Operation<Future<?>> op) {
+        return op.call(instance, VistaLevelRenderer.wrapFrustumUpdate(runnable));
     }
 
-    @Inject(method = "addRecentlyCompiledSection", at = @At("HEAD"))
-    public void vista$onRecentlyCompiledSection(SectionRenderDispatcher.RenderSection renderSection, CallbackInfo ci) {
-        VistaLevelRenderer.onRecentlyCompiledSection(renderSection, this.sectionOcclusionGraph);
-    }*/
+    @Inject(method = "addRecentlyCompiledChunk", at = @At("HEAD"))
+    public void vista$onRecentlyCompiledSection(ChunkRenderDispatcher.RenderChunk renderChunk, CallbackInfo ci) {
+        VistaLevelRenderer.addRecentlyCompiledChunkToOtherCameras(renderChunk, this.recentlyCompiledChunks);
+    }
 }

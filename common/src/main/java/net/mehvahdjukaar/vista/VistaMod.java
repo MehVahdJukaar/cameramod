@@ -1,13 +1,10 @@
 package net.mehvahdjukaar.vista;
 
-import com.mojang.serialization.Codec;
-import net.mehvahdjukaar.moonlight.api.fluids.SoftFluidRegistry;
 import net.mehvahdjukaar.moonlight.api.misc.EventCalled;
 import net.mehvahdjukaar.moonlight.api.misc.RegSupplier;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
-import net.mehvahdjukaar.vista.common.BroadcastManager;
 import net.mehvahdjukaar.vista.common.ModLootOverrides;
 import net.mehvahdjukaar.vista.common.cassette.CassetteItem;
 import net.mehvahdjukaar.vista.common.cassette.CassetteTape;
@@ -24,10 +21,7 @@ import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.mehvahdjukaar.vista.integration.supplementaries.SuppCompat;
 import net.mehvahdjukaar.vista.network.ModNetwork;
-import net.minecraft.core.Holder;
-import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
@@ -36,10 +30,8 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.monster.EnderMan;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.storage.loot.functions.LootItemFunctionType;
 import net.minecraft.world.level.storage.loot.predicates.LootItemConditionType;
@@ -74,7 +66,7 @@ public class VistaMod {
             res("television"), TVBlockEntity::new, TV);
 
     public static final Supplier<Block> VIEWFINDER = RegHelper.registerBlockWithItem(res("viewfinder"),
-            () -> new ViewFinderBlock(Block.Properties.of().strength(1.5f).noOcclusion()));
+            () -> new ViewFinderBlock(Block.Properties.of().strength(1.5f).forceSolidOff().noOcclusion()));
 
     public static final Supplier<BlockEntityType<ViewFinderBlockEntity>> VIEWFINDER_TILE = RegHelper.registerBlockEntityType(
             res("viewfinder"), ViewFinderBlockEntity::new, VIEWFINDER);
@@ -173,17 +165,21 @@ public class VistaMod {
     private static void addItemsToTabs(RegHelper.ItemToTabEvent event) {
         event.add(CreativeModeTabs.REDSTONE_BLOCKS, TV.get());
         event.add(CreativeModeTabs.REDSTONE_BLOCKS, VIEWFINDER.get());
-        var ra = Utils.hackyGetRegistryAccess();
-        for (var v : ra.lookupOrThrow(CassetteTape.REGISTRY_KEY).listElements().toList()) {
-            if (v.is(SUPPORTER_TAPES_TAG)) continue;
-            ItemStack stack = CASSETTE.get().getDefaultInstance();
-            CassetteItem.setCassette(stack, v);
-            event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, stack);
-        }
+
         event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, HOLLOW_CASSETTE.get());
         event.addAfter(CreativeModeTabs.TOOLS_AND_UTILITIES, i -> i.is(C_MUSIC_DISCS), SOJOURN_MUSIC_DISC.get());
 
         CompatHandler.addItemsToTabs(event);
+
+        if (PlatHelper.getPlatform().isForge()) {
+            var ra = Utils.hackyGetRegistryAccess();
+            for (var v : ra.lookupOrThrow(CassetteTape.REGISTRY_KEY).listElements().toList()) {
+                if (v.is(SUPPORTER_TAPES_TAG)) continue;
+                ItemStack stack = CASSETTE.get().getDefaultInstance();
+                CassetteItem.setCassette(stack, v);
+                event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, stack);
+            }
+        }
     }
 
     @EventCalled

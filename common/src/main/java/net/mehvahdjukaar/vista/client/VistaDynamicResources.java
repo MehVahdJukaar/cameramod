@@ -123,7 +123,7 @@ public class VistaDynamicResources extends DynClientResourcesGenerator {
                 JsonArray passes = new JsonArray();
 
                 JsonObject pass = new JsonObject();
-                pass.addProperty("name", "vista:color_grade");
+                pass.addProperty("name", "vista_color_grade");
                 pass.addProperty("intarget", "minecraft:main");
                 pass.addProperty("outtarget", "swap");
 
