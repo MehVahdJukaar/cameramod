@@ -14,6 +14,7 @@ import net.mehvahdjukaar.vista.client.renderer.ViewFinderBlockEntityRenderer;
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import net.mehvahdjukaar.vista.client.textures.CassetteTexturesManager;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
+import net.mehvahdjukaar.vista.common.BroadcastManager;
 import net.mehvahdjukaar.vista.common.cassette.CassetteItem;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.Util;
@@ -117,6 +118,7 @@ public class VistaModClient {
     public static void onClientDisconnect() {
         LiveFeedTexturesManager.clear();
         VistaLevelRenderer.clear();
+        BroadcastManager.clearClientData();
 
         DynamicTextureRenderer.clearCache();
     }

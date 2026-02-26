@@ -139,7 +139,13 @@ public class LiveFeedTexturesManager {
             }
             text.setDisconnected(false);
 
-            VistaLevelRenderer.render(text, vf);
+            try {
+                VistaLevelRenderer.render(text, vf);
+            } catch (Throwable throwable) {
+                VistaMod.LOGGER.error("Failed to render live feed {}", uuid, throwable);
+                text.setDisconnected(true);
+                return;
+            }
 
             if (ClientConfigs.DRAW_DATE.get() || VistaMod.isFunny()) {
                 LocalDateTime now = LocalDateTime.now();
