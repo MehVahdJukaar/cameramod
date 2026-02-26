@@ -1,11 +1,6 @@
 package net.mehvahdjukaar.vista.integration.computer_craft.forge;
 
 
-import dan200.computercraft.api.ForgeComputerCraftAPI;
-import net.mehvahdjukaar.vista.VistaMod;
-import net.mehvahdjukaar.vista.integration.computer_craft.ViewFinderPeripheral;
-import net.mehvahdjukaar.vista.forge.VistaForge;
-import net.minecraft.core.Direction;
 import net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent;
 
 
