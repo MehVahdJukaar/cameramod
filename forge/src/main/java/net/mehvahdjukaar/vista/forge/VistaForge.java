@@ -1,6 +1,7 @@
 package net.mehvahdjukaar.vista.forge;
 
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.common.BroadcastManager;
 import net.mehvahdjukaar.vista.common.cassette.CassetteTape;
 import net.minecraft.server.level.ServerLevel;
@@ -23,8 +24,9 @@ public class VistaForge {
     public VistaForge() {
         VistaMod.init();
         MinecraftForge.EVENT_BUS.register(this);
-
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(VistaForge::registerDataPackRegistry);
+        var bus = FMLJavaModLoadingContext.get().getModEventBus();
+        VistaForgeClient.init(bus);
+        bus.addListener(VistaForge::registerDataPackRegistry);
     }
 
     public static void registerDataPackRegistry(DataPackRegistryEvent.NewRegistry event) {

@@ -8,7 +8,6 @@ import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.*;
@@ -17,6 +16,7 @@ import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.level.LevelEvent;
+import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -42,9 +42,12 @@ public class VistaForgeClient {
         if (event.phase == TickEvent.Phase.END) VistaModClient.onRenderTickEnd(Minecraft.getInstance());
     }
 
-    @SubscribeEvent
     public static void onAddGuiLayers(RegisterGuiOverlaysEvent event) {
         event.registerBelow(VanillaGuiOverlay.SPYGLASS.id(), "viewfinder", new Hud());
+    }
+
+    public static void init(IEventBus bus) {
+        bus.addListener(VistaForgeClient::onAddGuiLayers);
     }
 
 
@@ -66,6 +69,7 @@ public class VistaForgeClient {
                         camera.x, camera.y, camera.z);
             }
         }
+
     }
 
 

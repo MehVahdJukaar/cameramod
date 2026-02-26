@@ -26,6 +26,7 @@
   "injectors": {
     "defaultRequire": 1
   },
+  "plugin": "net.mehvahdjukaar.vista.mixins.VistaMixinPlugin",
   "mixinextras": {
     "minVersion": "0.5.0"
   }
