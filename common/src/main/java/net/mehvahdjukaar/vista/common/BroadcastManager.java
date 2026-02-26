@@ -14,6 +14,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.saveddata.SavedData;
 import org.jetbrains.annotations.NotNull;
@@ -210,6 +211,14 @@ public final class BroadcastManager extends SavedData {
 
     public void sync() {
         ModNetwork.CHANNEL.sendToAllClientPlayers(new ClientBoundSyncBroadcastManagerPacket(this.snapshot));
+    }
+
+    public void syncTo(ServerPlayer player) {
+        ModNetwork.CHANNEL.sendToClientPlayer(player, new ClientBoundSyncBroadcastManagerPacket(this.snapshot));
+    }
+
+    public static void clearClientData() {
+        CLIENT_SIDE_INSTANCE.setClientData(Map.of());
     }
 
 }

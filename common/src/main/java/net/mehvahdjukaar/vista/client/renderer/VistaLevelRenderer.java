@@ -263,16 +263,16 @@ public class VistaLevelRenderer {
         }
 
         level.getProfiler().push("camera");
-        double playerX = mc.player.getX();
-        double playerY = mc.player.getY();
-        double playerZ = mc.player.getZ();
-        int sectionX = SectionPos.posToSectionCoord(playerX);
-        int sectionY = SectionPos.posToSectionCoord(playerY);
-        int sectionZ = SectionPos.posToSectionCoord(playerZ);
+        double cameraX = cameraPos.x;
+        double cameraY = cameraPos.y;
+        double cameraZ = cameraPos.z;
+        int sectionX = SectionPos.posToSectionCoord(cameraX);
+        int sectionY = SectionPos.posToSectionCoord(cameraY);
+        int sectionZ = SectionPos.posToSectionCoord(cameraZ);
         if (lr.lastCameraChunkX != sectionX || lr.lastCameraChunkY != sectionY || lr.lastCameraChunkZ != sectionZ) {
-            lr.lastCameraX = playerX;
-            lr.lastCameraY = playerY;
-            lr.lastCameraZ = playerZ;
+            lr.lastCameraX = cameraX;
+            lr.lastCameraY = cameraY;
+            lr.lastCameraZ = cameraZ;
             lr.lastCameraChunkX = sectionX;
             lr.lastCameraChunkY = sectionY;
             lr.lastCameraChunkZ = sectionZ;

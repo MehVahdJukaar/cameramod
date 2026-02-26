@@ -61,11 +61,6 @@ public class LevelRendererMixin {
         }
     }
 
-    @WrapOperation(method = "setupRender", at = @At(value = "INVOKE",
-            target = "Ljava/util/concurrent/ExecutorService;submit(Ljava/lang/Runnable;)Ljava/util/concurrent/Future;"))
-    public Future<?> vista$wrapFrustumUpdate(ExecutorService instance, Runnable runnable, Operation<Future<?>> op) {
-        return op.call(instance, VistaLevelRenderer.wrapFrustumUpdate(runnable));
-    }
 
     @Inject(method = "addRecentlyCompiledChunk", at = @At("HEAD"))
     public void vista$onRecentlyCompiledSection(ChunkRenderDispatcher.RenderChunk renderChunk, CallbackInfo ci) {
