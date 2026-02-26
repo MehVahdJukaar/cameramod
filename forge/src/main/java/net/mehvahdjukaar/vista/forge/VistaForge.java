@@ -1,10 +1,12 @@
 package net.mehvahdjukaar.vista.forge;
 
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.common.BroadcastManager;
 import net.mehvahdjukaar.vista.common.cassette.CassetteTape;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -34,6 +36,15 @@ public class VistaForge {
         var level = event.getLevel();
         if (level instanceof ServerLevel serverLevel) {
             VistaMod.addEntityGoal(event.getEntity(), serverLevel);
+        }
+    }
+
+    @SubscribeEvent
+    public void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
+        if (event.getEntity() instanceof net.minecraft.server.level.ServerPlayer player) {
+            if (player.level() instanceof ServerLevel serverLevel) {
+                BroadcastManager.getInstance(serverLevel).syncTo(player);
+            }
         }
     }
 

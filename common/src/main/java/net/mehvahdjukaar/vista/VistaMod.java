@@ -105,8 +105,9 @@ public class VistaMod {
             Registries.ITEM, new ResourceLocation("c", "glass_panes"));
 
     public static final Supplier<Item> SOJOURN_MUSIC_DISC = RegHelper.registerItem(res("music_disc_sojourn"),
-            () -> PlatHelper.newMusicDisc(13, SOJOURN_DISC_SOUND,
-                    new Item.Properties().stacksTo(1).rarity(Rarity.RARE), 159)
+            () -> new RecordItem(13, SOJOURN_DISC_SOUND.get(),
+                    new Item.Properties().stacksTo(1).rarity(Rarity.RARE), 159) {
+            }
     );
 
     public static void init() {
