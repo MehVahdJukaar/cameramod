@@ -80,5 +80,6 @@ accessible field net/minecraft/client/renderer/LevelRenderer recentlyCompiledChu
 accessible field net/minecraft/client/renderer/LevelRenderer$RenderChunkInfo chunk Lnet/minecraft/client/renderer/chunk/ChunkRenderDispatcher$RenderChunk;
 accessible field net/minecraft/client/renderer/LevelRenderer lastFullRenderChunkUpdate Ljava/util/concurrent/Future;
 mutable field net/minecraft/client/renderer/LevelRenderer recentlyCompiledChunks Ljava/util/concurrent/BlockingQueue;
+accessible class net/minecraft/client/renderer/LevelRenderer$RenderInfoMap
 mutable field net/minecraft/client/renderer/LevelRenderer renderChunksInFrustum Lit/unimi/dsi/fastutil/objects/ObjectArrayList;
 accessible method net/minecraft/client/renderer/LevelRenderer$RenderInfoMap get (Lnet/minecraft/client/renderer/chunk/ChunkRenderDispatcher$RenderChunk;)Lnet/minecraft/client/renderer/LevelRenderer$RenderChunkInfo;

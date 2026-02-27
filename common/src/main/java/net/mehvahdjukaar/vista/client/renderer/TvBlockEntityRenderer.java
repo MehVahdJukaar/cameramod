@@ -47,24 +47,6 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         return PlatHelper.getPlatform().isFabric();
     }
 
-    @ForgeOverride
-    public AABB getRenderBoundingBox(BlockEntity tile) {
-        AABB aabb = new AABB(tile.getBlockPos());
-        Direction dir = tile.getBlockState().getValue(TVBlock.FACING);
-        float width = ((TVBlockEntity) tile).getConnectedCount();
-        float height = ((TVBlockEntity) tile).getConnectedCount();
-        if (dir == Direction.EAST) {
-            return aabb.expandTowards(0, height - 1, -width + 1);
-        } else if (dir == Direction.WEST) {
-            return aabb.expandTowards(0, height - 1, width - 1);
-        } else if (dir == Direction.NORTH) {
-            return aabb.expandTowards(-width + 1, height - 1, 0);
-        } else if (dir == Direction.SOUTH) {
-            return aabb.expandTowards(width - 1, height - 1, 0);
-        }
-        return aabb;
-    }
-
 
     @Override
     public void render(TVBlockEntity blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource buffer,

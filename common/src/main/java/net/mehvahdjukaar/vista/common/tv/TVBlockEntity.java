@@ -1,6 +1,7 @@
 package net.mehvahdjukaar.vista.common.tv;
 
 import net.mehvahdjukaar.moonlight.api.block.ItemDisplayTile;
+import net.mehvahdjukaar.moonlight.api.misc.ForgeOverride;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
@@ -25,6 +26,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
@@ -256,5 +258,23 @@ public class TVBlockEntity extends ItemDisplayTile {
 
     public int getScreenPixelHeight() {
         return Math.max(1, connectedTvsAmount) * 16 - EDGE_PIXEL_LEN;
+    }
+
+    @ForgeOverride
+    public AABB getRenderBoundingBox() {
+        AABB aabb = new AABB(this.getBlockPos());
+        Direction dir = this.getBlockState().getValue(TVBlock.FACING);
+        float width = this.getConnectedCount();
+        float height = this.getConnectedCount();
+        if (dir == Direction.EAST) {
+            return aabb.expandTowards(0, height - 1, -width + 1);
+        } else if (dir == Direction.WEST) {
+            return aabb.expandTowards(0, height - 1, width - 1);
+        } else if (dir == Direction.NORTH) {
+            return aabb.expandTowards(-width + 1, height - 1, 0);
+        } else if (dir == Direction.SOUTH) {
+            return aabb.expandTowards(width - 1, height - 1, 0);
+        }
+        return aabb;
     }
 }
