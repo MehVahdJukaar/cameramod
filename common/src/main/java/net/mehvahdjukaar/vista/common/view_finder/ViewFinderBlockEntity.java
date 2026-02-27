@@ -21,8 +21,10 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.StainedGlassPaneBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
@@ -109,7 +111,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
 
     @Override
     public boolean canPlaceItem(int index, ItemStack stack) {
-        return this.isEmpty() && stack.is(VistaMod.GLASS_PANES_TAG) ||
+        return this.isEmpty() && (stack.getItem() instanceof BlockItem bi && bi.getBlock() instanceof StainedGlassPaneBlock) ||
                 (CompatHandler.SUPPLEMENTARIES && SuppCompat.getShaderForItem(stack.getItem()) != null);
     }
 

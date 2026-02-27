@@ -16,7 +16,9 @@ import java.util.concurrent.Future;
 @OptionalMixin(value = "me.jellysquid.mods.sodium.mixin.core.render.world.WorldRendererMixin" , classLoaded = false)
 public class LevelRendererMixin2 {
 
-    @WrapOperation(method = "setupRender", at = @At(value = "INVOKE",
+    @WrapOperation(method = "setupRender",
+            require =  0, //embeddium port on 1.20 has diff class name.. lets just make this optional.
+            at = @At(value = "INVOKE",
             target = "Ljava/util/concurrent/ExecutorService;submit(Ljava/lang/Runnable;)Ljava/util/concurrent/Future;"))
     public Future<?> vista$wrapFrustumUpdate(ExecutorService instance, Runnable runnable, Operation<Future<?>> op) {
         return op.call(instance, VistaLevelRenderer.wrapFrustumUpdate(runnable));

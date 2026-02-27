@@ -1,0 +1,17 @@
+{
+    "targets": [
+        "swap"
+    ],
+    "passes": [
+        {
+            "name": "ntsc_encode",
+            "intarget": "minecraft:main",
+            "outtarget": "swap"
+        },
+        {
+            "name": "ntsc_decode",
+            "intarget": "swap",
+            "outtarget": "minecraft:main"
+        }
+    ]
+}
