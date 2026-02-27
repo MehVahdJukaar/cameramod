@@ -85,9 +85,6 @@ dependencies {
 
     //modApi("net.mehvahdjukaar:moonlight-fabric:${moonlight_version}")
     modImplementation "curse.maven:selene-499980:7541534"
-    modRuntimeOnly("net.mehvahdjukaar:supplementaries-fabric:${supplementaries_version}"){
-        transitive = false
-    }
 
     //modImplementation("cc.tweaked-cobalt:cobalt:0.93")
    // modCompileOnly "com.terraformersmc:modmenu:4.0.6",

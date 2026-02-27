@@ -36,8 +36,8 @@ dependencies {
     implementation(annotationProcessor("io.github.llamalad7:mixinextras-common:0.5.0"))
 
     modApi("net.mehvahdjukaar:moonlight:${moonlight_version}")
-    modCompileOnly("net.mehvahdjukaar:supplementaries:${supplementaries_version}")
-    //modImplementation("curse.maven:selene-499980:7113116")
+    //modCompileOnly("net.mehvahdjukaar:supplementaries:${supplementaries_version}")
+    modImplementation("curse.maven:supplementaries-412082:7431873")
 
     modImplementation("curse.maven:exposure-871755:7667016")
     modCompileOnly("curse.maven:distant-horizons-508933:7375280")
