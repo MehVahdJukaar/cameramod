@@ -52,7 +52,6 @@ public class VistaRenderTypes extends RenderType {
                         .setShaderState(CAMERA_SHADER_STATE)
                         .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
                         .setLightmapState(LIGHTMAP)
-                        .setCullState(NO_CULL)
                         .setTextureState(textureStateBuilder.build())
                         .setTexturingState(new TexturingStateShard("set_texel_size",
                                 () -> setCameraDrawUniforms(k),
