@@ -4,6 +4,7 @@ import net.mehvahdjukaar.ml_classes.IOneUserInteractable;
 import net.mehvahdjukaar.ml_classes.MthUtils;
 import net.mehvahdjukaar.ml_classes.TileOrEntityTarget;
 import net.mehvahdjukaar.moonlight.api.block.ItemDisplayTile;
+import net.mehvahdjukaar.supplementaries.common.block.tiles.CannonBlockTile;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
 import net.mehvahdjukaar.vista.client.video_source.LiveFeedVideoSource;
@@ -54,11 +55,14 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     private UUID controllingPlayer = null;
     private final LiveFeedVideoSource videoSource;
 
+    public final ViewFinderAccess selfAccess;
+
     public ViewFinderBlockEntity(BlockPos pos, BlockState state) {
         super(VistaMod.VIEWFINDER_TILE.get(), pos, state);
 
         this.myUUID = UUID.randomUUID();
         this.videoSource = new LiveFeedVideoSource(this);
+        this.selfAccess = ViewFinderAccess.block(this);
     }
 
     @Override
