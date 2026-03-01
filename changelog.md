@@ -1,1 +1,1 @@
-fixed loot tables
+fixed a loot table not working
