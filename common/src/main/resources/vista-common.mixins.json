@@ -5,6 +5,7 @@
   "package": "net.mehvahdjukaar.vista.mixins",
   "mixins": [
     "AnvilMenuMixin",
+    "BlockStateBaseMixin",
     "CompatIrisDhCompat",
     "EndermanMixin",
     "PlayerMixin"

@@ -1,1 +1,1 @@
-fixed a loot table not working
+fixed a crash on servers

@@ -76,7 +76,13 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
 
         BlockEntity be = level.getBlockEntity(currentPos);
         if (be instanceof TVBlockEntity tv) {
-            return tv;
+            //Not needed
+            if (this.shouldHaveBlockEntity(state)) {
+                return tv;
+            } else {
+                int err0r = 1;
+            }
+
         }
 
         while (type.isConnected(Direction.DOWN, facing)) {
