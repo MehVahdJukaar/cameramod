@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(value = DHCompat.class, remap = false)
 public class CompatIrisDhCompat {
 
-    @Inject(method = "checkFrame", remap = false, at = @At("HEAD"), cancellable = true)
+    @Inject(method = "checkFrame", remap = false, require = 0, at = @At("HEAD"), cancellable = true)
     private static void vista$shushIrisWTF(CallbackInfoReturnable<Boolean> cir) {
         //no op
         if (IrisCompat.shouldShushDHCompat()) {

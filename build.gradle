@@ -33,7 +33,8 @@ allprojects {
         maven { url = "https://www.cursemaven.com" }
         maven { url = "https://jitpack.io" }
 
-        maven { url = "https://maven.neoforged.net" }
+        maven { url = "https://maven.neoforged.net/releases" }
+        maven { url = "https://maven.minecraftforge.net/" }
         maven { url = "https://maven.architectury.dev" }
         maven { url = "https://maven.parchmentmc.org" }
 

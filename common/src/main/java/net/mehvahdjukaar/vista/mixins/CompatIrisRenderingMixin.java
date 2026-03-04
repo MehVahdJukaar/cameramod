@@ -4,7 +4,6 @@ import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
 import net.irisshaders.iris.mixin.LevelRendererAccessor;
 import net.irisshaders.iris.pipeline.IrisRenderingPipeline;
 import net.irisshaders.iris.shadows.ShadowRenderer;
-import net.mehvahdjukaar.vista.integration.iris.IrisCompat;
 import net.minecraft.client.Camera;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
@@ -15,9 +14,10 @@ import org.spongepowered.asm.mixin.injection.At;
 public class CompatIrisRenderingMixin {
 
     @WrapWithCondition(method = "renderShadows",
+            require = 0,
             remap = false,
             at = @At(value = "INVOKE", target = "Lnet/irisshaders/iris/shadows/ShadowRenderer;renderShadows(Lnet/irisshaders/iris/mixin/LevelRendererAccessor;Lnet/minecraft/client/Camera;)V"))
     private boolean vista$blockIrisShadowGlobalStateMessBugs(ShadowRenderer instance, LevelRendererAccessor fullyBufferedMultiBufferSource, Camera camera) {
-        return !IrisCompat.shouldSkipShadows();
+        return true;
     }
 }

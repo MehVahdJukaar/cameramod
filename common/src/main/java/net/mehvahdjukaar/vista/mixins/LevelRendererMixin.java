@@ -6,12 +6,16 @@ import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
+import net.mehvahdjukaar.vista.integration.iris.IrisCompat;
 import net.minecraft.client.Camera;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.chunk.ChunkRenderDispatcher;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.world.entity.Entity;
+import org.joml.Matrix4f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -61,6 +65,15 @@ public class LevelRendererMixin {
         }
     }
 
+
+    @Inject(method = "renderLevel", at = @At("RETURN"))
+    public void vista$restoreIrisPipeline(com.mojang.blaze3d.vertex.PoseStack poseStack,
+                                          float partialTick, long finishNanoTime,
+                                          boolean renderBlockOutline, Camera camera,
+                                          GameRenderer gameRenderer, LightTexture lightTexture,
+                                          Matrix4f projectionMatrix, CallbackInfo ci) {
+        IrisCompat.restorePipelineAfterRender();
+    }
 
     @Inject(method = "addRecentlyCompiledChunk", at = @At("HEAD"))
     public void vista$onRecentlyCompiledSection(ChunkRenderDispatcher.RenderChunk renderChunk, CallbackInfo ci) {
