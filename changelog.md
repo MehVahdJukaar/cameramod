@@ -1,1 +1,1 @@
-fixed a crash on servers
+- fixed view finder drops
