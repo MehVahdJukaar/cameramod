@@ -1,11 +1,9 @@
 package net.mehvahdjukaar.vista.common.view_finder;
 
-import com.mojang.serialization.MapCodec;
 import net.mehvahdjukaar.moonlight.api.block.IRotatable;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
-import net.mehvahdjukaar.supplementaries.common.block.tiles.CannonBlockTile;
 import net.mehvahdjukaar.supplementaries.common.utils.BlockUtil;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
@@ -15,6 +13,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
+import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
@@ -34,7 +33,6 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.EntityCollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
@@ -71,7 +69,7 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock, IR
     public InteractionResult use(BlockState blockState, Level level, BlockPos pos,
                                  Player player, InteractionHand hand, BlockHitResult blockHitResult) {
         ItemStack heldItem = player.getItemInHand(hand);
-        if (!heldItem.is(VistaMod.HOLLOW_CASSETTE.get())){
+        if (!heldItem.is(VistaMod.HOLLOW_CASSETTE.get())) {
             if (level.getBlockEntity(pos) instanceof ViewFinderBlockEntity tile) {
                 ItemStack stack = player.getItemInHand(hand);
                 return tile.tryInteracting(player, hand, stack, pos);
@@ -123,12 +121,16 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock, IR
 
     @Override
     public void onRemove(BlockState oldState, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
-        super.onRemove(oldState, level, pos, newState, movedByPiston);
+        if (level.getBlockEntity(pos) instanceof ViewFinderBlockEntity tile) {
+            Containers.dropContents(level, pos, tile);
+            level.updateNeighbourForOutputSignal(pos, this);
+        }
         if (oldState.getBlock() instanceof ViewFinderBlock &&
                 !(newState.getBlock() instanceof ViewFinderBlock) &&
                 level instanceof ServerLevel sl) {
             BroadcastManager.getInstance(sl).unlinkFeed(GlobalPos.of(level.dimension(), pos));
         }
+        super.onRemove(oldState, level, pos, newState, movedByPiston);
     }
 
     @Override
