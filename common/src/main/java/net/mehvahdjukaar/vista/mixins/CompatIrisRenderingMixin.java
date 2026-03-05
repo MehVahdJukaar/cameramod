@@ -16,6 +16,7 @@ public class CompatIrisRenderingMixin {
 
     @WrapWithCondition(method = "renderShadows",
             remap = false,
+            require = 0,
             at = @At(value = "INVOKE", target = "Lnet/irisshaders/iris/shadows/ShadowRenderer;renderShadows(Lnet/irisshaders/iris/mixin/LevelRendererAccessor;Lnet/minecraft/client/Camera;)V"))
     private boolean vista$blockIrisShadowGlobalStateMessBugs(ShadowRenderer instance, LevelRendererAccessor fullyBufferedMultiBufferSource, Camera camera) {
         return !IrisCompat.shouldSkipShadows();
