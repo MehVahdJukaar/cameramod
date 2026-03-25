@@ -232,8 +232,12 @@ static List<String> listGameVersions(String minInclusive, String maxExclusive) {
 }
 
 
-tasks.register('buildAndpublishAll') {
+
+tasks.register('buildAndPublishAll') {
     dependsOn ':clean'
+    dependsOn ':common:clean'
+    dependsOn ':fabric:clean'
+    dependsOn ':forge:clean'
     dependsOn ':build'
     dependsOn ':forge:curseforge'
     dependsOn ':forge:modrinth'
