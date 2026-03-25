@@ -4,14 +4,12 @@ plugins {
     id "io.github.juuxel.loom-quiltflower" version "1.7.1" apply false
     id "com.matthewprenger.cursegradle" version "1.+"
     id "com.modrinth.minotaur" version "2.+"
-    id "lol.bai.explosion" version "0.3.1" apply false
 }
 
 allprojects {
     apply plugin: "java"
     apply plugin: "architectury-plugin"
     apply plugin: "maven-publish"
-    apply plugin: "lol.bai.explosion"
 
 
     group = mod_group_id
@@ -33,7 +31,7 @@ allprojects {
         maven { url = "https://www.cursemaven.com" }
         maven { url = "https://jitpack.io" }
 
-        maven { url = "https://maven.neoforged.net" }
+        maven { url = "https://maven.neoforged.net/releases" }
         maven { url = "https://maven.architectury.dev" }
         maven { url = "https://maven.parchmentmc.org" }
 
