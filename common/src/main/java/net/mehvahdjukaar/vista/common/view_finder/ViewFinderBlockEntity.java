@@ -26,6 +26,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.AbstractSkullBlock;
+import net.minecraft.world.level.block.SkullBlock;
 import net.minecraft.world.level.block.StainedGlassPaneBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
@@ -116,8 +118,8 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
 
     @Override
     public boolean canPlaceItem(int index, ItemStack stack) {
-        return this.isEmpty() && (stack.getItem() instanceof BlockItem bi && bi.getBlock() instanceof StainedGlassPaneBlock) ||
-                (CompatHandler.SUPPLEMENTARIES && stack.is(ItemTags.SKULLS));
+        return this.isEmpty() && (stack.getItem() instanceof BlockItem bi && (bi.getBlock() instanceof StainedGlassPaneBlock ||
+                (CompatHandler.SUPPLEMENTARIES && bi.getBlock() instanceof AbstractSkullBlock)));
     }
 
     @Override
