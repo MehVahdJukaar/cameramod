@@ -18,6 +18,7 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -116,7 +117,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     @Override
     public boolean canPlaceItem(int index, ItemStack stack) {
         return this.isEmpty() && (stack.getItem() instanceof BlockItem bi && bi.getBlock() instanceof StainedGlassPaneBlock) ||
-                (CompatHandler.SUPPLEMENTARIES && SuppCompat.getShaderForItem(stack.getItem()) != null);
+                (CompatHandler.SUPPLEMENTARIES && stack.is(ItemTags.SKULLS));
     }
 
     @Override

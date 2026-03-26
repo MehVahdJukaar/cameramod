@@ -237,7 +237,7 @@ tasks.register('buildAndPublishAll') {
     dependsOn ':clean'
     dependsOn ':common:clean'
     dependsOn ':fabric:clean'
-    dependsOn ':forge:clean'
+    dependsOn ':neoforge:clean'
     dependsOn ':build'
     dependsOn ':forge:curseforge'
     dependsOn ':forge:modrinth'
