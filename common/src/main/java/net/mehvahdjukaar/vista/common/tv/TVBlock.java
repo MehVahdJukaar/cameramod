@@ -7,7 +7,6 @@ import net.mehvahdjukaar.vista.common.tv.connection.GridAccessor;
 import net.mehvahdjukaar.vista.common.tv.connection.GridTile;
 import net.mehvahdjukaar.vista.common.tv.connection.RectFinder;
 import net.mehvahdjukaar.vista.common.tv.connection.RectSelection;
-import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
