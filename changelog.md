@@ -1,1 +1,2 @@
-- made all compat iris mixins optionals since i cant deal with this stuff. pls dont ask for iris support its nearly impossible due to how bad that mod is done. oculus is even worse it seems
+- fixed cassettes not dropping from tvs
+- fixed mob heads not working on servers
