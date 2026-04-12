@@ -233,18 +233,54 @@ static List<String> listGameVersions(String minInclusive, String maxExclusive) {
 
 
 
-tasks.register('buildAndPublishAll') {
+
+tasks.register('buildToMavenLocal') {
     dependsOn ':clean'
     dependsOn ':common:clean'
     dependsOn ':fabric:clean'
     dependsOn ':forge:clean'
     dependsOn ':build'
+    dependsOn ':forge:build'
+    dependsOn ':fabric:build'
     dependsOn ':forge:curseforge'
     dependsOn ':forge:modrinth'
     dependsOn ':fabric:curseforge'
     dependsOn ':fabric:modrinth'
-    dependsOn ':publish'
+    dependsOn ':publishToMavenLocal'
+    dependsOn ':forge:publishToMavenLocal'
+    dependsOn ':fabric:publishToMavenLocal'
 
     group = 'build'
-    description = 'Runs clean, build, and publish forge and fabric'
+    description = 'Runs clean, build, and publish to maven local'
+}
+
+tasks.register('gitTag') {
+    group = 'build'
+    description = 'Create and push git tag from project version'
+
+    doLast {
+        def tag = project.version.toString()
+
+        // check if tag already exists
+        def stdout = new ByteArrayOutputStream()
+        exec {
+            commandLine 'git', 'tag', '-l', tag
+            standardOutput = stdout
+        }
+
+        if (!stdout.toString().trim().isEmpty()) {
+            logger.warn("Git tag '${tag}' already exists")
+        } else {
+
+            // create annotated tag
+            exec {
+                commandLine 'git', 'tag', '-a', tag, '-m', "Release ${tag}"
+            }
+
+            // push tag
+            exec {
+                commandLine 'git', 'push', 'origin', tag
+            }
+        }
+    }
 }
