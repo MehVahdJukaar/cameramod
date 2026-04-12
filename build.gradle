@@ -234,7 +234,7 @@ static List<String> listGameVersions(String minInclusive, String maxExclusive) {
 
 
 
-tasks.register('buildToMavenLocal') {
+tasks.register('buildAndPublishAll') {
     dependsOn ':clean'
     dependsOn ':common:clean'
     dependsOn ':fabric:clean'
@@ -249,9 +249,13 @@ tasks.register('buildToMavenLocal') {
     dependsOn ':publishToMavenLocal'
     dependsOn ':forge:publishToMavenLocal'
     dependsOn ':fabric:publishToMavenLocal'
+    dependsOn ':publish'
+    dependsOn ':forge:publish'
+    dependsOn ':fabric:publish'
+    finalizedBy ':gitTag'
 
     group = 'build'
-    description = 'Runs clean, build, and publish to maven local'
+    description = 'Runs clean, build, and publish neoforge and fabric'
 }
 
 tasks.register('gitTag') {
