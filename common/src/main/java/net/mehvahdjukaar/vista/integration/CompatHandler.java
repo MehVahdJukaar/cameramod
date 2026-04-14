@@ -17,6 +17,7 @@ public class CompatHandler {
     public static final boolean SUPPLEMENTARIES = PlatHelper.isModLoaded("supplementaries");
     public static final boolean IRIS = PlatHelper.isModLoaded("iris") || PlatHelper.isModLoaded("oculus");
     public static final boolean SODIUM = PlatHelper.isModLoaded("sodium") || PlatHelper.isModLoaded("embeddium");
+    public static final boolean ENTITYCULLING = PlatHelper.isModLoaded("entityculling");
 
     public static void init() {
         if (EXPOSURE) ExposureCompat.init();
