@@ -1,7 +1,5 @@
 package net.mehvahdjukaar.vista.integration.entity_culling;
 
-import dev.tr7zw.entityculling.EntityCullingMod;
-import dev.tr7zw.entityculling.EntityCullingModBase;
 
 import java.lang.reflect.Field;
 
@@ -22,7 +20,7 @@ public class EntityCullingCompat {
     public static Runnable decorateRenderWithoutCulling(Runnable task) {
 
         return () -> {
-            EntityCullingModBase.enabled = false;
+            //EntityCullingModBase.enabled = false;
             try {
                 boolean oldState = CULLING_ENABLED_FIELD.getBoolean(null);
                 CULLING_ENABLED_FIELD.set(null, false);
