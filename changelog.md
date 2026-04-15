@@ -1,1 +1,1 @@
-- added some mod compat code
+- fixed drop

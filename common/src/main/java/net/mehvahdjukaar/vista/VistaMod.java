@@ -114,7 +114,6 @@ public class VistaMod {
             VistaMod.LOGGER.error("IRIS mod detected. Vista WILL have visual issues and degraded performance. This is not something that I can fix and happens even with shaderpacks off. Trust me I tried but it's inherently due to how Iris was made and should be handled there.");
         }
 
-        //TODO: alex mobs shaders compat
         //TODO:
         //wrech and cannon for when facing same axis
         // view finder rotation bug wirh wrench?

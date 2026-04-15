@@ -195,10 +195,12 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
-        if (!state.is(newState.getBlock())) this.shrinkConnection(state, level, pos);
-        if (level.getBlockEntity(pos) instanceof TVBlockEntity tile) {
-            Containers.dropContents(level, pos, tile);
-            level.updateNeighbourForOutputSignal(pos, this);
+        if (!state.is(newState.getBlock())) {
+            this.shrinkConnection(state, level, pos);
+            if (level.getBlockEntity(pos) instanceof TVBlockEntity tile) {
+                Containers.dropContents(level, pos, tile);
+                level.updateNeighbourForOutputSignal(pos, this);
+            }
         }
         super.onRemove(state, level, pos, newState, movedByPiston);
     }
