@@ -20,6 +20,9 @@
     ],
     "jei_mod_plugin": [
       "net.mehvahdjukaar.vista.integration.jei.JEICompat"
+    ],
+    "modmenu": [
+      "net.mehvahdjukaar.vista.integration.modmenu.fabric.ModMenuCompat"
     ]
   },
   "mixins": [

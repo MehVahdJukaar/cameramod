@@ -1,0 +1,16 @@
+{
+  "block.vista.television": "Televizyon",
+  "item.vista.cassette": "Kaset",
+  "item.vista.hollow_cassette": "Oyulmuş Kaset",
+  "block.vista.viewfinder": "Vizör",
+  "tooltip.vista.cassette.tape": "Kaset: %s",
+  "tooltip.vista.hollow_cassette.linked": "[%1$s, %2$s, %3$s] konumuna bağlı",
+  "tooltip.vista.hollow_cassette.linked_unknown": "Geçersiz konuma bağlı",
+  "tooltip.vista.hollow_cassette.linked_away": "%s konumunda bir yerlerde",
+  "subtitles.vista.television.eject": "Kaset çıktı",
+  "subtitles.vista.television.insert": "Kaset sokuldu",
+  "message.vista.viewfinder.control": "İnmek için %1$, Kilitlemek/Açmak için %2$s tuşuna basın",
+  "item.vista.music_disc_sojourn": "Müzik Diski",
+  "advancements.husbandry.vista.absolute_cinema.description": "Büyük ekran bir Televizyon'da kaset oynatın",
+  "advancements.husbandry.vista.absolute_cinema.title": "Mutlak Sinema"
+}

@@ -87,7 +87,9 @@ dependencies {
     modImplementation("curse.maven:selene-499980:7664873"){
         transitive = false
     }
-
+    modCompileOnly("curse.maven:modmenu-308702:3920481") {
+        exclude module: "fabric-api"
+    }
     //modImplementation("cc.tweaked-cobalt:cobalt:0.93")
    // modCompileOnly "com.terraformersmc:modmenu:4.0.6",
 }
