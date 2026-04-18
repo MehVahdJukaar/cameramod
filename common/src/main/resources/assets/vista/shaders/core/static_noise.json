@@ -1,4 +1,5 @@
 {
+
     "vertex": "vista:static_noise",
     "fragment": "vista:static_noise",
     "samplers": [

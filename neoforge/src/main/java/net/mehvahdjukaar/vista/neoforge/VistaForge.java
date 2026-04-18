@@ -31,13 +31,7 @@ public class VistaForge {
 
     @SubscribeEvent
     public void onEntityJoin(EntityJoinLevelEvent event) {
-        new BLockItem(){
-
-            regi
-
-        }
-        var level = event.getLevel();
-        if (level instanceof ServerLevel serverLevel) {
+        if (event.getLevel() instanceof ServerLevel serverLevel) {
             VistaMod.addEntityGoal(event.getEntity(), serverLevel);
         }
     }

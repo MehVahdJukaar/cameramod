@@ -28,7 +28,7 @@ public class LiveFeedTexture extends RenderableDynamicTexture {
 
     private final UUID associatedUUID;
 
-    private final LevelRendererCameraState rendererState = LevelRendererCameraState.createNew();
+    private final LevelRendererCameraState rendererState = new LevelRendererCameraState();
     @Nullable
     private final ResourceLocation postFragment;
     @Nullable

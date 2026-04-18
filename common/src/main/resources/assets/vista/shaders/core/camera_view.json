@@ -1,4 +1,5 @@
 {
+
   "vertex": "vista:camera_view",
   "fragment": "vista:camera_view",
   "samplers": [

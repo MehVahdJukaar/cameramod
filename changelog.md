@@ -1,1 +1,1 @@
-- added some mod compat code
+- minor improvements to camera view internals
