@@ -10,6 +10,8 @@ accessible field net/minecraft/client/renderer/GameRenderer renderDistance F
 
 accessible method net/minecraft/client/Camera setPosition (Lnet/minecraft/world/phys/Vec3;)V
 accessible method net/minecraft/client/Camera setRotation (FF)V
+accessible field net/minecraft/client/Camera level Lnet/minecraft/world/level/BlockGetter;
+accessible field net/minecraft/client/Camera initialized Z
 
 accessible class net/minecraft/client/renderer/LevelRenderer$RenderChunkStorage
 accessible field net/minecraft/client/renderer/LevelRenderer renderChunkStorage Ljava/util/concurrent/atomic/AtomicReference;

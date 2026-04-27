@@ -10,6 +10,7 @@ import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.TextAndImageButton;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -31,7 +32,6 @@ public class ModMenuCompat implements ModMenuApi {
 
         @Override
         protected void addExtraButtons() {
-
             int y = this.height - 27;
             int centerX = this.width / 2;
 

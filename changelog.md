@@ -1,1 +1,1 @@
-- fixed drop
+fixed an issue with camera setup
