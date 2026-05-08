@@ -10,7 +10,7 @@
       "tag": "minecraft:planks"
     },
     "1": {
-      "tag": "minecraft:iron_ingot"
+      "item": "minecraft:iron_ingot"
     },
     "2": {
       "item": "minecraft:spyglass"

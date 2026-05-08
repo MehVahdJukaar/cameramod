@@ -1,7 +1,7 @@
 package net.mehvahdjukaar.vista.forge;
 
+import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.vista.VistaMod;
-import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.common.BroadcastManager;
 import net.mehvahdjukaar.vista.common.cassette.CassetteTape;
 import net.minecraft.server.level.ServerLevel;
@@ -25,7 +25,7 @@ public class VistaForge {
         VistaMod.init();
         MinecraftForge.EVENT_BUS.register(this);
         var bus = FMLJavaModLoadingContext.get().getModEventBus();
-        VistaForgeClient.init(bus);
+        if (PlatHelper.getPhysicalSide().isClient()) VistaForgeClient.init(bus);
         bus.addListener(VistaForge::registerDataPackRegistry);
     }
 
