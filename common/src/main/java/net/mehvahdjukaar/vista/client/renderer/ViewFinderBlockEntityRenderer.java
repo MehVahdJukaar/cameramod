@@ -126,14 +126,13 @@ public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFi
 
             ResourceLocation emissiveTexture = VistaModClient.VIEW_FINDER_LENS_EMISSIVE_TEXTURES.apply(lens.getItem());
             if (emissiveTexture != null) {
-                VertexConsumer emissiveBuilder = bufferSource.getBuffer(RenderType.eyes(emissiveTexture));
+                VertexConsumer emissiveBuilder = bufferSource.getBuffer(RenderType.entityTranslucentEmissive(emissiveTexture));
                 //int eyeLight = LightTexture.pack(LightTexture.FULL_BLOCK, LightTexture.sky(packedLight));
                 this.model.render(poseStack, emissiveBuilder, packedLight, packedOverlay);
             }
         }
         poseStack.popPose();
     }
-
 
     public static LayerDefinition createMesh() {
         MeshDefinition meshdefinition = new MeshDefinition();

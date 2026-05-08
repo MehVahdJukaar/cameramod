@@ -59,6 +59,8 @@ public class VistaLevelRenderer {
 
     public static void clear() {
         DUMMY_CAMERA.entity = null;
+        DUMMY_CAMERA.level = null;
+        DUMMY_CAMERA.initialized = false;
         MC_OWN_GRAPH.set(null);
         MANAGED_GRAPHS.clear();
         renderingLiveFeedVF = null;
@@ -188,12 +190,16 @@ public class VistaLevelRenderer {
         gr.resetProjectionMatrix(oldProjectionMatrix);
     }
 
+    //same as setup camera but for our own stuff. Normally called in game renderer
+    //Better separate so we dont trigger mixins in there which might assume game rendering
     @SuppressWarnings("ConstantConditions")
     private static void setupSceneCamera(ViewFinderBlockEntity tile, Camera dummyCamera, float partialTicks) {
         Level level = tile.getLevel();
         float pitch = tile.getPitch(partialTicks);
         float yaw = tile.getYaw(partialTicks);
 
+        dummyCamera.level = level;
+        dummyCamera.initialized = true;
         if (dummyCamera.entity == null) {
             dummyCamera.entity = new Display.BlockDisplay(EntityType.BLOCK_DISPLAY, level);
         }

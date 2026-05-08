@@ -1,1 +1,1 @@
-more port fixes
+fixed an issue with camera setup

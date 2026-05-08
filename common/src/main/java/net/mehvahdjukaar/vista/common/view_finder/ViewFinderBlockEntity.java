@@ -4,6 +4,7 @@ import net.mehvahdjukaar.ml_classes.IOneUserInteractable;
 import net.mehvahdjukaar.ml_classes.MthUtils;
 import net.mehvahdjukaar.ml_classes.TileOrEntityTarget;
 import net.mehvahdjukaar.moonlight.api.block.ItemDisplayTile;
+import net.mehvahdjukaar.supplementaries.common.block.tiles.CannonBlockTile;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
 import net.mehvahdjukaar.vista.client.video_source.LiveFeedVideoSource;
@@ -17,12 +18,17 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.AbstractSkullBlock;
+import net.minecraft.world.level.block.SkullBlock;
+import net.minecraft.world.level.block.StainedGlassPaneBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
@@ -52,11 +58,14 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     private UUID controllingPlayer = null;
     private final LiveFeedVideoSource videoSource;
 
+    public final ViewFinderAccess selfAccess;
+
     public ViewFinderBlockEntity(BlockPos pos, BlockState state) {
         super(VistaMod.VIEWFINDER_TILE.get(), pos, state);
 
         this.myUUID = UUID.randomUUID();
         this.videoSource = new LiveFeedVideoSource(this);
+        this.selfAccess = ViewFinderAccess.block(this);
     }
 
     @Override
@@ -109,8 +118,8 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
 
     @Override
     public boolean canPlaceItem(int index, ItemStack stack) {
-        return this.isEmpty() && stack.is(VistaMod.GLASS_PANES_TAG) ||
-                (CompatHandler.SUPPLEMENTARIES && SuppCompat.getShaderForItem(stack.getItem()) != null);
+        return this.isEmpty() && (stack.getItem() instanceof BlockItem bi && (bi.getBlock() instanceof StainedGlassPaneBlock ||
+                (CompatHandler.SUPPLEMENTARIES && bi.getBlock() instanceof AbstractSkullBlock)));
     }
 
     @Override

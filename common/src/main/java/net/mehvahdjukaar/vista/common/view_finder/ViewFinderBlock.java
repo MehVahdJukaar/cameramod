@@ -1,8 +1,13 @@
 package net.mehvahdjukaar.vista.common.view_finder;
 
-import com.mojang.serialization.MapCodec;
+import net.mehvahdjukaar.moonlight.api.block.IRotatable;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
+import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
+import net.mehvahdjukaar.supplementaries.common.block.blocks.CannonBlock;
+import net.mehvahdjukaar.supplementaries.common.block.blocks.EndermanSkullBlock;
+import net.mehvahdjukaar.supplementaries.common.block.blocks.NoticeBoardBlock;
+import net.mehvahdjukaar.supplementaries.common.utils.BlockUtil;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.mehvahdjukaar.vista.common.BroadcastManager;
@@ -10,6 +15,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
+import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
@@ -18,6 +25,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
@@ -26,13 +34,17 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.EntityCollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
-public class ViewFinderBlock extends DirectionalBlock implements EntityBlock {
+import java.util.Optional;
+
+public class ViewFinderBlock extends DirectionalBlock implements EntityBlock, IRotatable {
 
     protected static final VoxelShape SHAPE_DOWN = Block.box(0.0, 0.0, 0.0, 14, 2.0, 14);
     protected static final VoxelShape SHAPE_UP = Block.box(0.0, 14.0, 0.0, 14, 14, 14);
@@ -60,7 +72,7 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock {
     public InteractionResult use(BlockState blockState, Level level, BlockPos pos,
                                  Player player, InteractionHand hand, BlockHitResult blockHitResult) {
         ItemStack heldItem = player.getItemInHand(hand);
-        if (!heldItem.is(VistaMod.HOLLOW_CASSETTE.get())){
+        if (!heldItem.is(VistaMod.HOLLOW_CASSETTE.get())) {
             if (level.getBlockEntity(pos) instanceof ViewFinderBlockEntity tile) {
                 ItemStack stack = player.getItemInHand(hand);
                 return tile.tryInteracting(player, hand, stack, pos);
@@ -72,17 +84,16 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock {
     @Override
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
         super.setPlacedBy(level, pos, state, placer, stack);
-        if (placer != null && level.getBlockEntity(pos) instanceof ViewFinderBlockEntity cannon) {
+        if (placer != null && level.getBlockEntity(pos) instanceof ViewFinderBlockEntity tile) {
             Direction dir = Direction.orderedByNearest(placer)[0];
             Direction myDir = state.getValue(FACING).getOpposite();
-            var access = ViewFinderAccess.block(cannon);
             if (dir.getAxis() == Direction.Axis.Y) {
                 float pitch = dir == Direction.UP ? -90 : 90;
-                cannon.setPitch(access, (myDir.getOpposite() == dir ? pitch + 180 : pitch));
+                tile.setPitch(tile.selfAccess, (myDir.getOpposite() == dir ? pitch + 180 : pitch));
 
             } else {
                 float yaw = dir.toYRot();
-                cannon.setYaw(access, (myDir.getOpposite() == dir ? yaw + 180 : yaw));
+                tile.setYaw(tile.selfAccess, (myDir.getOpposite() == dir ? yaw + 180 : yaw));
             }
         }
     }
@@ -113,12 +124,16 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock {
 
     @Override
     public void onRemove(BlockState oldState, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
-        super.onRemove(oldState, level, pos, newState, movedByPiston);
+        if (level.getBlockEntity(pos) instanceof ViewFinderBlockEntity tile) {
+            Containers.dropContents(level, pos, tile);
+            level.updateNeighbourForOutputSignal(pos, this);
+        }
         if (oldState.getBlock() instanceof ViewFinderBlock &&
                 !(newState.getBlock() instanceof ViewFinderBlock) &&
                 level instanceof ServerLevel sl) {
             BroadcastManager.getInstance(sl).unlinkFeed(GlobalPos.of(level.dimension(), pos));
         }
+        super.onRemove(oldState, level, pos, newState, movedByPiston);
     }
 
     @Override
@@ -162,5 +177,28 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock {
             return Shapes.empty();
         }
         return Shapes.block();
+    }
+
+    @Override
+    public Optional<BlockState> getRotatedState(BlockState state, LevelAccessor levelAccessor, BlockPos blockPos,
+                                                Rotation rotation, Direction axis, @Nullable Vec3 hit) {
+        boolean ccw = rotation == Rotation.COUNTERCLOCKWISE_90;
+        return BlockUtil.getRotatedDirectionalBlock(state, axis, ccw).or(() -> Optional.of(state));
+    }
+
+    @Override
+    public void onRotated(BlockState newState, BlockState oldState, LevelAccessor world, BlockPos pos, Rotation rotation,
+                          Direction axis, @Nullable Vec3 hit) {
+        if (axis.getAxis() == newState.getValue(FACING).getAxis() && world.getBlockEntity(pos) instanceof ViewFinderBlockEntity tile) {
+            float angle = rotation.rotate(0, 4) * -90;
+            Vector3f currentDir = Vec3.directionFromRotation(tile.getPitch(), tile.getYaw()).toVector3f();
+            Quaternionf q = new Quaternionf().rotateAxis(angle * Mth.DEG_TO_RAD, axis.step());
+            currentDir.rotate(q);
+            Vec3 newDir = new Vec3(currentDir);
+            tile.setYaw(tile.selfAccess, (float) MthUtils.getYaw(newDir));
+            tile.setPitch(tile.selfAccess, (float) MthUtils.getPitch(newDir));
+            tile.setChanged();
+            tile.getLevel().sendBlockUpdated(pos, oldState, newState, 3);
+        }
     }
 }

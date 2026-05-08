@@ -20,6 +20,9 @@
     ],
     "jei_mod_plugin": [
       "net.mehvahdjukaar.vista.integration.jei.JEICompat"
+    ],
+    "modmenu": [
+      "net.mehvahdjukaar.vista.integration.modmenu.fabric.ModMenuCompat"
     ]
   },
   "mixins": [
@@ -30,13 +33,5 @@
     "fabric": "*",
     "minecraft": ">=${minecraft_min_version} <${minecraft_max_version}",
     "moonlight": ">=${moonlight_min_version}"
-  },
-  "conflicts": {
-    "supplementaries": "<1.20-2.8.0"
-  },
-  "breaks": {
-    "carpeted": "*",
-    "betterlily": "*",
-    "betterjukebox": "*"
   }
 }

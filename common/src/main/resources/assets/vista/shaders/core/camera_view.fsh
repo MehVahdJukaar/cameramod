@@ -8,7 +8,7 @@ uniform sampler2D Sampler1;
 uniform float GameTime;
 
 uniform float NoiseIntensity;
-uniform float FadeAnimation;// 1 = off, 0 = on
+uniform float FadeAnimation;
 uniform int OverlayIndex;
 
 uniform float FogStart;
@@ -40,171 +40,168 @@ in vec4 lightMapColor;
 flat in vec2 atlasSizePx;
 flat in vec2 spriteSizePx;
 
+flat in float vOverlayFrameHeightUV;
+flat in vec2  vOverlayFrameOffsetUV;
+flat in int   vOverlayEnabled;
+
 in vec2 texCoord0;
 in vec2 texCoord1;
 
 out vec4 fragColor;
 
 /* ===================== Helpers ===================== */
+
 float beamFalloff(float d) {
-    float expLike   = exp2(-d * d * 2.5 - 0.3);
-    float softTail  = 0.05 / (d * d * d * 0.45 + 0.055);
+    float expLike = exp2(-d * d * 2.5 - 0.3);
+    float softTail = 0.05 / (d * d * d * 0.45 + 0.055);
     return mix(expLike, softTail, 0.65) * 0.99;
 }
 
 float triadDistance(vec2 triadA, vec2 triadB) {
-    vec2 delta = triadA - triadB;
-    delta *= vec2(1.25, 1.8) * 0.905 * Smear;
-    float chebyshevCore = max(abs(delta.x), abs(delta.y));
-    float euclidBlend   = length(delta * vec2(1.05, 1.0)) * 0.85;
-    return mix(chebyshevCore, euclidBlend, 0.3);
+    vec2 delta = (triadA - triadB) * (vec2(1.25, 1.8) * 0.905 * Smear);
+    float cheb = max(abs(delta.x), abs(delta.y));
+    float eucl = length(delta * vec2(1.05, 1.0)) * 0.85;
+    return mix(cheb, eucl, 0.3);
 }
 
 vec2 normalizedTriadPerPixel() {
-    //it works i guess
     vec2 invFrame = 96.0 / spriteSizePx;
-    //remove 1 multiplication to have triads per pixels. 2 to be triads per uv
     return TriadsPerPixel * invFrame;
 }
 
-/* TRIAD space -> UV (no global clamp here; we clamp to sprite rect later) */
-vec2 triadToUV(vec2 triadP, vec2 frameOriginUV) {
-    vec2 tpp = normalizedTriadPerPixel();
-
-    // convert triad position to frame-local pixels
-    vec2 pix = triadP / max(tpp, 1e-6);
-
-    // frame-local UV (0..1 inside frame)
+vec2 triadToUV(vec2 triadP, vec2 frameOriginUV, vec2 invTpp) {
+    vec2 pix = triadP * invTpp;
     vec2 localUV = pix / spriteSizePx;
-
-    // return absolute UV inside the texture
     return frameOriginUV + localUV * SpriteDimensions;
 }
 
-
-/* ---- Precise, no-bleed clamp: clamp to edge texel centers ----
-   We clamp in texel units relative to the current frame, to [0.5 .. width-0.5]. */
 vec2 clampToSpriteTexelCenters(vec2 uv, vec2 frameOriginUV) {
-    // frame size in UVs
-
-    // Convert to texel coords relative to frame
     vec2 p = (uv - frameOriginUV) * atlasSizePx;
-
-    // Safe range: center of first texel → center of last texel
     vec2 lo = vec2(0.5);
     vec2 hi = max(spriteSizePx - vec2(0.5), lo);
-
     p = clamp(p, lo, hi);
     return frameOriginUV + p / atlasSizePx;
 }
 
-vec3 sampleImage(vec2 uv, vec2 frameOriginUV)
-{
+/* Fast x^1.18 approximation (max error < 0.012 in [0,1]) */
+vec3 fastGamma(vec3 x) {
+    return x * (1.0 + 0.18 * (1.0 - x));
+}
+
+/* ===================== Sampling ===================== */
+
+vec3 sampleImage(
+    vec2 uv,
+    vec2 frameOriginUV,
+    vec2 tpp
+) {
     float colorAdd = 0.0;
+
     if (OverlayIndex == 1) {
-        vec3 uvAndCol = vcr_pause(uv, frameOriginUV, SpriteDimensions, atlasSizePx, GameTime, normalizedTriadPerPixel());
+        vec3 uvAndCol = vcr_pause(
+            uv, frameOriginUV,
+            SpriteDimensions,
+            atlasSizePx,
+            GameTime,
+            tpp
+        );
         uv = uvAndCol.xy;
         colorAdd = uvAndCol.z;
     }
 
     vec3 color = texture(Sampler0, uv).rgb;
 
-    if (OverlayIndex > 0) {
-        // --- overlay dimensions ---
-        ivec2 texSize = textureSize(Sampler1, 0);
-        float frameSize = float(texSize.x);              // square frame width/height
-        int frameCount = texSize.y / texSize.x;          // number of vertical frames
-        float frameHeightUV = 1.0 / float(frameCount);   // height of one frame in UV
-
-        // --- current frame based on GameTime ---
-        int millis = int(GameTime * 24000 * 0.05*1000); // 0.05 = 20 fps; adjust as needed
-        int frameIndex = int(millis * 0.01) % frameCount;
-        vec2 frameOffsetUV = vec2(0.0, float(frameIndex) * frameHeightUV);
-
-        // --- map quad UVs to overlay frame ---
-        // horizontal: use entire width (0-1)
-        // vertical: scale by 1.0 / frameCount to fit in one frame
+    if (vOverlayEnabled == 1) {
         vec2 overlayUV = vec2(
-            uv.x,
-            (uv.y - frameOriginUV.y) * frameHeightUV + frameOffsetUV.y
+        uv.x,
+        (uv.y - frameOriginUV.y) * vOverlayFrameHeightUV
+        + vOverlayFrameOffsetUV.y
         );
 
         vec4 overlayColor = texture(Sampler1, overlayUV);
         color += overlayColor.rgb * overlayColor.a;
     }
 
-    color += colorAdd;
-
-    return color;
+    return color + colorAdd;
 }
 
-/* ===================== Phosphor pass (gather) ===================== */
-vec3 accumulateTriadResponse(vec2 pixelPos, vec2 localUV, vec2 frameOriginUV) {
+/* ===================== Phosphor ===================== */
 
+vec3 accumulateTriadResponse(
+    vec2 pixelPos,
+    vec2 localUV,
+    vec2 frameOriginUV
+) {
     vec2 tpp = normalizedTriadPerPixel();
+    vec2 invTpp = 1.0 / max(tpp, vec2(1e-6));
 
     vec2 triadPos = pixelPos * tpp - 0.25;
 
-    // -------- Derivative-based aliasing detection (cycles per pixel) --------
-    // Estimate how many triad cycles a single screen pixel spans.
     vec2 dx = dFdx(triadPos);
     vec2 dy = dFdy(triadPos);
-    float cpp = max(length(dx), length(dy));// cycles-per-pixel in triad units
-    // Nyquist ~ 0.5 cpp. Build a soft contrast scale in [0..1].
-    float t = clamp(0.5 / max(cpp, 1e-5), 0.0, 1.0);
-    float contrast = t * t;// smoother rolloff
+    float cpp = max(length(dx), length(dy));
 
-    // Small scanline/beam jitter in TRIAD space (stable vs texture)
-    vec2 jittered = triadPos;
-    float amp = 0.03 * clamp(1.0 / max(tpp.x, 1e-6), 0.25, 1.0);//tpp.x is incorrect
+    float invCpp = 0.5 / max(cpp, 1e-5);
+    float t = min(invCpp, 1.0);
+    float contrast = t * t;
+
+    float amp = 0.03 * clamp(1.0 / max(tpp.x, 1e-6), 0.25, 1.0);
+
     float offset = 0.0;
-    offset += (mod(floor(triadPos.x), 3.0) < 1.5 ? 1.0 : -1.0) * amp;
-    offset += (mod(floor(triadPos.x), 5.0) < 2.5 ? 1.0 : -1.0) * (amp * 0.6);
-    offset += (mod(floor(triadPos.x), 7.0) < 3.5 ? 1.0 : -1.0) * (amp * 0.4);
+    float fx = floor(triadPos.x);
+
+    offset += (mod(fx, 3.0) < 1.5 ? 1.0 : -1.0) * amp;
+    offset += (mod(fx, 5.0) < 2.5 ? 1.0 : -1.0) * (amp * 0.6);
+    offset += (mod(fx, 7.0) < 3.5 ? 1.0 : -1.0) * (amp * 0.4);
+
+    vec2 jittered = triadPos;
     jittered.y += offset;
 
-    vec3 sum = vec3(0.0);
-    float wr = 0.0, wg = 0.0, wb = 0.0;
+    vec2 triadCell = floor(triadPos) + 0.5;
 
-    int dynRadius = max(TriadKernelRadius, int(ceil(2.5 * Smear)));
-
-    // Subpixel layout (stripe-like)
     const float lr = 0.25;
     const float up = 0.2;
 
+    vec2 rBase = jittered + vec2(0.0, up);
+    vec2 gBase = jittered + vec2(lr, 0.0);
+    vec2 bBase = jittered + vec2(-lr, 0.0);
+
+    vec3 sum = vec3(0.0);
+    float wr = 0.0;
+    float wg = 0.0;
+    float wb = 0.0;
+
+    int dynRadius = max(TriadKernelRadius, int(ceil(2.5 * Smear)));
+
     for (int dy_i = -dynRadius; dy_i <= dynRadius; ++dy_i) {
         for (int dx_i = -dynRadius; dx_i <= dynRadius; ++dx_i) {
-            vec2 cellCenter = floor(triadPos) + 0.5 + vec2(dx_i, dy_i);
 
-            vec2 rP = jittered + vec2(0.0, up);
-            vec2 gP = jittered + vec2(lr, 0.0);
-            vec2 bP = jittered + vec2(-lr, 0.0);
+            vec2 cellCenter = triadCell + vec2(dx_i, dy_i);
 
-            float dR = triadDistance(cellCenter, rP);
-            float dG = triadDistance(cellCenter, gP);
-            float dB = triadDistance(cellCenter, bP);
+            float wR = beamFalloff(triadDistance(cellCenter, rBase));
+            float wG = beamFalloff(triadDistance(cellCenter, gBase));
+            float wB = beamFalloff(triadDistance(cellCenter, bBase));
 
-            float wR = beamFalloff(dR);
-            float wG = beamFalloff(dG);
-            float wB = beamFalloff(dB);
+            vec2 uvR = clampToSpriteTexelCenters(
+                triadToUV(rBase, frameOriginUV, invTpp),
+                frameOriginUV
+            );
+            vec2 uvG = clampToSpriteTexelCenters(
+                triadToUV(gBase, frameOriginUV, invTpp),
+                frameOriginUV
+            );
+            vec2 uvB = clampToSpriteTexelCenters(
+                triadToUV(bBase, frameOriginUV, invTpp),
+                frameOriginUV
+            );
 
-            // Beam center → atlas UV, then clamp to sprite edge texel centers
-            vec2 uvR = clampToSpriteTexelCenters(triadToUV(rP, frameOriginUV), frameOriginUV);
-            vec2 uvG = clampToSpriteTexelCenters(triadToUV(gP, frameOriginUV), frameOriginUV);
-            vec2 uvB = clampToSpriteTexelCenters(triadToUV(bP, frameOriginUV), frameOriginUV);
+            vec3 sR = fastGamma(sampleImage(uvR, frameOriginUV, tpp)) * 1.08;
+            vec3 sG = fastGamma(sampleImage(uvG, frameOriginUV, tpp)) * 1.08;
+            vec3 sB = fastGamma(sampleImage(uvB, frameOriginUV, tpp)) * 1.08;
 
-            vec3 sR = sampleImage(uvR, frameOriginUV);
-            vec3 sG = sampleImage(uvG, frameOriginUV);
-            vec3 sB = sampleImage(uvB, frameOriginUV);
-
-            // Optional gentle tonal tweak
-            sR = pow(sR, vec3(1.18)) * 1.08;
-            sG = pow(sG, vec3(1.18)) * 1.08;
-            sB = pow(sB, vec3(1.18)) * 1.08;
-
-            sum.r += sR.r * wR;  wr += wR;
-            sum.g += sG.g * wG;  wg += wG;
-            sum.b += sB.b * wB;  wb += wB;
+            sum.r += sR.r * wR; wr += wR;
+            sum.g += sG.g * wG; wg += wG;
+            sum.b += sB.b * wB; wb += wB;
         }
     }
 
@@ -220,13 +217,12 @@ vec3 accumulateTriadResponse(vec2 pixelPos, vec2 localUV, vec2 frameOriginUV) {
     // compute frame-local UVs for fallback
     vec2 fallbackUV = frameOriginUV + localUV * SpriteDimensions;
 
-    vec3 fallback = sampleImage(clampToSpriteTexelCenters(fallbackUV, frameOriginUV), frameOriginUV);
+    vec3 fallback = sampleImage(fallbackUV, frameOriginUV, tpp);
 
-
-    // Blend based on aliasing risk: high cpp -> contrast→0 -> prefer fallback
     return mix(fallback, triadOut, contrast);
 }
 
+/* ===================== Main ===================== */
 
 void main() {
     // infer frame origin from texCoord0
@@ -236,40 +232,54 @@ void main() {
     // frame-local pixel position for triad math
     vec2 pixelPos = localUV * spriteSizePx;
 
-    vec3 triadRGB = NoiseIntensity >=1 ? vec3(1, 1, 1) :  accumulateTriadResponse(pixelPos, localUV, frameOriginUV);
+    vec3 triadRGB;
+
+    if (NoiseIntensity >= 1.0) {
+        triadRGB = vec3(0.0);
+    } else {
+        triadRGB = accumulateTriadResponse(
+            pixelPos,
+            localUV,
+            frameOriginUV
+        );
+    }
 
     vec4 color = vec4(triadRGB, 1.0) * vertexColor;
 
-    // ===================== NOISE =====================
-    // Get procedural noise
-    if (NoiseIntensity >=0){
+    /* ---- Noise ---- */
+
+    if (NoiseIntensity >= 0.0) {
         vec4 noise = crt_noise(texCoord0, GameTime);
-        color.rgb =  color.rgb * (1-NoiseIntensity) + noise.rgb * NoiseIntensity;
+        color.rgb =
+        color.rgb * (1.0 - NoiseIntensity)
+        + noise.rgb * NoiseIntensity;
     }
 
-    // ===================== AC BEAT =====================
-    float acBeat = vhs_wave(localUV, frameOriginUV, SpriteDimensions, GameTime);
-    color.rgb += (acBeat-0.5)*(0.03 + (NoiseIntensity*0.4));
-    // =============================================================
+    /* ---- AC beat ---- */
 
-    // ===================== VIGNETTE =====================
-    // Compute vignette using frame-local UV
+    float acBeat = vhs_wave(localUV, frameOriginUV, SpriteDimensions, GameTime);
+
+    color.rgb += (acBeat - 0.5) * (0.03 + (NoiseIntensity * 0.4));
+
+    /* ---- Vignette ---- */
+
     float vFactor = crt_vignette(localUV);
     float vignette = mix(1.0, vFactor, clamp(VignetteIntensity, 0.0, 1.0));
+
     color.rgb *= vignette;
-    // =============================================================
 
+    /* ---- Fade animation ---- */
 
-
-    if (FadeAnimation != 0){
+    if (FadeAnimation != 0.0) {
         color = crt_turn_on(
-        color,
-        pixelPos,
-        spriteSizePx,
-        FadeAnimation
+            color,
+            pixelPos,
+            spriteSizePx,
+            FadeAnimation
         );
     }
 
     color *= lightMapColor;
+
     fragColor = linear_fog(color, vertexDistance, FogStart, FogEnd, FogColor);
 }

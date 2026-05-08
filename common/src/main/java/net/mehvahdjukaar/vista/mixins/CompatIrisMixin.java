@@ -20,7 +20,10 @@ public class CompatIrisMixin  {
     @Nullable
     private WorldRenderingPipeline pipeline;
 
-    @Inject(method = "preparePipeline", remap = false, at = @At("HEAD"), cancellable = true)
+    @Inject(method = "preparePipeline",
+            remap = false,
+            require = 0,
+            at = @At("HEAD"), cancellable = true)
     private void vista$preparePipeline(NamespacedId currentDimension,
                                        CallbackInfoReturnable<WorldRenderingPipeline> cir) {
         var modified = IrisCompat.getModifiedPipeline();

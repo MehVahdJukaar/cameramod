@@ -28,31 +28,6 @@ public class VistaRenderTypes extends RenderType {
     private static final ShaderStateShard CAMERA_SHADER_STATE = new ShaderStateShard(VistaModClient.CAMERA_VIEW_SHADER);
     private static final ShaderStateShard STATIC_SHADER_STATE = new ShaderStateShard(VistaModClient.STATIC_SHADER);
 
-    protected static final TransparencyStateShard DIFFERENCE_BLENDING = new TransparencyStateShard("additive_transparency", () -> {
-        RenderSystem.enableBlend();
-        RenderSystem.blendFuncSeparate(
-                GlStateManager.SourceFactor.ONE_MINUS_DST_COLOR,
-                GlStateManager.DestFactor.ONE_MINUS_SRC_COLOR,
-                GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
-    }, () -> {
-        RenderSystem.disableBlend();
-        RenderSystem.defaultBlendFunc();
-    });
-
-
-    public static final Function<ResourceLocation, RenderType> ENTITY_DIFFERENCE_EMISSIVE = Util.memoize((resourceLocation) -> {
-        CompositeState compositeState = RenderType.CompositeState.builder()
-                .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_EMISSIVE_SHADER)
-                .setTextureState(new RenderStateShard.TextureStateShard(resourceLocation, false, false))
-                .setTransparencyState(DIFFERENCE_BLENDING)
-                .setCullState(NO_CULL)
-                .setWriteMaskState(COLOR_WRITE)
-                .setOverlayState(OVERLAY)
-                .createCompositeState(false);
-        return create("entity_difference_emissive", DefaultVertexFormat.NEW_ENTITY,
-                VertexFormat.Mode.QUADS, 1536, true, true, compositeState);
-    });
-
     private record CrtKey(ResourceLocation texture, float frameW, float frameH, int scale,
                           IntAnimationState turnOnAnim, IntAnimationState staticAnim,
                           CrtOverlay overlay) {
@@ -66,14 +41,6 @@ public class VistaRenderTypes extends RenderType {
         return CRT_RENDER_TYPE.apply(key);
     }
 
-    public static final LayeringStateShard CUSTOM_POLYGON_OFFSET_LAYERING = new LayeringStateShard(
-            "vista:polygon_offset_layering", () -> {
-        RenderSystem.polygonOffset(-1.0F, -10.0F);
-        RenderSystem.enablePolygonOffset();
-    }, () -> {
-        RenderSystem.polygonOffset(0.0F, 0.0F);
-        RenderSystem.disablePolygonOffset();
-    });
     private static final Function<CrtKey, RenderType> CRT_RENDER_TYPE =
             Util.memoize(k -> {
                 var textureStateBuilder = MultiTextureStateShard.builder()
@@ -85,7 +52,6 @@ public class VistaRenderTypes extends RenderType {
                         .setShaderState(CAMERA_SHADER_STATE)
                         .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
                         .setLightmapState(LIGHTMAP)
-                        .setCullState(NO_CULL)
                         .setTextureState(textureStateBuilder.build())
                         .setTexturingState(new TexturingStateShard("set_texel_size",
                                 () -> setCameraDrawUniforms(k),
@@ -108,8 +74,7 @@ public class VistaRenderTypes extends RenderType {
         //shader.safeGetUniform("Time").set(myTime);
         float scale = key.scale / 12f;
         double v = ClientConfigs.PIXEL_DENSITY.get() * scale;
-        setFloat(shader, "TriadsPerPixel",
-                (float) v);
+        setFloat(shader, "TriadsPerPixel", (float) v);
         setFloat(shader, "Smear", 1f);
         setFloat(shader, "EnableEnergyNormalize", 0.0f);
 

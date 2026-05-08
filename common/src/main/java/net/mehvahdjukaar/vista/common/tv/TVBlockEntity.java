@@ -25,7 +25,9 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec2;
@@ -55,6 +57,19 @@ public class TVBlockEntity extends ItemDisplayTile {
 
     public TVBlockEntity(BlockPos pos, BlockState state) {
         super(VistaMod.TV_TILE.get(), pos, state);
+    }
+
+    @Nullable
+    public static TVBlockEntity create(BlockPos pos, BlockState state) {
+        if (((TVBlock)state.getBlock()).shouldHaveBlockEntity(state)) {
+            return new TVBlockEntity(pos, state);
+        }
+        return null;
+    }
+
+    @Override
+    public void setRemoved() {
+        super.setRemoved();
     }
 
     @Override
@@ -157,9 +172,7 @@ public class TVBlockEntity extends ItemDisplayTile {
             level.playSound(player, worldPosition, VistaMod.CASSETTE_EJECT_SOUND.get(),
                     SoundSource.BLOCKS, 1, 1);
             //pop current
-            Vec3 vec3 = hit.getLocation().add(new Vec3(hit.getDirection().step().mul(0.05f)));
-
-            vec3 = vec3.offsetRandom(this.level.random, 0.7F);
+            Vec3 vec3 = hit.getLocation().add(new Vec3(hit.getDirection().step().mul(0.2f)));
 
             ItemStack itemStack2 = current.copy();
             ItemEntity itemEntity = new ItemEntity(this.level, vec3.x(), vec3.y(), vec3.z(), itemStack2);

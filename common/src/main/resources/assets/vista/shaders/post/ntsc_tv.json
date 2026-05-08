@@ -1,0 +1,57 @@
+{
+    "targets": [
+        "swap",
+        "swap2",
+        "previous"
+    ],
+    "passes": [
+        {
+            "name": "ntsc_encode",
+            "intarget": "minecraft:main",
+            "outtarget": "swap"
+        },
+        {
+            "name": "ntsc_decode",
+            "intarget": "swap",
+            "outtarget": "swap2",
+            "auxtargets": [
+                {
+                    "name": "BaseSampler",
+                    "id": "minecraft:main"
+                }
+            ]
+        },
+        {
+            "name": "deconverge",
+            "intarget": "swap2",
+            "outtarget": "minecraft:main"
+        },
+        {
+            "name": "scan_pincushion",
+            "intarget": "minecraft:main",
+            "outtarget": "swap"
+        },
+        {
+            "name": "phosphor",
+            "intarget": "swap",
+            "outtarget": "minecraft:main",
+            "auxtargets": [
+                {
+                    "name": "PrevSampler",
+                    "id": "previous"
+                }
+            ],
+            "uniforms": [
+                {
+                    "name": "Phosphor",
+                    "values": [ 0.4, 0.4, 0.4 ]
+                }
+            ]
+        },
+        {
+            "name": "blit",
+            "intarget": "minecraft:main",
+            "outtarget": "previous"
+        }
+    ]
+}

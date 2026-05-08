@@ -10,6 +10,7 @@ import net.mehvahdjukaar.vista.common.tv.connection.RectSelection;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -76,7 +77,13 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
 
         BlockEntity be = level.getBlockEntity(currentPos);
         if (be instanceof TVBlockEntity tv) {
-            return tv;
+            //Not needed
+            if (this.shouldHaveBlockEntity(state)) {
+                return tv;
+            } else {
+                int err0r = 1;
+            }
+
         }
 
         while (type.isConnected(Direction.DOWN, facing)) {
@@ -188,7 +195,13 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
-        if (!state.is(newState.getBlock())) this.shrinkConnection(state, level, pos);
+        if (!state.is(newState.getBlock())) {
+            this.shrinkConnection(state, level, pos);
+            if (level.getBlockEntity(pos) instanceof TVBlockEntity tile) {
+                Containers.dropContents(level, pos, tile);
+                level.updateNeighbourForOutputSignal(pos, this);
+            }
+        }
         super.onRemove(state, level, pos, newState, movedByPiston);
     }
 
@@ -209,6 +222,7 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
     }
 
     private void shrinkConnection(BlockState tvState, Level level, BlockPos pos) {
+        if (tvState.getValue(CONNECTION) == TVType.SINGLE) return;
         int maxSize = CommonConfigs.MAX_CONNECTED_TV_SIZE.get();
         if (maxSize <= 1) return;
         TVGridAccess gridAccess = new TVGridAccess(level, pos, tvState);

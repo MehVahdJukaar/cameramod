@@ -109,7 +109,9 @@ dependencies {
    //     transitive = false
   //  }
      modImplementation "curse.maven:selene-499980:7664875"
-     modImplementation "curse.maven:embeddium-908741:5681725"
+     //modImplementation "curse.maven:oculus-581495:6020952"
+  //   modImplementation "curse.maven:embeddium-908741:5681725"
+   //  modImplementation "curse.maven:supplementaries-412082:7431873"
 
     //modImplementation("cc.tweaked-cobalt:cobalt:0.93")
 
