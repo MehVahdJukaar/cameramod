@@ -44,12 +44,12 @@ modUrl = "${mod_homepage}"
 [[dependencies.${ mod_id }]]
     modId = "watermedia"
     type = "optional"
-    versionRange = "[,3.0.0)"
+    versionRange = "*"
     ordering = "NONE"
     side = "CLIENT"
 
 [[dependencies.${ mod_id }]]
-    modId = "vista-aeronautics-fix"
+    modId = "vistafix"
     type = "incompatible"
     versionRange = "(,1.0.1]"
     ordering = "NONE"
