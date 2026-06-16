@@ -28,3 +28,9 @@ classes/
 /forge/build/
 /build/
 /.junie/AGENTS.md
+
+# AI agent / assistant config (local only, not on GitHub)
+.claude/
+.cursor/
+.junie/
+CLAUDE.md
