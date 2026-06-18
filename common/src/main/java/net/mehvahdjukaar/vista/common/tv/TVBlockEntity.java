@@ -263,12 +263,16 @@ public class TVBlockEntity extends ItemDisplayTile {
                 if (ClientConfigs.TURN_OFF_EFFECTS.get()) tv.fadeAnimation.increment();
                 if (consumeEnergy && !tv.hasEnergy()) return;
                 float duration = tv.videoSource.getVideoDuration();
-                if (++tv.soundLoopTicks >= (duration)) {
-                    tv.soundLoopTicks = 0;
+                // Play on the first tick (soundLoopTicks == 0) so the sound starts immediately
+                // when a cassette is inserted, then repeat every `duration` ticks.
+                if (tv.soundLoopTicks == 0) {
                     SoundEvent sound = tv.videoSource.getVideoSound();
                     if (sound != null) {
                         world.playLocalSound(pos, sound, SoundSource.BLOCKS, 1, 1.0f, false);
                     }
+                }
+                if (++tv.soundLoopTicks >= (duration)) {
+                    tv.soundLoopTicks = 0;
                 }
             } else {
                 tv.soundLoopTicks = 0;

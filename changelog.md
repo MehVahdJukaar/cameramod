@@ -1,1 +1,1 @@
-updated dh compat
+improved deps handlingjust 
