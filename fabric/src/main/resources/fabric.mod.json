@@ -39,6 +39,7 @@
     "supplementaries": "<1.20-2.8.0"
   },
   "breaks": {
-    "vistafix": "<=1.0.1"
+    "vistafix": "<=1.0.1",
+    "distanthorizons": "<3.1.2-b"
   }
 }

@@ -18,6 +18,7 @@ import net.neoforged.neoforge.energy.EnergyStorage;
 import net.neoforged.neoforge.energy.IEnergyStorage;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.items.IItemHandler;
 import org.jetbrains.annotations.Nullable;
@@ -68,6 +69,11 @@ public class VistaForge {
     public void onServerPlayerTick(PlayerTickEvent.Post event) {
         Player entity = event.getEntity();
         if (entity instanceof ServerPlayer sp) VistaMod.onServerPlayerTick(sp);
+    }
+
+    @SubscribeEvent
+    public void onServerStopping(ServerStoppingEvent event) {
+        ServerCameraChunkManager.clearAll(event.getServer());
     }
 
 }

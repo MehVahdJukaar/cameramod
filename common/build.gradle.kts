@@ -30,7 +30,7 @@ dependencies {
 
 
     modCompileOnly("curse.maven:exposure-871755:7862664")
-    modCompileOnly("curse.maven:distant-horizons-508933:8037637")
+    modCompileOnly("curse.maven:distant-horizons-508933:8287411")
     modCompileOnly("maven.modrinth:iris:1.8.8+1.21.1-neoforge")
 
     modCompileOnly("curse.maven:cc-tweaked-282001:5714512")

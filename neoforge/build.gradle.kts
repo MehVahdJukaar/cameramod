@@ -31,7 +31,7 @@ dependencies {
     modCompileOnly("curse.maven:jei-238222:7420587")
     modCompileOnly("curse.maven:sodium-394468:6382649")
     modCompileOnly("curse.maven:irisshaders-455508:6213635")
-    modCompileOnly("curse.maven:distant-horizons-508933:8037637")
+    modCompileOnly("curse.maven:distant-horizons-508933:8287411")
     modCompileOnly("maven.modrinth:iris:1.8.8+1.21.1-neoforge")
 
     modCompileOnly("curse.maven:geckolib-388172:7707149")

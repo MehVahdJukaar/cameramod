@@ -49,6 +49,13 @@ modUrl = "${mod_homepage}"
     side = "CLIENT"
 
 [[dependencies.${ mod_id }]]
+    modId = "distanthorizons"
+    type = "optional"
+    versionRange = "[3.1.2-b,)"
+    ordering = "NONE"
+    side = "CLIENT"
+
+[[dependencies.${ mod_id }]]
     modId = "vistafix"
     type = "incompatible"
     versionRange = "(,1.0.1]"

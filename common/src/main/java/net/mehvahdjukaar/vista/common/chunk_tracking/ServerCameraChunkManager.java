@@ -13,6 +13,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.Position;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ChunkPos;
@@ -232,6 +233,13 @@ public class ServerCameraChunkManager {
             GlobalPos dest = broadCastLoc.getChunkSendPosition();
             if (dest == null) continue;
 
+            // If the ViewFinder sits inside a Sable sublevel (a "ship" placed in the world), its
+            // stored position is the plot-grid storage coordinate. Force-loading/sending those plot
+            // chunks fights Sable's plot lifecycle (shutdown hangs, chunks not loading). Resolve the
+            // real-world chunk anchor where the sublevel logically is; Sable manages the sublevel's
+            // own chunks itself.
+            dest = normalizeGlobalPos(level, dest);
+
             //TODO: send chunks even if outside of current dim.
             if (dest.dimension().equals(level.dimension())) {
                 // Skip ViewFinders already within this zone (the caller already covers them)
@@ -255,6 +263,27 @@ public class ServerCameraChunkManager {
 
     private static @NotNull boolean isInRecursiveDistance(ChunkPos centerChunk, int cx, int cz) {
         return centerChunk.getChessboardDistance(cx, cz) <= RECURSIVE_SCAN_RADIUS;
+    }
+
+    /**
+     * Resolves the real-world chunk anchor for a ViewFinder destination.
+     *
+     * <p>Sublevels (movable "ships") store their blocks at plot-grid coordinates; a ViewFinder
+     * inside one resolves to where the ship is logically placed in the world. We project out of the
+     * sublevel (a no-op outside one) and snap to chunk granularity (Y dropped) so sub-chunk movement
+     * doesn't churn the desired-set or re-send packets. Everything downstream operates on
+     * {@link ChunkPos}, so this loses nothing.
+     */
+    private static GlobalPos normalizeGlobalPos(ServerLevel playerLevel, GlobalPos dest) {
+        // Project against the ViewFinder's OWN level (it may be cross-dimension).
+        ServerLevel destLevel = dest.dimension().equals(playerLevel.dimension())
+                ? playerLevel
+                : playerLevel.getServer().getLevel(dest.dimension());
+        if (destLevel == null) return dest;
+        Vec3 world = SableCompanion.INSTANCE.projectOutOfSubLevel(
+                destLevel, (Position) Vec3.atLowerCornerOf(dest.pos()));
+        ChunkPos chunk = new ChunkPos(BlockPos.containing(world));
+        return GlobalPos.of(dest.dimension(), chunk.getWorldPosition());
     }
 
     // ── Force-loading ─────────────────────────────────────────────────────────
@@ -291,9 +320,20 @@ public class ServerCameraChunkManager {
     }
 
     /**
-     * Clear all state on server stop.
+     * Release every outstanding force-load ticket and clear all state on server stop.
+     *
+     * <p>{@code setChunkForced} writes to the level's persistent {@code ForcedChunksSavedData}, so
+     * tickets still held when the server stops would be saved to disk and reloaded orphaned next
+     * session (the in-memory ref-counts are gone, so nothing would ever release them). We unforce
+     * them here before the maps — which are {@code static} and would otherwise leak across worlds in
+     * a single client session — are cleared.
      */
-    public static void clearAll() {
+    public static void clearAll(MinecraftServer server) {
+        int chunkRadius = CommonConfigs.SEND_CHUNKS_VIEWED_BY_VIEW_FINDER.get();
+        for (GlobalPos vf : linkedViewFindersTrackedByPlayers.keySet()) {
+            ServerLevel vfLevel = server.getLevel(vf.dimension());
+            if (vfLevel != null) setChunksForceLoaded(vfLevel, vf.pos(), chunkRadius, false);
+        }
         linkedViewFindersTrackedByPlayers.clear();
         loadedServerTVs.clear();
     }

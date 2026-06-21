@@ -35,7 +35,7 @@ dependencies {
 
     modImplementation("curse.maven:irisshaders-455508:6213635")
     modCompileOnly("curse.maven:exposure-871755:7862665")
-    modCompileOnly("curse.maven:distant-horizons-508933:8037637")
+    modCompileOnly("curse.maven:distant-horizons-508933:8287411")
     modImplementation("curse.maven:sodium-394468:6382649")
     modCompileOnly("curse.maven:cc-tweaked-282001:5714511")
     modCompileOnly("curse.maven:jei-238222:7420583")
