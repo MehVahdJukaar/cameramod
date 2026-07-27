@@ -3,7 +3,7 @@ package net.mehvahdjukaar.vista.integration.exposure;
 import io.github.mortuusars.exposure.world.item.AlbumItem;
 import io.github.mortuusars.exposure.world.item.PhotographItem;
 import io.github.mortuusars.exposure.world.item.StackedPhotographsItem;
-import io.github.mortuusars.exposure.world.item.util.ItemAndStack;
+import io.github.mortuusars.exposure.world.item.component.StackedPhotographs;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.vista.common.picture_tape.PictureTapeEntries;
 import net.minecraft.world.item.Item;
@@ -47,7 +47,7 @@ public class ExposureCompat {
         while (taken.size() < maxCount && !stackedItem.getPhotographs(copy).isEmpty()) {
             taken.add(stackedItem.removeTopPhotograph(copy).getItemStack());
         }
-        List<ItemAndStack<PhotographItem>> left = stackedItem.getPhotographs(copy);
+        StackedPhotographs left = stackedItem.getPhotographs(copy);
         // exposure only keeps the stacked item around while it holds more than one photograph
         ItemStack remainder = switch (left.size()) {
             case 0 -> ItemStack.EMPTY;

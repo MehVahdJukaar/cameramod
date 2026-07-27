@@ -10,8 +10,8 @@ import io.github.mortuusars.exposure.world.camera.frame.Frame;
 import io.github.mortuusars.exposure.world.item.AlbumItem;
 import io.github.mortuusars.exposure.world.item.PhotographItem;
 import io.github.mortuusars.exposure.world.item.StackedPhotographsItem;
+import io.github.mortuusars.exposure.world.item.component.StackedPhotographs;
 import io.github.mortuusars.exposure.world.item.component.album.AlbumPage;
-import io.github.mortuusars.exposure.world.item.util.ItemAndStack;
 import net.mehvahdjukaar.moonlight.api.misc.TField;
 import net.mehvahdjukaar.moonlight.api.misc.TMethod;
 import net.mehvahdjukaar.vista.client.ui.TapeEntryRenderer;
@@ -21,8 +21,6 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.List;
 
 public class ExposurePictureRenderer implements TapeEntryRenderer {
 
@@ -67,8 +65,8 @@ public class ExposurePictureRenderer implements TapeEntryRenderer {
     private static ItemStack resolvePhoto(ItemStack stack) {
         if (stack.getItem() instanceof PhotographItem) return stack;
         if (stack.getItem() instanceof StackedPhotographsItem stacked) {
-            List<ItemAndStack<PhotographItem>> photos = stacked.getPhotographs(stack);
-            return photos.isEmpty() ? ItemStack.EMPTY : photos.getFirst().getItemStack();
+            StackedPhotographs photos = stacked.getPhotographs(stack);
+            return photos.isEmpty() ? ItemStack.EMPTY : photos.getItemUnsafe(0);
         }
         if (stack.getItem() instanceof AlbumItem album) {
             return firstAlbumPhoto(album, stack);
