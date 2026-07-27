@@ -7,7 +7,7 @@ import net.irisshaders.iris.pipeline.VanillaRenderingPipeline;
 import net.irisshaders.iris.pipeline.WorldRenderingPipeline;
 import net.irisshaders.iris.shadows.ShadowRenderer;
 import net.irisshaders.iris.uniforms.CapturedRenderingState;
-import net.mehvahdjukaar.candlelight.api.PlatformImpl;
+import net.irisshaders.iris.vertices.ImmediateState;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigBuilder;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.minecraft.client.Minecraft;
@@ -45,6 +45,17 @@ public class IrisCompat {
 
     public static boolean isFeedRendering() {
         return VISTA_RENDERING.get();
+    }
+
+    // ImmediateState.isRenderingLevel is a bare static that Iris flips true/false at the head and
+    // return of LevelRenderer#renderLevel. Nesting a second renderLevel inside the main one leaves
+    // it stuck false — see the call site in VistaLevelRenderer#renderLevel.
+    public static boolean isIrisRenderingLevel() {
+        return ImmediateState.isRenderingLevel;
+    }
+
+    public static void setIrisRenderingLevel(boolean renderingLevel) {
+        ImmediateState.isRenderingLevel = renderingLevel;
     }
 
     public static int getFeedFrameCounter() {
@@ -152,7 +163,10 @@ public class IrisCompat {
             try {
                 ShadowRenderer.ACTIVE = false;
                 VISTA_RENDERING.set(true);
-                advanceFeedClocks();
+                // Only the outermost pass counts as one feed frame. Recursive mirrors nest through
+                // here too, and bumping the (pipeline-global) jitter clock once per nesting level
+                // would put us right back to the skipping-samples case this shim exists to avoid.
+                if (!oldVistaRendering) advanceFeedClocks();
                 renderTask.run();
             } finally {
                 ShadowRenderer.ACTIVE = oldShadowActive;

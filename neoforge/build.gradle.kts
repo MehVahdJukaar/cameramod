@@ -35,7 +35,7 @@ dependencies {
     modCompileOnly("curse.maven:cc-tweaked-282001:5714512")
     modCompileOnly("curse.maven:jei-238222:7420587")
     modRuntimeOnly("maven.modrinth:jade:15.10.5+neoforge")
-    modCompileOnly("curse.maven:sodium-394468:6382649")
+    modImplementation("curse.maven:sodium-394468:8382328")
     modCompileOnly("curse.maven:irisshaders-455508:6213635")
     modCompileOnly("curse.maven:distant-horizons-508933:8287411")
     modCompileOnly("maven.modrinth:iris:1.8.8+1.21.1-neoforge")
@@ -53,7 +53,7 @@ dependencies {
     modCompileOnly("curse.maven:simple-clouds-1121215:6928979")
 
     modImplementation("foundry.veil:veil-neoforge-1.21.1:4.1.2")
-    modImplementation("curse.maven:fsable-1312371:8007005")
+    modImplementation("curse.maven:fsable-1312371:8263584")
     // Create contraption view-finder integration (platform impl: CreatePlatStuffImpl)
     modCompileOnly("curse.maven:create-328085:7963363")
     //modCompileOnly("curse.maven:create-aeronautics-676721:8003941")

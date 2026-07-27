@@ -271,6 +271,19 @@ public class VistaLevelRenderer {
             return;
         }
 
+        // Every off-screen level render goes through here — TV feeds, mirrors, and their nested
+        // recursions alike — so the mod compat wrappers belong on this call and nowhere else.
+        // Each one saves and restores whatever global it stomps, so nesting is fine.
+        CompatHandler.decorateRenderer(() -> doRender(mc, text, renderingToken, cameraSetup, fov,
+                applyPostChain, customProjection, bfsStartOverride, renderDistanceOverride)).run();
+    }
+
+    private static void doRender(Minecraft mc, PerspectiveTexture text, Object renderingToken,
+                                 SceneCameraSetup cameraSetup, float fov,
+                                 boolean applyPostChain,
+                                 @Nullable Matrix4f customProjection,
+                                 @Nullable Vec3 bfsStartOverride,
+                                 @Nullable Integer renderDistanceOverride) {
         int depth = RENDER_STACK.size();
         boolean isOutermost = depth == 0;
 
@@ -436,8 +449,19 @@ public class VistaLevelRenderer {
         gr.resetProjectionMatrix(projMatrix);
         lr.prepareCullFrustum(cameraPos, cameraMatrix, projMatrix);
 
-        lr.renderLevel(deltaTracker, false, camera, gr,
-                gr.lightTexture(), cameraMatrix, projMatrix);
+        // Iris tracks "are we inside LevelRenderer#renderLevel" with a plain static boolean that it
+        // sets on HEAD and clears on RETURN — no nesting counter. Our nested call therefore leaves it
+        // false for the whole remainder of the main pass, and everything Iris gates on it silently
+        // goes down the not-rendering-the-level path: new BufferBuilders skip Iris's extended vertex
+        // format, and block entities stop getting wrapped with the block-entity render state (so they
+        // lose their gbuffers_block program and just vanish). Save and restore it around the call.
+        boolean irisWasRenderingLevel = CompatHandler.IRIS && IrisCompat.isIrisRenderingLevel();
+        try {
+            lr.renderLevel(deltaTracker, false, camera, gr,
+                    gr.lightTexture(), cameraMatrix, projMatrix);
+        } finally {
+            if (irisWasRenderingLevel) IrisCompat.setIrisRenderingLevel(true);
+        }
 
         Matrix4f modelViewMatrix = RenderSystem.getModelViewMatrix();
 
