@@ -35,7 +35,7 @@ dependencies {
     modCompileOnly("curse.maven:watermedia-869524:7072353")
 
     modCompileOnly("curse.maven:irisshaders-455508:6213635")
-    modCompileOnly("curse.maven:exposure-871755:7862665")
+    modCompileOnly("curse.maven:exposure-871755:8223556")
     // Joy of Painting (xercapaint) is Fabric-only on 1.21.1, so the integration lives in :fabric
     modImplementation("maven.modrinth:joy-of-painting:1.21.1-2.0.1")
     modCompileOnly("curse.maven:distant-horizons-508933:8287411")

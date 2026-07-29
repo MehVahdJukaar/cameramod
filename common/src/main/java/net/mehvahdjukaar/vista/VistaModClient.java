@@ -3,6 +3,7 @@ package net.mehvahdjukaar.vista;
 import com.google.common.collect.MapMaker;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import net.mehvahdjukaar.moonlight.api.client.CoreShaderContainer;
+import net.mehvahdjukaar.moonlight.api.client.gui.ConfigScreenExtensions;
 import net.mehvahdjukaar.moonlight.api.misc.EventCalled;
 import net.mehvahdjukaar.moonlight.api.platform.ClientHelper;
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
@@ -14,10 +15,7 @@ import net.mehvahdjukaar.vista.client.textures.CassetteTexturesManager;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
 import net.mehvahdjukaar.vista.client.textures.MirrorTextureManager;
 import net.mehvahdjukaar.vista.client.textures.WebTexturesManager;
-import net.mehvahdjukaar.vista.client.ui.MapTapeEntryRenderer;
-import net.mehvahdjukaar.vista.client.ui.PictureTapeScreen;
-import net.mehvahdjukaar.vista.client.ui.ViewFinderScreen;
-import net.mehvahdjukaar.vista.client.ui.VistaWelcomeScreen;
+import net.mehvahdjukaar.vista.client.ui.*;
 import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpeg;
 import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpegManager;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ExtraChunkViewData;
@@ -187,6 +185,7 @@ public class VistaModClient {
                 VistaMod.res("creative"),
                 (stack, world, entity, s) -> CommonConfigs.isWaveGateCraftable() ? 0 : 1
         );
+        ConfigScreenExtensions.registerShowcase(VistaMod.MOD_ID, TvShowcaseWidget.SHOWCASE);
     }
 
     @EventCalled

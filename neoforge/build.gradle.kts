@@ -31,7 +31,7 @@ dependencies {
     modCompileOnly("curse.maven:zeta-968868:7640154")
 
     //modImplementation("cc.tweaked-cobalt:cobalt:0.93")
-    modImplementation("curse.maven:exposure-871755:7862664")
+    modImplementation("curse.maven:exposure-871755:8223555")
     modCompileOnly("curse.maven:cc-tweaked-282001:5714512")
     modCompileOnly("curse.maven:jei-238222:7420587")
     modRuntimeOnly("maven.modrinth:jade:15.10.5+neoforge")

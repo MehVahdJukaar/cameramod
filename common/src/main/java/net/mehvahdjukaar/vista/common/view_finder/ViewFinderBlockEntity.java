@@ -264,7 +264,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
 
     @Override
     public boolean canPlaceItemThroughFace(int index, ItemStack itemStack, @Nullable Direction direction) {
-        return canPlaceItem((direction == null) || direction.getAxis().isHorizontal() ? 1 : 0, itemStack);
+        return canPlaceItem(index, itemStack);
     }
 
     @Override
@@ -274,7 +274,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
 
     @Override
     public int[] getSlotsForFace(Direction side) {
-        return new int[]{side.getAxis().isHorizontal() ? 1 : 0};
+        return new int[]{0}; //only one slot, the lens
     }
 
     @Nullable

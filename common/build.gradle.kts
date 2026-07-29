@@ -27,7 +27,7 @@ dependencies {
     modImplementation("curse.maven:supplementaries-412082:8044262")
 
 
-    modCompileOnly("curse.maven:exposure-871755:7862664")
+    modCompileOnly("curse.maven:exposure-871755:8223555")
     modCompileOnly("curse.maven:distant-horizons-508933:8287411")
     modCompileOnly("maven.modrinth:iris:1.8.8+1.21.1-neoforge")
 

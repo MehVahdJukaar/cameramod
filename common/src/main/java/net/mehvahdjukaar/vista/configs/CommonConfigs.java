@@ -114,11 +114,11 @@ public class CommonConfigs {
 
         builder.icon("cassette").push("drops");
         CREEPER_DROP = builder
-                .icon("cassette")
+                .icon("minecraft:creeper_spawn_egg")
                 .comment("Whether creepers should drop tapes when killed by the pillagers.")
                 .feature("creeper_drop", true);
         CHEST_DROP = builder
-                .icon("cassette")
+                .icon("minecraft:chest")
                 .comment("Whether loot chests could contain cassette tapes.")
                 .feature("chest_drop", true);
         builder.pop(); // drops
