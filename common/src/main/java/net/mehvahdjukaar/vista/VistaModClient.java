@@ -52,6 +52,13 @@ public class VistaModClient {
     public static final CoreShaderContainer CAMERA_VIEW_SHADER = new CoreShaderContainer(GameRenderer::getRendertypeEntitySolidShader);
     public static final CoreShaderContainer MIRROR_MATERIAL_SHADER = new CoreShaderContainer(GameRenderer::getRendertypeEntitySolidShader);
     public static final CoreShaderContainer STATIC_SHADER = new CoreShaderContainer(GameRenderer::getPositionColorShader);
+    /**
+     * Own core shader rather than reusing {@code getPositionColorTexLightmapShader()}: Iris hardcodes that
+     * particular vanilla shader as text rendering (same override hook as the rendertype_text shaders), so
+     * anything else drawn with it gets Iris's block-entity-text gbuffer program instead of real geometry
+     * shading and comes out black.
+     */
+    public static final CoreShaderContainer WAVE_GATE_SHADER = new CoreShaderContainer(GameRenderer::getPositionColorTexLightmapShader);
 
     public static final ModelLayerLocation VIEWFINDER_MODEL = loc("viewfinder");
     public static final Material WAVE_EFFECT = new Material(LOCATION_BLOCKS, VistaMod.res("block/wave_gate/wave"));
@@ -233,6 +240,7 @@ public class VistaModClient {
         event.register(VistaMod.res("static_noise"), DefaultVertexFormat.NEW_ENTITY, STATIC_SHADER::assign);
         event.register(VistaMod.res("camera_view"), DefaultVertexFormat.NEW_ENTITY, CAMERA_VIEW_SHADER::assign);
         event.register(VistaMod.res("mirror_material"), DefaultVertexFormat.NEW_ENTITY, MIRROR_MATERIAL_SHADER::assign);
+        event.register(VistaMod.res("wave_gate"), DefaultVertexFormat.NEW_ENTITY, WAVE_GATE_SHADER::assign);
     }
 
     private static void registerModelLayers(ClientHelper.ModelLayerEvent event) {

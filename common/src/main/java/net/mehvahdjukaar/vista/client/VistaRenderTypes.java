@@ -31,6 +31,7 @@ public class VistaRenderTypes extends RenderType {
     private static final ShaderStateShard CAMERA_SHADER_STATE = new ShaderStateShard(VistaModClient.CAMERA_VIEW_SHADER);
     private static final ShaderStateShard STATIC_SHADER_STATE = new ShaderStateShard(VistaModClient.STATIC_SHADER);
     private static final ShaderStateShard MIRROR_MATERIAL_SHADER_STATE = new ShaderStateShard(VistaModClient.MIRROR_MATERIAL_SHADER);
+    private static final ShaderStateShard WAVE_GATE_SHADER_STATE = new ShaderStateShard(VistaModClient.WAVE_GATE_SHADER);
 
     private record CrtKey(ResourceLocation texture, float frameW, float frameH, Vec2i scale,
                           IntAnimationState turnOnAnim, IntAnimationState staticAnim,
@@ -172,7 +173,7 @@ public class VistaRenderTypes extends RenderType {
                     VertexFormat.Mode.QUADS,
                     1536, true, false,
                     RenderType.CompositeState.builder()
-                            .setShaderState(POSITION_COLOR_TEX_LIGHTMAP_SHADER)
+                            .setShaderState(WAVE_GATE_SHADER_STATE)
                             .setTextureState(new RenderStateShard.TextureStateShard(TextureAtlas.LOCATION_BLOCKS,
                                     false, false))
                             .setTransparencyState(NO_TRANSPARENCY)

@@ -234,6 +234,7 @@ public class ViewFinderController {
                 needsToUpdateServer = false;
                 viewFinder.syncToServer( false, player);
             }
+
         } else {
             stopControllingAndSync();
         }

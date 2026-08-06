@@ -34,6 +34,7 @@ public class ClientConfigs {
     public static final Supplier<Double> UPDATE_DISTANCE;
     public static final Supplier<Integer> LIVE_FEED_RESOLUTION_SCALE;
     public static final Supplier<Boolean> RENDER_DEBUG;
+    public static final Supplier<LinkedFeedDisplayMode> LINKED_FEED_DISPLAY_MODE;
     public static final Supplier<Boolean> SCALE_PIXELS;
     public static final Supplier<Boolean> TURN_OFF_EFFECTS;
     public static final Supplier<Float> PIXEL_DENSITY;
@@ -130,6 +131,10 @@ public class ClientConfigs {
                 .comment("Enables rendering of debug information for televisions")
                 .define("render_debug", false);
 
+        LINKED_FEED_DISPLAY_MODE = builder
+                .comment("What a hollow cassette's tooltip reveals about its linked target once linked. HIDDEN: nothing is shown. COORDINATES: the exact block coordinates are shown. CIPHERED (default): a 5-letter word rendered in the enchanting table's font is shown instead, unique to that link but unreadable, so you can tell cassettes apart without leaking the actual location")
+                .define("linked_feed_display_mode", LinkedFeedDisplayMode.CIPHERED);
+
         CompatHandler.addConfigs(builder);
 
         builder.pop(); // live_feed
@@ -204,5 +209,11 @@ public class ClientConfigs {
         OFF,
         SHARED,
         RECURSIVE
+    }
+
+    public enum LinkedFeedDisplayMode {
+        HIDDEN,
+        COORDINATES,
+        CIPHERED
     }
 }

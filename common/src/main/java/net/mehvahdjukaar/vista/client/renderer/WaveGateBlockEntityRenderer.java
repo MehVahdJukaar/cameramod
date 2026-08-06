@@ -59,9 +59,6 @@ public class WaveGateBlockEntityRenderer implements BlockEntityRenderer<WaveGate
 
         long ticks = tile.getLevel().getGameTime();
 
-        int lu = VertexUtil.lightU(packedLight);
-        int lv = VertexUtil.lightV(packedLight);
-
         VertexConsumer builder = VistaModClient.WAVE_EFFECT.buffer(bufferSource,
                 r -> VistaRenderTypes.WAVE_PARTICLE);
 
@@ -83,8 +80,8 @@ public class WaveGateBlockEntityRenderer implements BlockEntityRenderer<WaveGate
                 2 / 16f, 8 / 16f,
                 14 / 16f, 15 / 16f,
                 255, 255, 255, 255,
-                255,
-                LightTexture.FULL_BRIGHT);
+                VertexUtil.lightU(LightTexture.FULL_BRIGHT),
+                VertexUtil.lightV(LightTexture.FULL_BRIGHT));
 
         poseStack.popPose();
     }
