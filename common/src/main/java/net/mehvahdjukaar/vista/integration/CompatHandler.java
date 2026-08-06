@@ -32,6 +32,7 @@ public class CompatHandler {
     public static final boolean CREATE = PlatHelper.isModLoaded("create");
     public static final boolean JOY_OF_PAINTING = PlatHelper.isModLoaded("xercapaint");
     public static final boolean REFURBISHED_FURNITURE = PlatHelper.isModLoaded("refurbished_furniture");
+    public static final boolean CAMERA_MOD = PlatHelper.isModLoaded("camera");
     public static final boolean WATERMEDIA = isWatermediaCompatible();
 
     private static boolean isWatermediaCompatible() {

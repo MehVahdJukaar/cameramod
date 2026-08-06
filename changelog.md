@@ -1,1 +1,3 @@
-- fixes
+- added compat with camera mod
+- added compat with refurbished mod
+- fixed forge energy not updating client

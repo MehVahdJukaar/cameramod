@@ -55,6 +55,10 @@ dependencies {
     modImplementation("curse.maven:refurbished-furniture-897116:7473565")
     modImplementation("curse.maven:framework-549225:7462477")
 
+    // henkelmax's Camera Mod: NeoForge only on 1.21.1, so the picture tape integration lives here.
+    // It shadows corelib into its own package, so no extra dependency is needed.
+    modImplementation("curse.maven:camera-mod-289310:6715623")
+
     modImplementation("foundry.veil:veil-neoforge-1.21.1:4.1.2")
     modImplementation("curse.maven:fsable-1312371:8263584")
     // Create contraption view-finder integration (platform impl: CreatePlatStuffImpl)
