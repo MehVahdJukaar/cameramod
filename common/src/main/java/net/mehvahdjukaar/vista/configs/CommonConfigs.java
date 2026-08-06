@@ -30,6 +30,7 @@ public class CommonConfigs {
     public static final Supplier<ViewFinderInteraction> VIEW_FINDER_INTERACTION;
     public static final Supplier<Boolean> TV_CONSUME_ENERGY;
     public static final Supplier<Integer> TV_ENERGY_CONSUMPTION_RATE;
+    public static final Supplier<Boolean> TV_USE_FURNITURE_ELECTRICITY;
     public static final Supplier<Boolean> PICTURE_TAPE_ENABLED;
     public static final Supplier<Integer> PICTURE_TAPE_MAX_ENTRIES;
 
@@ -54,6 +55,11 @@ public class CommonConfigs {
         TV_ENERGY_CONSUMPTION_RATE = fabric ? () -> 0 : builder
                 .comment("Energy consumption rate per tick when TV is powered and has a cassette.")
                 .define("energy_consumption_rate", 20, 1, 10000);
+        TV_USE_FURNITURE_ELECTRICITY = builder
+                .comment("Whether TVs act as Refurbished Furniture electricity modules. When on they can be " +
+                        "wired up with the wrench and only display something while their network powers them. " +
+                        "Takes priority over consume_energy. Requires Refurbished Furniture to be installed.")
+                .define("use_furniture_electricity", false);
         builder.pop(); // television
 
         builder.icon("picture_tape").push("picture_tape");
@@ -129,6 +135,19 @@ public class CommonConfigs {
 
     public static void init() {
 
+    }
+
+    public static boolean isTvElectricityEnabled() {
+        return CompatHandler.REFURBISHED_FURNITURE && TV_USE_FURNITURE_ELECTRICITY.get();
+    }
+
+    // Refurbished Furniture's electricity wins over Forge energy when both are enabled
+    public static boolean doesTvConsumeForgeEnergy() {
+        return TV_CONSUME_ENERGY.get() && !isTvElectricityEnabled();
+    }
+
+    public static boolean doesTvNeedExternalPower() {
+        return isTvElectricityEnabled() || TV_CONSUME_ENERGY.get();
     }
 
     public static boolean isMirrorEnabled() {

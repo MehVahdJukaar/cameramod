@@ -18,12 +18,6 @@ public class VistaPlatStuff {
 
     @Contract
     @PlatformImpl
-    public static boolean tvHasEnergy(TVBlockEntity tv) {
-        throw new AssertionError();
-    }
-
-    @Contract
-    @PlatformImpl
     public static void tickEnergy(TVBlockEntity tv) {
         throw new AssertionError();
     }

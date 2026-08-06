@@ -47,6 +47,9 @@ dependencies {
     modCompileOnly("maven.modrinth:flashback:0.32.0")
     modCompileOnly("curse.maven:geckolib-388172:7707138")
 
+    modImplementation("curse.maven:refurbished-furniture-897116:7473562")
+    modImplementation("curse.maven:framework-549225:7462474")
+
     // Vampirism has no Fabric version
     modCompileOnly("curse.maven:origins-391943:7365871")
 

@@ -15,6 +15,8 @@ import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
 import net.mehvahdjukaar.vista.common.tv.TVBlock;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
+import net.mehvahdjukaar.vista.configs.CommonConfigs;
+import net.mehvahdjukaar.vista.integration.refurbished_furniture.RefurbishedFurnitureCompat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.LightTexture;
@@ -68,6 +70,10 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
     @Override
     public void render(TVBlockEntity blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int light, int overlay) {
+        // node and wires show regardless of the screen being on
+        if (CommonConfigs.isTvElectricityEnabled()) {
+            RefurbishedFurnitureCompat.renderNodeAndWires(blockEntity);
+        }
         if (!blockEntity.isScreenOn(partialTick)) return;
 
         Direction dir = blockEntity.getBlockState().getValue(TVBlock.FACING);

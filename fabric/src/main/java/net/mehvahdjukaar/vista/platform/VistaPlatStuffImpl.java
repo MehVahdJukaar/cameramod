@@ -11,10 +11,6 @@ public class VistaPlatStuffImpl {
                                                      Matrix4f modelViewMatrix, Matrix4f projMatrix) {
     }
 
-    public static boolean tvHasEnergy(TVBlockEntity tv) {
-        return true;
-    }
-
     public static void tickEnergy(TVBlockEntity tv) {
     }
 }

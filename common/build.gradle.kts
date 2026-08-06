@@ -42,6 +42,10 @@ dependencies {
     //due to geckolib state machine nonsense
     modCompileOnly("curse.maven:geckolib-388172:7707149")
 
+    // Refurbished Furniture electricity system (TVs can be wired into it). Framework is its hard dep.
+    modCompileOnly("curse.maven:refurbished-furniture-897116:7473565")
+    modCompileOnly("curse.maven:framework-549225:7462477")
+
     modCompileOnly("curse.maven:alexs-caves-924854:4806837")
     modImplementation("curse.maven:watermedia-869524:7072353")
 

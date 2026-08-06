@@ -65,6 +65,8 @@ public class TVBlockEntity extends ItemDisplayTile {
     private boolean isLookingAtEnderman = false;
     private boolean wasScreenOn = false;
 
+    private boolean hasEnergy = false;
+
     public Object energyCap = null;
 
     public TVBlockEntity(BlockPos pos, BlockState state) {
@@ -79,6 +81,7 @@ public class TVBlockEntity extends ItemDisplayTile {
         compound.putBoolean("Paused", paused);
         compound.putInt("VideoPlaybackTicks", videoPlaybackTicks);
         compound.putBoolean("ShowsTime", showsTime);
+        if (hasEnergy) compound.putBoolean("HasEnergy", hasEnergy);
     }
 
     @Override
@@ -94,6 +97,7 @@ public class TVBlockEntity extends ItemDisplayTile {
         this.paused = tag.getBoolean("Paused");
         this.videoPlaybackTicks = tag.getInt("VideoPlaybackTicks");
         this.showsTime = tag.getBoolean("ShowsTime");
+        if (tag.contains("HasEnergy")) this.hasEnergy = tag.getBoolean("HasEnergy");
         updateObservationController();
     }
 
@@ -253,10 +257,12 @@ public class TVBlockEntity extends ItemDisplayTile {
         boolean powered = state.getValue(TVBlock.POWER_STATE).isOn();
         //both sides
 
-        boolean consumeEnergy = CommonConfigs.TV_CONSUME_ENERGY.get();
+        // energy lives on the server only, the client just reads the synced powered flag
+        if (!world.isClientSide && CommonConfigs.doesTvConsumeForgeEnergy()) {
+            VistaPlatStuff.tickEnergy(tv);
+        }
         if (powered) {
             if (!tv.paused) tv.videoPlaybackTicks++;
-            if (consumeEnergy) VistaPlatStuff.tickEnergy(tv);
         } else {
             tv.fadeAnimation.decrement();
             tv.videoPlaybackTicks = 0;
@@ -267,7 +273,7 @@ public class TVBlockEntity extends ItemDisplayTile {
 
             if (powered) {
                 if (ClientConfigs.TURN_OFF_EFFECTS.get()) tv.fadeAnimation.increment();
-                if (consumeEnergy && !tv.hasEnergy()) return;
+                if (!tv.hasEnergy()) return;
                 float duration = tv.videoSource.getVideoDuration();
                 // Play on the first tick (soundLoopTicks == 0) so the sound starts immediately
                 // when a cassette is inserted, then repeat every `duration` ticks.
@@ -291,7 +297,7 @@ public class TVBlockEntity extends ItemDisplayTile {
 
 
         } else {
-            if (consumeEnergy && !tv.hasEnergy()) return;
+            if (!tv.hasEnergy()) return;
 
             tv.pushSlideshowMaps(world, pos, powered);
 
@@ -367,8 +373,20 @@ public class TVBlockEntity extends ItemDisplayTile {
     }
 
     private boolean hasEnergy() {
-        if (!CommonConfigs.TV_CONSUME_ENERGY.get()) return true;
-        return VistaPlatStuff.tvHasEnergy(this);
+        return !CommonConfigs.doesTvNeedExternalPower() || hasEnergy;
+    }
+
+    public boolean isHasEnergy() {
+        return hasEnergy;
+    }
+
+    // Set by whichever power system is in charge: CompatRefurbishedFurnitureSelfTvBlockEntityMixin
+    // when the electricity integration is on, TvEnergyHandler otherwise.
+    public void setHasEnergy(boolean powered) {
+        if (this.hasEnergy != powered) {
+            this.hasEnergy = powered;
+            this.setChanged();
+        }
     }
 
     // Maps stored on a picture tape aren't tracked by vanilla, so when one is playing we push the

@@ -4,7 +4,6 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.client.ClientHooks;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import org.joml.Matrix4f;
@@ -19,10 +18,6 @@ public class VistaPlatStuffImpl {
                 camera, mc.levelRenderer.getFrustum());
         mc.getProfiler().pop();
 
-    }
-
-    public static boolean tvHasEnergy(TVBlockEntity tv) {
-        return TvEnergyHandler.getOrCreate(tv).hasPower();
     }
 
     public static void tickEnergy(TVBlockEntity tv) {

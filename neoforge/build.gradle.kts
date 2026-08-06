@@ -52,6 +52,9 @@ dependencies {
     modCompileOnly("curse.maven:quark-243121:7640331")
     modCompileOnly("curse.maven:simple-clouds-1121215:6928979")
 
+    modImplementation("curse.maven:refurbished-furniture-897116:7473565")
+    modImplementation("curse.maven:framework-549225:7462477")
+
     modImplementation("foundry.veil:veil-neoforge-1.21.1:4.1.2")
     modImplementation("curse.maven:fsable-1312371:8263584")
     // Create contraption view-finder integration (platform impl: CreatePlatStuffImpl)

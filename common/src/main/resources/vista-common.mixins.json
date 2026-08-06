@@ -9,6 +9,7 @@
     "ChunkMapTrackedEntityMixin",
     "ChunkTrackingViewMixin",
     "CompatGeckoLibMixin",
+    "CompatRefurbishedFurnitureSelfTvBlockEntityMixin",
     "CompatSableTrackingMixin",
     "EndermanMixin",
     "EndermanSkullBlockTileMixin",

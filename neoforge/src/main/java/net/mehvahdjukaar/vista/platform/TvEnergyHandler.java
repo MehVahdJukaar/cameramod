@@ -26,20 +26,18 @@ public class TvEnergyHandler implements IEnergyStorage {
     }
 
     public void tick() {
+        Vec2i v = tv.getConnectedCount();
+        int cost = CommonConfigs.TV_ENERGY_CONSUMPTION_RATE.get() * v.x() * v.y();
+        // draining below one tick's worth counts as unpowered, so a tv fed exactly at its
+        // consumption rate stays on instead of flickering between the two states
+        boolean canRun = stored >= cost;
+
         boolean hasCassette = !tv.getDisplayedItem().isEmpty() &&
                 tv.getDisplayedItem().getItem() instanceof ITvCassette;
         boolean isPowered = tv.getBlockState().getValue(TVBlock.POWER_STATE).isOn();
-        if (!hasCassette || !isPowered) return;
+        if (canRun && hasCassette && isPowered) stored -= cost;
 
-        int cost = CommonConfigs.TV_ENERGY_CONSUMPTION_RATE.get();
-       Vec2i v = tv.getConnectedCount();
-        cost =  cost * v.x() * v.y();
-        stored = Math.max(0, stored - cost);
-    }
-
-    public boolean hasPower() {
-        if (!CommonConfigs.TV_CONSUME_ENERGY.get()) return true;
-        return stored > 0;
+        tv.setHasEnergy(canRun);
     }
 
     @Override
