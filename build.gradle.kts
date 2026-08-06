@@ -36,17 +36,70 @@ subprojects {
 
 
     upload {
+        val modLoader = project.name
+
         maven {
             nexus()
         }
         curseforge {
             dependencies {
                 required("selene")
+
+                optional("exposure")
+                optional("distant-horizons")
+                optional("cc-tweaked")
+                optional("irisshaders")
+                optional("sodium")
+                optional("entityculling")
+                optional("watermedia")
+                optional("simple-clouds")
+                optional("veil-lib")
+                optional("refurbished-furniture")
+                optional("supernatural")
+                optional("jei")
+
+                if (modLoader == "neoforge") {
+                    optional("oculus")
+                    optional("embeddium")
+                    optional("alexs-caves")
+                    optional("vampirism-become-a-vampire")
+                    optional("create")
+                    optional("camera-mod")
+                }
+                if (modLoader == "fabric") {
+                    optional("joy-of-painting")
+                }
             }
         }
         modrinth {
             dependencies {
                 required("moonlight")
+
+                optional("exposure")
+                optional("distanthorizons")
+                optional("cc-tweaked")
+                optional("iris")
+                optional("sodium")
+                optional("entityculling")
+                optional("watermedia")
+                optional("simple-clouds")
+                optional("veil")
+                optional("supernatural")
+                optional("jei")
+                optional("flashback")
+                // Refurbished Furniture is CurseForge only
+
+                if (modLoader == "neoforge") {
+                    optional("oculus")
+                    optional("embeddium")
+                    optional("alexs-caves")
+                    optional("vampirism")
+                    optional("create")
+                    optional("camera-mod")
+                }
+                if (modLoader == "fabric") {
+                    optional("joy-of-painting")
+                }
             }
         }
 

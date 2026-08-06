@@ -25,11 +25,21 @@ public interface TapeEntryRenderer {
             renderUnknown(graphics, stack, x, y, size);
             return;
         }
-        blitStretched(graphics, texture, x, y, size);
+        blitCentered(graphics, texture, x, y, size, getAspectRatio(stack));
     }
 
-    static void blitStretched(GuiGraphics graphics, ResourceLocation texture, int x, int y, int size) {
-        graphics.blit(texture, x, y, size, size, 0, 0, 1, 1, 1, 1);
+    /**
+     * Fits the picture inside the square cell the gallery gives it, keeping its own shape.
+     */
+    static void blitCentered(GuiGraphics graphics, ResourceLocation texture, int x, int y, int size, float aspectRatio) {
+        int width = size;
+        int height = size;
+        if (aspectRatio > 1) {
+            height = Math.max(1, Math.round(size / aspectRatio));
+        } else if (aspectRatio > 0 && aspectRatio < 1) {
+            width = Math.max(1, Math.round(size * aspectRatio));
+        }
+        graphics.blit(texture, x + (size - width) / 2, y + (size - height) / 2, width, height, 0, 0, 1, 1, 1, 1);
     }
 
     static void renderUnknown(GuiGraphics graphics, ItemStack stack, int x, int y, int size) {
