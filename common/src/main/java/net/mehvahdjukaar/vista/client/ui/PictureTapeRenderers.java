@@ -41,6 +41,11 @@ public class PictureTapeRenderers {
         return renderer == null ? null : renderer.getTexture(stack);
     }
 
+    public static float getFrameAspectRatio(ItemStack stack) {
+        TapeEntryRenderer renderer = find(stack);
+        return renderer == null ? 1 : renderer.getAspectRatio(stack);
+    }
+
     @Nullable
     private static TapeEntryRenderer find(ItemStack stack) {
         for (TapeEntryRenderer renderer : RENDERERS) {

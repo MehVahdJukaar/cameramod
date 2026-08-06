@@ -43,6 +43,7 @@ public class ClientConfigs {
     public static final Supplier<Boolean> ENABLE_FFMPEG;
     public static final Supplier<Integer> WEB_RESOLUTION_SCALE;
     public static final Supplier<ScalingMode> SCALING_MODE;
+    public static final Supplier<ScalingMode> PICTURE_TAPE_SCALING_MODE;
     public static final Supplier<Boolean> BILINEAR;
     public static final Supplier<EngineMode> VIDEO_ENGINE;
     public static final Supplier<List<String>> SAFE_URLS;
@@ -139,6 +140,15 @@ public class ClientConfigs {
 
         builder.pop(); // live_feed
         builder.pop(); // television
+
+        builder.icon("picture_tape").push("picture_tape");
+        PICTURE_TAPE_SCALING_MODE = builder
+                .comment("How a picture is fitted onto the TV screen when the two don't have the same shape. " +
+                        "STRETCH: distorts the picture to fill the screen. CONTAIN: shows all of it, leaving bars " +
+                        "on the two shorter sides. COVER: fills the screen, cropping whatever sticks out. " +
+                        "FIT_WIDTH / FIT_HEIGHT: match that side of the screen and let the other one bar or crop")
+                .define("scaling_mode", ScalingMode.CONTAIN);
+        builder.pop(); // picture_tape
 
         builder.icon("wave_gate").push("wave_gate");
         VIDEO_ENGINE = CompatHandler.WATERMEDIA ? builder.comment("Toggle between local FFmpeg driven video loading and WaterMedia (VLC) mod usage. Requires Watermedia mod. FFmpeg mode has improved visuals and functionality, and likely supports more media types. Watermedia on the other hand supports youtube links. The first mode uses both, prioritizing our local FFmpeg impl and falling back to watermedia on media player links.")

@@ -31,6 +31,12 @@ public class PaintingTapeEntryRenderer implements TapeEntryRenderer {
         return variant == null ? FALLBACK_TEXTURE : textureOf(variant);
     }
 
+    @Override
+    public float getAspectRatio(ItemStack stack) {
+        PaintingVariant variant = resolveVariant(stack);
+        return variant == null ? 1 : (float) variant.width() / variant.height();
+    }
+
     private static ResourceLocation textureOf(PaintingVariant variant) {
         return variant.assetId().withPrefix("textures/painting/").withSuffix(".png");
     }

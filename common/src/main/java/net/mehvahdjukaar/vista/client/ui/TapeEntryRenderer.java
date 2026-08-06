@@ -12,6 +12,13 @@ public interface TapeEntryRenderer {
     @Nullable
     ResourceLocation getTexture(ItemStack stack);
 
+    /**
+     * Width over height of the picture, used to fit it onto a TV screen of a different shape.
+     */
+    default float getAspectRatio(ItemStack stack) {
+        return 1;
+    }
+
     default void render(GuiGraphics graphics, ItemStack stack, int x, int y, int size) {
         ResourceLocation texture = getTexture(stack);
         if (texture == null) {

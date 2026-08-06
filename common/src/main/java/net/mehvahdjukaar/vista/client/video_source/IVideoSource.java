@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
+import net.mehvahdjukaar.vista.client.textures.ScreenFit;
 import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
 import net.mehvahdjukaar.vista.common.cassette.CassetteItem;
 import net.mehvahdjukaar.vista.common.picture_tape.PictureTapeItem;
@@ -33,6 +34,10 @@ public interface IVideoSource {
 
     default int getVideoDuration() {
         return 0;
+    }
+
+    default ScreenFit getScreenFit() {
+        return ScreenFit.FILL;
     }
 
     static IVideoSource create(ItemStack stack) {

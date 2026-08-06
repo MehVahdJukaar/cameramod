@@ -97,7 +97,9 @@ public class TVBlockEntity extends ItemDisplayTile {
         this.paused = tag.getBoolean("Paused");
         this.videoPlaybackTicks = tag.getInt("VideoPlaybackTicks");
         this.showsTime = tag.getBoolean("ShowsTime");
-        if (tag.contains("HasEnergy")) this.hasEnergy = tag.getBoolean("HasEnergy");
+        // must not be guarded on the key being there: the tag is only written when powered, and the
+        // client reuses the same tile across updates, so a missing key has to clear the flag
+        this.hasEnergy = tag.getBoolean("HasEnergy");
         updateObservationController();
     }
 

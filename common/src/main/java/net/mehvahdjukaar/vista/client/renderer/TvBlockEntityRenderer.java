@@ -9,6 +9,7 @@ import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
+import net.mehvahdjukaar.vista.client.textures.ScreenFit;
 import net.mehvahdjukaar.vista.client.video_source.BroadcastVideoSource;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
@@ -128,7 +129,17 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         float quadW = screenSize.x() / 32f;
         float quadH = screenSize.y() / 32f;
 
-        addQuad(vc, poseStack, -quadW, -quadH, quadW, quadH, light);
+        // frames that aren't the screen's shape get barred or cropped instead of stretched. Bars are
+        // just a smaller quad: the block model's own screen face shows through behind it.
+        ScreenFit.Bounds fit = videoSource.getScreenFit()
+                .computeBounds(screenSize.x() / (float) screenSize.y());
+        float uInset = (1 - fit.uScale()) / 2f;
+        float vInset = (1 - fit.vScale()) / 2f;
+        quadW *= fit.quadScaleX();
+        quadH *= fit.quadScaleY();
+
+        addQuad(vc, poseStack, -quadW, -quadH, quadW, quadH,
+                uInset, vInset, 1 - uInset, 1 - vInset, light);
 
 
         if (ClientConfigs.rendersDebug()) {
@@ -144,14 +155,23 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
                                float x0, float y0,
                                float x1, float y1,
                                int light) {
+        addQuad(builder, poseStack, x0, y0, x1, y1, 0, 0, 1, 1, light);
+    }
+
+    public static void addQuad(VertexConsumer builder, PoseStack poseStack,
+                               float x0, float y0,
+                               float x1, float y1,
+                               float u0, float v0,
+                               float u1, float v1,
+                               int light) {
         int lu = light & 0xFFFF;
         int lv = (light >> 16) & 0xFFFF;
         PoseStack.Pose last = poseStack.last();
         Vector3f normal = last.normal().transform(new Vector3f(0, 0, -1));
-        vert(builder, poseStack, x0, y1, 1, 0, lu, lv, normal);
-        vert(builder, poseStack, x1, y1, 0, 0, lu, lv, normal);
-        vert(builder, poseStack, x1, y0, 0, 1, lu, lv, normal);
-        vert(builder, poseStack, x0, y0, 1, 1, lu, lv, normal);
+        vert(builder, poseStack, x0, y1, u1, v0, lu, lv, normal);
+        vert(builder, poseStack, x1, y1, u0, v0, lu, lv, normal);
+        vert(builder, poseStack, x1, y0, u0, v1, lu, lv, normal);
+        vert(builder, poseStack, x0, y0, u1, v1, lu, lv, normal);
     }
 
     private static void vert(VertexConsumer builder, PoseStack poseStack,
