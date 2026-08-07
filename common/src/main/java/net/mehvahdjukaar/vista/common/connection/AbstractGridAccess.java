@@ -3,6 +3,7 @@ package net.mehvahdjukaar.vista.common.connection;
 import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
 import net.mehvahdjukaar.moonlight.api.util.math.Rect2D;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
+import net.mehvahdjukaar.vista.VistaPlatStuff;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
@@ -94,6 +95,11 @@ public abstract class AbstractGridAccess implements GridAccessor {
         if (finalTileRect != null) {
             BlockPos target = targetPos(finalTileRect.bottomLeft());
             onMasterApplied(target, finalTileRect);
+        }
+        // done last, once the master block entity has settled: a reshape can move the master while leaving
+        // some of the touched blocks with an identical state, which by itself notifies nothing
+        for (Vec2i key : statesChanged.keySet()) {
+            VistaPlatStuff.invalidateBlockCapabilities(level, targetPos(key));
         }
     }
 }

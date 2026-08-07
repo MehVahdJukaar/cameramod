@@ -4,6 +4,8 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.client.ClientHooks;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import org.joml.Matrix4f;
@@ -22,6 +24,10 @@ public class VistaPlatStuffImpl {
 
     public static void tickEnergy(TVBlockEntity tv) {
         TvEnergyHandler.getOrCreate(tv).tick();
+    }
+
+    public static void invalidateBlockCapabilities(Level level, BlockPos pos) {
+        level.invalidateCapabilities(pos);
     }
 
 }

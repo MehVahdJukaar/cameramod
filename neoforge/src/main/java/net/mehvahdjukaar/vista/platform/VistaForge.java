@@ -2,6 +2,8 @@ package net.mehvahdjukaar.vista.platform;
 
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ServerCameraChunkManager;
+import net.mehvahdjukaar.vista.common.tv.TVBlock;
+import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -38,11 +40,18 @@ public class VistaForge {
 
     private void registerCapabilities(RegisterCapabilitiesEvent event) {
         if (!CommonConfigs.TV_CONSUME_ENERGY.get()) return;
-        event.registerBlockEntity(
+        // bound to the block and not to the block entity because only the master tv of a connected
+        // setup has one. This way energy can be fed to any of the connected tvs and ends up on the master
+        event.registerBlock(
                 Capabilities.EnergyStorage.BLOCK,
-                VistaMod.TV_TILE.get(),
-                (tv, side) -> TvEnergyHandler.getOrCreate(tv));
-
+                (level, pos, state, blockEntity, side) -> {
+                    if (!(state.getBlock() instanceof TVBlock tvBlock)) return null;
+                    if (tvBlock.findMasterBlockEntity(level, pos, state) instanceof TVBlockEntity master) {
+                        return TvEnergyHandler.getOrCreate(master);
+                    }
+                    return null;
+                },
+                VistaMod.TV.get());
     }
 
     @SubscribeEvent
