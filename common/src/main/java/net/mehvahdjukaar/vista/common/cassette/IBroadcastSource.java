@@ -19,6 +19,20 @@ public interface IBroadcastSource {
         }
     }
 
+    /**
+     * Links the feed immediately when the level's saved-data storage is available, returning false
+     * when the link was deferred (level still under construction during early chunk loading).
+     * Callers should retry later, e.g. from their tick method. See {@link BroadcastManager#getInstanceIfReady}.
+     */
+    default boolean linkFeedIfReady(Level level, IBroadcastLocation location) {
+        BroadcastManager manager = BroadcastManager.getInstanceIfReady(level);
+        if (manager != null) {
+            manager.linkFeed(this.getBroadcastUUID(), location);
+            return true;
+        }
+        return false;
+    }
+
     default void removeLink(Level level) {
         if (level instanceof ServerLevel sl) {
             BroadcastManager.getInstance(sl)
