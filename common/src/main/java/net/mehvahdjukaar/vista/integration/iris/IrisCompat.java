@@ -7,6 +7,7 @@ import net.irisshaders.iris.gl.blending.DepthColorStorage;
 import net.irisshaders.iris.pipeline.PipelineManager;
 import net.irisshaders.iris.pipeline.VanillaRenderingPipeline;
 import net.irisshaders.iris.pipeline.WorldRenderingPipeline;
+import net.irisshaders.iris.shaderpack.materialmap.WorldRenderingSettings;
 import net.irisshaders.iris.shadows.ShadowRenderer;
 import net.irisshaders.iris.uniforms.CapturedRenderingState;
 import net.irisshaders.iris.vertices.ImmediateState;
@@ -27,7 +28,7 @@ import java.util.function.Supplier;
 public class IrisCompat {
 
     // true while Vista is rendering a camera pass (should work)
-    private static final WorldRenderingPipeline VISTA_PIPELINE = new VanillaRenderingPipeline();
+    private static final WorldRenderingPipeline VISTA_PIPELINE = createFeedPipeline();
     private static final ThreadLocal<Boolean> VISTA_RENDERING = ThreadLocal.withInitial(() -> false);
     private static Supplier<Boolean> irisShaderPacksOff;
 
@@ -132,6 +133,42 @@ public class IrisCompat {
     @Nullable
     private static final Field COLOR_BUFFER_VERSION_FIELD = lookupIrisRtField("iris$colorBufferVersion");
 
+    /**
+     * {@link VanillaRenderingPipeline}'s constructor is not inert: it rewrites
+     * {@link WorldRenderingSettings#INSTANCE} as if a pack had just been unloaded (chunk vertex format
+     * back to Sodium's compact one, block type ids dropped, AO and entity draw settings reset), and every
+     * one of those setters arms Iris's reload flag when the value changes. Right now this lands on
+     * untouched defaults because the field below is initialized when {@link #addConfigs} first touches
+     * this class at startup, well before any pack exists. That is incidental, though: the day this class
+     * gets loaded later, building the stub would reset the vertex format under a live pack and force a
+     * full terrain rebuild mid-frame. Put back whatever was there so the construction is inert whenever
+     * it happens to run.
+     */
+    private static WorldRenderingPipeline createFeedPipeline() {
+        WorldRenderingSettings settings = WorldRenderingSettings.INSTANCE;
+        var vertexFormat = settings.getVertexFormat();
+        var blockTypeIds = settings.getBlockTypeIds();
+        float ambientOcclusionLevel = settings.getAmbientOcclusionLevel();
+        boolean disableDirectionalShading = settings.shouldDisableDirectionalShading();
+        boolean useSeparateAo = settings.shouldUseSeparateAo();
+        boolean separateEntityDraws = settings.shouldSeparateEntityDraws();
+        boolean voxelizeLightBlocks = settings.shouldVoxelizeLightBlocks();
+        boolean reloadWasRequired = settings.isReloadRequired();
+
+        WorldRenderingPipeline pipeline = new VanillaRenderingPipeline();
+
+        settings.setVertexFormat(vertexFormat);
+        settings.setBlockTypeIds(blockTypeIds);
+        settings.setAmbientOcclusionLevel(ambientOcclusionLevel);
+        settings.setDisableDirectionalShading(disableDirectionalShading);
+        settings.setUseSeparateAo(useSeparateAo);
+        settings.setSeparateEntityDraws(separateEntityDraws);
+        settings.setVoxelizeLightBlocks(voxelizeLightBlocks);
+        // Restoring a null block type id map re-arms the flag on its own, so the flag goes back last.
+        if (!reloadWasRequired) settings.clearReloadRequired();
+        return pipeline;
+    }
+
     @Nullable
     public static WorldRenderingPipeline getModifiedPipeline() {
         return VISTA_RENDERING.get() && irisShaderPacksOff.get() ? VISTA_PIPELINE : null;
@@ -186,8 +223,8 @@ public class IrisCompat {
      * <i>locked</i>: from then on every {@code GlStateManager} blend/mask call is only recorded, not
      * applied, until an Iris program hands the state back on clear. A feed pass runs on a
      * {@link VanillaRenderingPipeline}, so no Iris program applies inside it and nothing ever releases
-     * the lock — the whole nested render (and the RenderSystem restore afterwards) would draw with the
-     * pack's frozen state, which is what makes blended geometry come out opaque in a TV or mirror.
+     * the lock: the whole nested render (and the RenderSystem restore afterwards) would then draw with
+     * the pack's frozen state, which is what makes blended geometry come out opaque in a TV or mirror.
      *
      * <p>What the storages hold at this point is exactly what the last vanilla caller asked for, since
      * the locked calls were deferred into them, so releasing them applies the correct state rather than

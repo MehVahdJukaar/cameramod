@@ -41,10 +41,6 @@ public class DistantHorizonsCompat {
         };
     }
 
-    /**
-     * Gives the user back control of the DH settings we overrode. Must run whenever the compat stops
-     * applying, otherwise those entries stay locked in DH's config screen for the rest of the session.
-     */
     public static void releaseConfigOverrides() {
         if (appliedMode == null) return;
         appliedMode = null;
@@ -63,8 +59,6 @@ public class DistantHorizonsCompat {
                 .define("distant_horizons_LOD", DHMode.OFF);
     }
 
-    // DH fires this once per render pass and lets listeners cancel it, so unlike the quality configs this
-    // is genuinely per-pass and leaves nothing behind.
     private static class SkipLodsInFeeds extends DhApiBeforeRenderEvent {
         @Override
         public void beforeRender(DhApiCancelableEventParam<DhApiRenderParam> event) {
@@ -81,7 +75,7 @@ public class DistantHorizonsCompat {
         MED,
         HIGH;
 
-        // null means we don't touch DH's quality at all
+        // null = don't touch DH's quality
         @Nullable
         public EDhApiHorizontalQuality horizontal() {
             return switch (this) {
