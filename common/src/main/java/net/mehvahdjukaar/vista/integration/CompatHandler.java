@@ -85,6 +85,10 @@ public class CompatHandler {
         if (IRIS) IrisCompat.addConfigs(builder);
     }
 
+    public static void onClientDisconnect() {
+        if (DISTANT_HORIZONS) DistantHorizonsCompat.releaseConfigOverrides();
+    }
+
     public static Runnable decorateRenderer(Runnable runTask) {
         if (DISTANT_HORIZONS) {
             runTask = DistantHorizonsCompat.decorateRenderWithoutLOD(runTask);

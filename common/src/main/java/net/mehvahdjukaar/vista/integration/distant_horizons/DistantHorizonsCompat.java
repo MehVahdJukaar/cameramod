@@ -2,8 +2,8 @@ package net.mehvahdjukaar.vista.integration.distant_horizons;
 
 import com.seibel.distanthorizons.api.DhApi;
 import com.seibel.distanthorizons.api.enums.config.EDhApiHorizontalQuality;
-import com.seibel.distanthorizons.api.interfaces.config.IDhApiConfigValue;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigBuilder;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Supplier;
 
@@ -11,36 +11,48 @@ public class DistantHorizonsCompat {
 
     private static Supplier<DHMode> dhMode = () -> DHMode.OFF;
 
+    // These two are *global* DH settings, not per-render-pass state: setValue() installs an API override
+    // that outranks whatever the user picked and greys the entry out in DH's own config screen until
+    // clearValue() is called. So they affect the player's own view just as much as our feeds, and we must
+    // hand them back rather than leaving DH permanently overridden.
+    //  - horizontalQuality(): changing it forces DH to rebuild the entire LOD dataset (several seconds),
+    //    so per-frame toggling is off the table (DH dev's advice). We only write it when the mode changes.
+    //  - useCameraPositionForQualityDropOff(): DH uses the camera position for LOD quality drop-off; with
+    //    multiple cameras (TVs) that produces stutters and inaccurate LODs, so we fall back to the legacy
+    //    player-position behavior.
+    @Nullable
+    private static DHMode appliedMode = null;
+
     public static Runnable decorateRenderWithoutLOD(Runnable task) {
         return () -> {
-            // Per DH dev advice these configs are set-and-forget rather than reverted every frame:
-            //  - horizontalQuality(): changing it forces DH to rebuild the entire LOD dataset (several
-            //    seconds), so we only write it when the desired value actually differs.
-            //  - useCameraPositionForQualityDropOff(): DH uses the camera position for LOD quality
-            //    drop-off; with multiple cameras (TVs) that produces stutters and inaccurate LODs, so we
-            //    fall back to the legacy player-position behavior. It only matters during rendering, so
-            //    leaving it set causes no issues.
-            IDhApiConfigValue<Boolean> cameraPositionConfig = DhApi.Delayed.configs.graphics().useCameraPositionForQualityDropOff();
-            if (Boolean.TRUE.equals(cameraPositionConfig.getValue())) {
-                cameraPositionConfig.setValue(false);
-            }
-
             DHMode mode = dhMode.get();
-            if (mode != DHMode.OFF) {
-                var qualityConfig = DhApi.Delayed.configs.graphics().horizontalQuality();
-                EDhApiHorizontalQuality wanted = mode.horizontal();
-                if (qualityConfig.getValue() != wanted) {
-                    qualityConfig.setValue(wanted);
-                }
+            if (mode == DHMode.OFF) {
+                releaseConfigOverrides();
+            } else if (mode != appliedMode) {
+                DhApi.Delayed.configs.graphics().useCameraPositionForQualityDropOff().setValue(false);
+                DhApi.Delayed.configs.graphics().horizontalQuality().setValue(mode.horizontal());
+                appliedMode = mode;
             }
 
             task.run();
         };
     }
 
+    /**
+     * Gives the user back control of the DH settings we overrode. Must run whenever the compat stops
+     * applying, otherwise those entries stay locked in DH's config screen for the rest of the session.
+     */
+    public static void releaseConfigOverrides() {
+        if (appliedMode == null) return;
+        appliedMode = null;
+        DhApi.Delayed.configs.graphics().useCameraPositionForQualityDropOff().clearValue();
+        DhApi.Delayed.configs.graphics().horizontalQuality().clearValue();
+    }
+
     public static void addConfigs(ConfigBuilder builder) {
         dhMode = builder
-                .comment("Distant Horizons compatibility lod render quality")
+                .comment("Distant Horizons compatibility lod render quality. Note that this overrides DH's own " +
+                        "horizontal quality setting globally, so it affects your normal view too")
                 .define("distant_horizons_LOD", DHMode.OFF);
     }
 

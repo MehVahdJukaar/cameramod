@@ -2,6 +2,8 @@ package net.mehvahdjukaar.vista.integration.iris;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import net.irisshaders.iris.Iris;
+import net.irisshaders.iris.gl.blending.BlendModeStorage;
+import net.irisshaders.iris.gl.blending.DepthColorStorage;
 import net.irisshaders.iris.pipeline.PipelineManager;
 import net.irisshaders.iris.pipeline.VanillaRenderingPipeline;
 import net.irisshaders.iris.pipeline.WorldRenderingPipeline;
@@ -163,6 +165,7 @@ public class IrisCompat {
             try {
                 ShadowRenderer.ACTIVE = false;
                 VISTA_RENDERING.set(true);
+                releaseIrisStateLocks();
                 // Only the outermost pass counts as one feed frame. Recursive mirrors nest through
                 // here too, and bumping the (pipeline-global) jitter clock once per nesting level
                 // would put us right back to the skipping-samples case this shim exists to avoid.
@@ -176,6 +179,24 @@ public class IrisCompat {
                 setPipelineManagerPipeline(pm, oldPmPipeline);
             }
         };
+    }
+
+    /**
+     * A pack program that overrode blend or killed the color/depth mask leaves Iris's global storages
+     * <i>locked</i>: from then on every {@code GlStateManager} blend/mask call is only recorded, not
+     * applied, until an Iris program hands the state back on clear. A feed pass runs on a
+     * {@link VanillaRenderingPipeline}, so no Iris program applies inside it and nothing ever releases
+     * the lock — the whole nested render (and the RenderSystem restore afterwards) would draw with the
+     * pack's frozen state, which is what makes blended geometry come out opaque in a TV or mirror.
+     *
+     * <p>What the storages hold at this point is exactly what the last vanilla caller asked for, since
+     * the locked calls were deferred into them, so releasing them applies the correct state rather than
+     * a stale one. No need to put the lock back either: the next pack program re-applies its override
+     * on the following {@code apply}.
+     */
+    private static void releaseIrisStateLocks() {
+        BlendModeStorage.restoreBlend();
+        DepthColorStorage.unlockDepthColor();
     }
 
     private static void setCurrentPipeline(LevelRenderer lr, WorldRenderingPipeline oldPipeline) {

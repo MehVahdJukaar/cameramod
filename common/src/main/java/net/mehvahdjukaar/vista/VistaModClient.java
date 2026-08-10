@@ -21,6 +21,7 @@ import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpegManager;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ExtraChunkViewData;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
+import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -253,6 +254,7 @@ public class VistaModClient {
         MirrorTextureManager.clear();
         VistaLevelRenderer.clear();
         MapTapeEntryRenderer.clear();
+        CompatHandler.onClientDisconnect();
     }
 
     public static void onClientTick(Minecraft minecraft) {
