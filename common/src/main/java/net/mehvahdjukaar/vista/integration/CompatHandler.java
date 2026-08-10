@@ -63,6 +63,7 @@ public class CompatHandler {
         PlatHelper.addCommonSetup(() -> {
             if (COMPUTER_CRAFT) CCCompat.setup();
             if (PlatHelper.getPhysicalSide().isClient() && WATERMEDIA) WatermediaSession.initHack();
+            if (PlatHelper.getPhysicalSide().isClient() && DISTANT_HORIZONS) DistantHorizonsCompat.setup();
             setupPlat();
         });
     }
