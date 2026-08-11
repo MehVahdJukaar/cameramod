@@ -1,6 +1,5 @@
 package net.mehvahdjukaar.vista.integration.watermedia;
 
-import com.mojang.blaze3d.platform.TextureUtil;
 import net.mehvahdjukaar.vista.client.textures.IWebTexture;
 import net.mehvahdjukaar.vista.client.web.MediaStatus;
 import net.minecraft.client.Minecraft;
@@ -66,13 +65,9 @@ public class WatermediaVideoTexture extends AbstractTexture implements IWebTextu
         }
     }
 
-    /**
-     * Do not let Minecraft manage the GL texture id for Watermedia videos.
-     * The underlying VideoPlayer / RenderAPI owns the texture lifetime.
-     */
     @Override
     public void releaseId() {
-        // no-op: GL texture is managed by Watermedia
+        // no-op: the VideoPlayer / RenderAPI owns the GL texture lifetime, not Minecraft
     }
 
     @Override

@@ -48,10 +48,7 @@ public class CreateCompat {
         registerViewFinderBehaviours(VistaMod.VIEWFINDER.get());
     }
 
-    /**
-     * Client-side callback from the contraption interaction behaviour: if the clicked block is a view finder,
-     * enter camera control. Returns whether the interaction was handled.
-     */
+    // called from the contraption interaction behaviour; returns whether the interaction was handled
     public static boolean onContraptionInteractClient(@Nullable BlockEntity be, Entity contraption, BlockPos localPos) {
         if (be instanceof ViewFinderBlockEntity vf) {
             CreateClientCompat.startControlling(vf, contraption, localPos);
@@ -60,9 +57,7 @@ public class CreateCompat {
         return false;
     }
 
-    /**
-     * Server-side callback from the movement behaviour: (re)register the view finder's feed while it moves.
-     */
+    // called from the movement behaviour every tick while the contraption moves
     public static void linkContraptionFeed(Level world, Entity contraption, BlockPos localPos,
                                            @Nullable CompoundTag blockEntityData) {
         if (world.isClientSide()) return;
@@ -73,9 +68,7 @@ public class CreateCompat {
                 new ContraptionBroadcastLocation(world.dimension(), contraption.getUUID(), localPos));
     }
 
-    /**
-     * Server-side callback from the movement behaviour: drop the contraption feed link when it stops moving.
-     */
+    // called from the movement behaviour when the contraption stops moving
     public static void unlinkContraptionFeed(Level world, Entity contraption, BlockPos localPos) {
         if (world.isClientSide()) return;
         // remove by value: if the block already re-registered a world location on disassembly, this is a no-op
@@ -163,9 +156,7 @@ public class CreateCompat {
         return null;
     }
 
-    /**
-     * Bake a view finder's aim into the contraption's stored block NBT so it persists past the live render.
-     */
+    // bakes the aim into the contraption's stored block NBT so it outlives the live render
     public static void persistViewFinderAim(Entity contraption, BlockPos localPos, Quaternionf localRot,
                                             int zoom, boolean locked) {
         Contraption c = ((AbstractContraptionEntity) contraption).getContraption();

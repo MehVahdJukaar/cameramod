@@ -1,6 +1,8 @@
 package net.mehvahdjukaar.vista.integration.create;
 
+import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.netty.buffer.ByteBuf;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.common.broadcast.BroadcastLocationType;
@@ -27,19 +29,16 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
-/**
- * Points a broadcast feed at a view finder riding inside a Create contraption.
- *
- * <p>Client side {@link #get} returns the render-level block entity (installing the moving reference frame so
- * the feed tracks the structure); server side there is no live block entity, so the link exists only for chunk
- * tracking + sync. All contraption access goes through {@link CreateCompat} so this stays Create-free.
- */
+// Points a broadcast feed at a view finder riding inside a Create contraption.
+// Client side get() returns the render-level block entity and installs the moving reference frame so the
+// feed tracks the structure. Server side there is no live block entity, so the link exists only for chunk
+// tracking + sync. Contraption access goes through CreateCompat to keep this file Create-free.
 public record ContraptionBroadcastLocation(ResourceKey<Level> dimension, UUID contraptionId, BlockPos localPos)
         implements IBroadcastLocation {
 
-    private static final com.mojang.serialization.Codec<ResourceKey<Level>> DIMENSION_CODEC =
+    private static final Codec<ResourceKey<Level>> DIMENSION_CODEC =
             ResourceLocation.CODEC.xmap(rl -> ResourceKey.create(Registries.DIMENSION, rl), ResourceKey::location);
-    private static final StreamCodec<io.netty.buffer.ByteBuf, ResourceKey<Level>> DIMENSION_STREAM_CODEC =
+    private static final StreamCodec<ByteBuf, ResourceKey<Level>> DIMENSION_STREAM_CODEC =
             ResourceLocation.STREAM_CODEC.map(rl -> ResourceKey.create(Registries.DIMENSION, rl), ResourceKey::location);
 
     public static final BroadcastLocationType TYPE = new BroadcastLocationType(

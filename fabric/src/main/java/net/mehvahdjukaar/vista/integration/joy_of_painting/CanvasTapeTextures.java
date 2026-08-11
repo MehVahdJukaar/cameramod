@@ -14,11 +14,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Builds (and caches) a {@link DynamicTexture} of a Joy of Painting canvas's pixels, so tapes can draw
- * it in the reel gallery and stretch it across a TV screen. Keyed by canvas id + version so an edited
- * canvas rebuilds instead of showing a stale image.
- */
+// Canvas pixels as a DynamicTexture, so tapes can draw them in the reel gallery and across a TV screen.
+// Keyed by canvas id + version so an edited canvas rebuilds instead of showing a stale image.
 public class CanvasTapeTextures {
 
     private static final Map<String, ResourceLocation> CACHE = new HashMap<>();

@@ -136,22 +136,17 @@ public class IrisCompat {
     @Nullable
     private static final Field COLOR_BUFFER_VERSION_FIELD = lookupIrisRtField("iris$colorBufferVersion");
 
-    /**
-     * {@link VanillaRenderingPipeline}'s constructor is not inert: it rewrites
-     * {@link WorldRenderingSettings#INSTANCE} as if a pack had just been unloaded (chunk vertex format
-     * back to Sodium's compact one, block type ids dropped, AO and entity draw settings reset), and every
-     * one of those setters arms Iris's reload flag when the value changes. Right now this lands on
-     * untouched defaults because the field below is initialized when {@link #addConfigs} first touches
-     * this class at startup, well before any pack exists. That is incidental, though: the day this class
-     * gets loaded later, building the stub would reset the vertex format under a live pack and force a
-     * full terrain rebuild mid-frame. Snapshot the settings and put them back so the construction is
-     * inert whenever it happens to run.
-     *
-     * <p>Copied field by field rather than through the getters on purpose: several of those name Sodium
-     * or Minecraft types, and the Iris artifact on the NeoForge compile classpath still carries Fabric
-     * mappings, so {@code getVertexFormat} and {@code getBlockTypeIds} are unusable from common. Going
-     * over the declared fields also covers the reload flag, which the setters arm on their own.
-     */
+    // VanillaRenderingPipeline's constructor is not inert: it rewrites WorldRenderingSettings.INSTANCE as
+    // if a pack had just been unloaded (vertex format back to Sodium's compact one, block type ids
+    // dropped, AO and entity draw settings reset), and each of those setters arms Iris's reload flag on
+    // change. Today it lands on untouched defaults because addConfigs touches this class at startup,
+    // before any pack exists, but that's incidental: loaded any later, it would reset the vertex format
+    // under a live pack and force a full terrain rebuild mid-frame. So snapshot and restore around it.
+    //
+    // Copied field by field rather than through the getters: several of those name Sodium or Minecraft
+    // types, and the Iris artifact on the NeoForge compile classpath still carries Fabric mappings, so
+    // getVertexFormat and getBlockTypeIds are unusable from common. Walking the declared fields also
+    // covers the reload flag the setters arm on their own.
     private static WorldRenderingPipeline createFeedPipeline() {
         WorldRenderingSettings settings = WorldRenderingSettings.INSTANCE;
         Map<Field, Object> snapshot = new LinkedHashMap<>();
@@ -227,19 +222,16 @@ public class IrisCompat {
         };
     }
 
-    /**
-     * A pack program that overrode blend or killed the color/depth mask leaves Iris's global storages
-     * <i>locked</i>: from then on every {@code GlStateManager} blend/mask call is only recorded, not
-     * applied, until an Iris program hands the state back on clear. A feed pass runs on a
-     * {@link VanillaRenderingPipeline}, so no Iris program applies inside it and nothing ever releases
-     * the lock: the whole nested render (and the RenderSystem restore afterwards) would then draw with
-     * the pack's frozen state, which is what makes blended geometry come out opaque in a TV or mirror.
-     *
-     * <p>What the storages hold at this point is exactly what the last vanilla caller asked for, since
-     * the locked calls were deferred into them, so releasing them applies the correct state rather than
-     * a stale one. No need to put the lock back either: the next pack program re-applies its override
-     * on the following {@code apply}.
-     */
+    // A pack program that overrode blend or killed the color/depth mask leaves Iris's global storages
+    // locked: from then on every GlStateManager blend/mask call is recorded, not applied, until an Iris
+    // program hands the state back on clear. Feed passes run on a VanillaRenderingPipeline, so no Iris
+    // program applies inside them and nothing releases the lock, and the whole nested render (plus the
+    // RenderSystem restore after it) draws with the pack's frozen state. That's what makes blended
+    // geometry come out opaque in a TV or mirror.
+    //
+    // Releasing applies the correct state rather than a stale one, since the locked calls were deferred
+    // into the storages and hold what the last vanilla caller asked for. The lock doesn't need putting
+    // back: the next pack program re-applies its override on the following apply.
     private static void releaseIrisStateLocks() {
         BlendModeStorage.restoreBlend();
         DepthColorStorage.unlockDepthColor();

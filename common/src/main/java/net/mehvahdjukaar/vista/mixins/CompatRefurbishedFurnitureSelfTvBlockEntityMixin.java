@@ -19,14 +19,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * Turns TVs into Refurbished Furniture electricity modules so they can be wired up with the wrench
- * and switched on and off from the furniture power network.
- * <p>
- * Refurbished Furniture finds nodes purely through {@code getBlockEntity(pos) instanceof IElectricityNode},
- * so implementing the interface is all that is needed: its own BlockEntity mixin registers us with the
- * electricity ticker, and its LevelChunk mixin drops our links when the tv is broken.
- */
+// Turns TVs into Refurbished Furniture electricity modules, wirable with the wrench.
+// RF finds nodes purely through getBlockEntity(pos) instanceof IElectricityNode, so implementing the
+// interface is all that's needed: its own BlockEntity mixin registers us with the electricity ticker,
+// and its LevelChunk mixin drops our links when the tv breaks.
 @OptionalMixin(value = "com.mrcrayfish.furniture.refurbished.electricity.IModuleNode")
 @Mixin(TVBlockEntity.class)
 public abstract class CompatRefurbishedFurnitureSelfTvBlockEntityMixin implements IModuleNode {

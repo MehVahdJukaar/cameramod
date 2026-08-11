@@ -16,15 +16,13 @@ import org.joml.Quaternionf;
 
 import java.util.UUID;
 
-/**
- * Aim sync for a view finder riding inside a Create contraption. A contraption has no server-side block entity, so
- * {@link net.mehvahdjukaar.vista.network.SyncViewFinderPacket} (which addresses the view finder by block pos) can't
- * be used; this packet carries the contraption entity id + local pos instead.
- *
- * <p>Client to server: the controlling player's aim change. The server relays it to everyone tracking the
- * contraption (so remote TVs update live) and bakes it into the contraption's stored block NBT (so the aim survives
- * a render rebuild, a new viewer coming into range, and save/load while assembled).
- */
+// Aim sync for a view finder riding inside a Create contraption. A contraption has no server-side block
+// entity, so SyncViewFinderPacket (which addresses by block pos) can't be used and this carries the
+// contraption entity id + local pos instead.
+//
+// Client to server: the controlling player's aim change. The server relays it to everyone tracking the
+// contraption (remote TVs update live) and bakes it into the stored block NBT, so the aim survives a
+// render rebuild, a new viewer coming into range, and save/load while assembled.
 public record SyncContraptionViewFinderPacket(
         UUID contraptionId, BlockPos localPos, Quaternionf localRot, int zoom,
         boolean locked, boolean stopControlling) implements Message {

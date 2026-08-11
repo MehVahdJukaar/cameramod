@@ -40,13 +40,9 @@ public class WatermediaImageTexture extends AbstractTexture implements IWebTextu
         return id;
     }
 
-    /**
-     * Do not let Minecraft manage the GL texture id for Watermedia images.
-     * The underlying ImageRenderer / ImageCache owns the texture lifetime.
-     */
     @Override
     public void releaseId() {
-        // no-op: GL texture is managed by Watermedia
+        // no-op: the ImageRenderer / ImageCache owns the GL texture lifetime, not Minecraft
     }
 
     @Override

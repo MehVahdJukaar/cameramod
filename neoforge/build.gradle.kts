@@ -61,9 +61,18 @@ dependencies {
 
     modImplementation("foundry.veil:veil-neoforge-1.21.1:4.1.2")
     modImplementation("curse.maven:fsable-1312371:8263584")
+
+    // Light-beam mods to check against sublevel view finder feeds: one of them makes chunks seen
+    // through a view finder on a sublevel render entities and block entities but no terrain.
+    modImplementation("curse.maven:spotlights-or-something-1565038:8429512") // searchlights 1.3.1, Veil cone spotlights
+    modImplementation("curse.maven:headlight-1190219:6282140") // 2.0.1
+    // Needs Create + Architectury at runtime, and Create is compileOnly here, so this one stays off
+    // the dev runtime until Create's runtime stack (flywheel/ponder/registrate) is declared too.
+    modCompileOnly("curse.maven:create-train-lights-1318080:7761822") // v1.1.1
+
     // Create contraption view-finder integration (platform impl: CreatePlatStuffImpl)
     modCompileOnly("curse.maven:create-328085:7963363")
-    //modCompileOnly("curse.maven:create-aeronautics-676721:8003941")
+    modCompileOnly("curse.maven:create-aeronautics-676721:8240058") // 1.3.0, the newest 1.21.1 build
     api("dev.ryanhcode.sable-companion:sable-companion-common-1.21.1:[${sable_companion_version},)")
     jarJar("dev.ryanhcode.sable-companion:sable-companion-common-1.21.1:[${sable_companion_version},)")
 
