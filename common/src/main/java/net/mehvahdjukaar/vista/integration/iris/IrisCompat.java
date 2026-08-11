@@ -22,7 +22,10 @@ import org.joml.Vector3d;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.function.Supplier;
 
 public class IrisCompat {
@@ -141,31 +144,37 @@ public class IrisCompat {
      * untouched defaults because the field below is initialized when {@link #addConfigs} first touches
      * this class at startup, well before any pack exists. That is incidental, though: the day this class
      * gets loaded later, building the stub would reset the vertex format under a live pack and force a
-     * full terrain rebuild mid-frame. Put back whatever was there so the construction is inert whenever
-     * it happens to run.
+     * full terrain rebuild mid-frame. Snapshot the settings and put them back so the construction is
+     * inert whenever it happens to run.
+     *
+     * <p>Copied field by field rather than through the getters on purpose: several of those name Sodium
+     * or Minecraft types, and the Iris artifact on the NeoForge compile classpath still carries Fabric
+     * mappings, so {@code getVertexFormat} and {@code getBlockTypeIds} are unusable from common. Going
+     * over the declared fields also covers the reload flag, which the setters arm on their own.
      */
     private static WorldRenderingPipeline createFeedPipeline() {
         WorldRenderingSettings settings = WorldRenderingSettings.INSTANCE;
-        var vertexFormat = settings.getVertexFormat();
-        var blockTypeIds = settings.getBlockTypeIds();
-        float ambientOcclusionLevel = settings.getAmbientOcclusionLevel();
-        boolean disableDirectionalShading = settings.shouldDisableDirectionalShading();
-        boolean useSeparateAo = settings.shouldUseSeparateAo();
-        boolean separateEntityDraws = settings.shouldSeparateEntityDraws();
-        boolean voxelizeLightBlocks = settings.shouldVoxelizeLightBlocks();
-        boolean reloadWasRequired = settings.isReloadRequired();
+        Map<Field, Object> snapshot = new LinkedHashMap<>();
+        try {
+            for (Field field : WorldRenderingSettings.class.getDeclaredFields()) {
+                if (Modifier.isStatic(field.getModifiers())) continue;
+                field.setAccessible(true);
+                snapshot.put(field, field.get(settings));
+            }
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            VistaMod.LOGGER.warn("Failed to snapshot Iris world rendering settings", e);
+            snapshot.clear();
+        }
 
         WorldRenderingPipeline pipeline = new VanillaRenderingPipeline();
 
-        settings.setVertexFormat(vertexFormat);
-        settings.setBlockTypeIds(blockTypeIds);
-        settings.setAmbientOcclusionLevel(ambientOcclusionLevel);
-        settings.setDisableDirectionalShading(disableDirectionalShading);
-        settings.setUseSeparateAo(useSeparateAo);
-        settings.setSeparateEntityDraws(separateEntityDraws);
-        settings.setVoxelizeLightBlocks(voxelizeLightBlocks);
-        // Restoring a null block type id map re-arms the flag on its own, so the flag goes back last.
-        if (!reloadWasRequired) settings.clearReloadRequired();
+        try {
+            for (Map.Entry<Field, Object> entry : snapshot.entrySet()) {
+                entry.getKey().set(settings, entry.getValue());
+            }
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            VistaMod.LOGGER.warn("Failed to restore Iris world rendering settings", e);
+        }
         return pipeline;
     }
 

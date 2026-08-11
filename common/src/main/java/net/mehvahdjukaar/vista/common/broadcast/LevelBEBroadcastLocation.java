@@ -81,9 +81,10 @@ public final class LevelBEBroadcastLocation implements IBroadcastLocation {
 
     @Override
     public TriResult<IBroadcastSource> get(boolean isClient) {
+        MinecraftServer server = PlatHelper.getCurrentServer();
         Level otherLevel = isClient
                 ? VistaModClient.getLocalLevelByDimension(globalPos.dimension())
-                : PlatHelper.getCurrentServer().getLevel(globalPos.dimension());
+                : (server == null ? null : server.getLevel(globalPos.dimension()));
 
         if (otherLevel != null && otherLevel.isLoaded(globalPos.pos())) {
             if (otherLevel.getBlockEntity(globalPos.pos()) instanceof IBroadcastSource provider) {
