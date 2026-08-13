@@ -7,7 +7,9 @@ import net.mehvahdjukaar.moonlight.api.client.gui.ConfigScreenExtensions;
 import net.mehvahdjukaar.moonlight.api.misc.EventCalled;
 import net.mehvahdjukaar.moonlight.api.platform.ClientHelper;
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
+import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
+import net.mehvahdjukaar.vista.client.PinnedChunks;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.mehvahdjukaar.vista.client.VistaDynamicResources;
 import net.mehvahdjukaar.vista.client.renderer.*;
@@ -22,6 +24,7 @@ import net.mehvahdjukaar.vista.common.chunk_tracking.ExtraChunkViewData;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
+import net.mehvahdjukaar.vista.network.ServerBoundExtraChunksSupportPacket;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -53,12 +56,7 @@ public class VistaModClient {
     public static final CoreShaderContainer CAMERA_VIEW_SHADER = new CoreShaderContainer(GameRenderer::getRendertypeEntitySolidShader);
     public static final CoreShaderContainer MIRROR_MATERIAL_SHADER = new CoreShaderContainer(GameRenderer::getRendertypeEntitySolidShader);
     public static final CoreShaderContainer STATIC_SHADER = new CoreShaderContainer(GameRenderer::getPositionColorShader);
-    /**
-     * Own core shader rather than reusing {@code getPositionColorTexLightmapShader()}: Iris hardcodes that
-     * particular vanilla shader as text rendering (same override hook as the rendertype_text shaders), so
-     * anything else drawn with it gets Iris's block-entity-text gbuffer program instead of real geometry
-     * shading and comes out black.
-     */
+    //for iris
     public static final CoreShaderContainer WAVE_GATE_SHADER = new CoreShaderContainer(GameRenderer::getPositionColorTexLightmapShader);
 
     public static final ModelLayerLocation VIEWFINDER_MODEL = loc("viewfinder");
@@ -293,10 +291,15 @@ public class VistaModClient {
         LiveFeedTexturesManager.clear();
 
         CLIENT_EXTRA_CHUNK_VIEW_DATA.clearZones();
+        PinnedChunks.clear();
     }
 
     public static void onLevelLoaded(ClientLevel cl) {
         KNOWN_LEVELS_BY_DIMENSION.put(cl.dimension(), cl);
+
+        if (Minecraft.getInstance().getConnection() != null) {
+            NetworkHelper.sendToServer(new ServerBoundExtraChunksSupportPacket(PinnedChunks.isSupported()));
+        }
     }
 
     public static Level getLocalLevel() {

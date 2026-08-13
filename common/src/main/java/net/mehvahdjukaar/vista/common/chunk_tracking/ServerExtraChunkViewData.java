@@ -29,8 +29,18 @@ public class ServerExtraChunkViewData extends ExtraChunkViewData {
     private final Set<GlobalPos> trackedWantedZoneCenters = new HashSet<>();
     // cleared whenever zones change so the flush re-evaluates everything
     private final Set<Long> queuedZoneChunks = new HashSet<>();
+    // clients that can't render pinned chunks say so on join, see ServerBoundExtraChunksSupportPacket
+    private boolean clientSupportsZones = true;
 
     public ServerExtraChunkViewData() {}
+
+    public void setClientSupportsZones(boolean supported) {
+        clientSupportsZones = supported;
+    }
+
+    public boolean clientSupportsZones() {
+        return clientSupportsZones;
+    }
 
     @Override
     protected void onZonesChanged() {

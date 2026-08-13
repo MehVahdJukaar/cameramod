@@ -12,6 +12,7 @@ public class ModNetwork {
         event.registerBidirectional(SyncViewFinderPacket.CODEC);
         // contraption view finder sync is registered from :neoforge only, see integration.create.CreateCompat
         event.registerServerBound(ServerBoundSyncWaveGatePacket.CODEC);
+        event.registerServerBound(ServerBoundExtraChunksSupportPacket.CODEC);
         event.registerClientBound(ClientBoundControlViewFinderPacket.CODEC);
         event.registerClientBound(ClientBoundSyncExtraChunksPacket.CODEC);
     }

@@ -3,6 +3,7 @@ package net.mehvahdjukaar.vista.network;
 import net.mehvahdjukaar.moonlight.api.platform.network.Message;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
+import net.mehvahdjukaar.vista.client.PinnedChunks;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ExtraChunkViewData;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ILevelRendererExt;
 import net.minecraft.client.Minecraft;
@@ -44,6 +45,9 @@ public record ClientBoundSyncExtraChunksPacket(ExtraChunkViewData data) implemen
                 client.getZones().size(), newChunks.size());
 
         if (newChunks.equals(oldChunks)) return; // ViewArea already has the right sections
+
+        // chunks we were holding for a zone that no longer exists would keep ticking forever
+        PinnedChunks.keepOnly(newChunks);
 
         Minecraft mc = Minecraft.getInstance();
 

@@ -341,7 +341,7 @@ public class GifPathSpriteSource implements SpriteSource {
                 String disp = gce.getAttribute("disposalMethod");
                 if ("restoreToBackgroundColor".equals(disp)) fm.disposal = 2;
                 else if ("restoreToPrevious".equals(disp)) fm.disposal = 3;
-                else fm.disposal = 1; // 0 and 1 both mean “do not dispose”
+                else fm.disposal = 1; // 0 and 1 both mean "do not dispose"
             } else {
                 fm.disposal = 1;
             }

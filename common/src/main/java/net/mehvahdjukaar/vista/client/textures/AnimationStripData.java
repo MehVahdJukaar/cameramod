@@ -78,9 +78,8 @@ public record AnimationStripData(
         int row = frameIndex % atlasRows;
         return v * frameRelativeH + row * frameRelativeH;
     }
-    /**
-     * Time (ticks) → actual textureMatrix frame index
-     */
+
+    // time in ticks to actual textureMatrix frame index
     public int getFrameIndexFromTime(int time) {
         if (frameInfos.length == 0) return 0;
 

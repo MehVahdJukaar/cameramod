@@ -87,7 +87,10 @@ public class ServerCameraChunkManager {
         if ((gameTime + player.getId()) % TICK_INTERVAL != 0) return;
 
         ServerExtraChunkViewData data = VistaMod.EXTRA_VIEW_AREAS.getOrCreate(player);
-        Set<GlobalPos> desired = findViewFindersNeededForPlayer(player);
+        // an empty desired set walks the normal remove path, so a client that reports late still gets
+        // its zones cleared and its force load references released
+        Set<GlobalPos> desired = data.clientSupportsZones()
+                ? findViewFindersNeededForPlayer(player) : Set.of();
         Set<GlobalPos> current = data.getTrackedWantedZoneCenters();
         if (desired.equals(current)) return;
 
