@@ -55,11 +55,10 @@ modUrl = "${mod_homepage}"
     ordering = "NONE"
     side = "CLIENT"
 
-# veil compat hooks internals that changed in 4.4.0
 [[dependencies.${ mod_id }]]
 modId = "veil"
 type = "optional"
-versionRange = "[4.4.0,)"
+versionRange = "[4.1.2,)"
 ordering = "NONE"
 side = "CLIENT"
 

@@ -41,6 +41,6 @@
   "breaks": {
     "vistafix": "<=1.0.1",
     "distanthorizons": "<3.1.2-b",
-    "veil": "<4.4.0"
+    "veil": "<4.1.2"
   }
 }

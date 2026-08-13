@@ -18,19 +18,8 @@ classes/
 .settings
 *.launch
 /unique_lines.txt
-/.junie/memory/
-/.codex
-/.aiassistant/
-/.ai/
 /common/build/
 /fabric/build/
 /neoforge/build/
 /forge/build/
 /build/
-/.junie/AGENTS.md
-
-# AI agent / assistant config (local only, not on GitHub)
-.claude/
-.cursor/
-.junie/
-CLAUDE.md

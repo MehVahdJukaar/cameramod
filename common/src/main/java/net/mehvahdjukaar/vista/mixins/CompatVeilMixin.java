@@ -21,6 +21,27 @@ public abstract class CompatVeilMixin {
     // skip it like Veil does for its own nested perspectives. Returning false takes Veil's no-lights
     // branch, which unbinds properly; suppressing the whole tail instead left Veil's framebuffer bound
     // and terrain vanished from feeds.
+    //
+    // drawLights gained a renderInscattering param in Veil 4.4.0, and Sable still bundles 4.1.4, so both
+    // signatures are targeted. Per version only one descriptor exists; the other wrap gets dropped
+    // silently, without even a log (that silence is how the 4.4 change slipped by: Supplementaries#2136).
+    @TargetHandler(
+            mixin = "foundry.veil.mixin.pipeline.client.PipelineLevelRendererMixin",
+            name = "blit"
+    )
+    @WrapOperation(
+            method = "@MixinSquared:Handler",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lfoundry/veil/api/client/render/VeilRenderSystem;drawLights(Lnet/minecraft/util/profiling/ProfilerFiller;Lfoundry/veil/api/client/render/CullFrustum;)Z")
+    )
+    private boolean vista$skipVeilLightPassInFeeds(ProfilerFiller profiler, CullFrustum cullFrustum,
+                                                   Operation<Boolean> original) {
+        if (VistaLevelRenderer.isRenderingLiveFeed()) return false;
+        return original.call(profiler, cullFrustum);
+    }
+
+    // Veil 4.4.0+ variant of the above
     @TargetHandler(
             mixin = "foundry.veil.mixin.pipeline.client.PipelineLevelRendererMixin",
             name = "blit"
@@ -31,8 +52,8 @@ public abstract class CompatVeilMixin {
                     value = "INVOKE",
                     target = "Lfoundry/veil/api/client/render/VeilRenderSystem;drawLights(Lnet/minecraft/util/profiling/ProfilerFiller;Lfoundry/veil/api/client/render/CullFrustum;Z)Z")
     )
-    private boolean vista$skipVeilLightPassInFeeds(ProfilerFiller profiler, CullFrustum cullFrustum,
-                                                   boolean renderInscattering, Operation<Boolean> original) {
+    private boolean vista$skipVeilLightPassInFeeds44(ProfilerFiller profiler, CullFrustum cullFrustum,
+                                                     boolean renderInscattering, Operation<Boolean> original) {
         if (VistaLevelRenderer.isRenderingLiveFeed()) return false;
         return original.call(profiler, cullFrustum, renderInscattering);
     }
