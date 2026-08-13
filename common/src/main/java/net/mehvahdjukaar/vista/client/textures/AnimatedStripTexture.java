@@ -153,7 +153,6 @@ public class AnimatedStripTexture extends AbstractTexture implements Dumpable {
             int frameCount,
             int maxTextureSize
     ) {
-        // Layout computed from frameCount, frameW/H, maxTextureSize
         Vec2i layout = computeAtlasLayout(frameCount, frameW, frameH, maxTextureSize, maxTextureSize);
         int rows = layout.x(); // number of rows per column
         int cols = layout.y(); // number of columns
@@ -164,14 +163,12 @@ public class AnimatedStripTexture extends AbstractTexture implements Dumpable {
         NativeImage out = new NativeImage(NativeImage.Format.RGBA, atlasW, atlasH, true);
 
         for (int i = 0; i < frameCount; i++) {
-            // COLUMN-MAJOR indexing: fill columns first
             int row = i % rows;
             int col = i / rows;
 
             int xOff = col * frameW;
             int yOff = row * frameH;
 
-            // Source is vertical strip
             originalImage.copyRect(out, 0, i * frameH, xOff, yOff, frameW, frameH, false, false);
         }
 

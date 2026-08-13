@@ -61,7 +61,7 @@ public class ClientConfigs {
                 .comment("Scale factor for mirror reflection resolution. Each mirror block is 16 virtual pixels wide; this multiplies that area. Higher values are sharper but more expensive.")
                 .define("resolution_scale", 8, 1, 32);
         MIRROR_UPDATE_MODE = builder
-                .comment("How mirror reflections are dispatched. RENDER_TICK_END (default, recommended): the BE renderer queues mirrors into a pending list; the queue is flushed from a top-level frame hook (Fabric mixin after GameRenderer.render; NeoForge RenderFrameEvent.Post) that's guaranteed to run outside any level render — safe under recursive renderLevel calls from other mods. TEXTURE_REFRESH: piggybacks on the live-feed texture refresh dispatch (one render per visible mirror, end-of-frame). Switch to TEXTURE_REFRESH if you suspect a timing-related rendering glitch.")
+                .comment("How mirror reflections are dispatched. RENDER_TICK_END (default): mirrors are queued and flushed from a top level frame hook, which is guaranteed to run outside any level render and stays safe when other mods render the level recursively. TEXTURE_REFRESH: rides along with the live feed texture refresh instead, one render per visible mirror at the end of the frame. Try TEXTURE_REFRESH if you suspect a timing related rendering glitch.")
                 .define("update_mode", MirrorUpdateMode.RENDER_TICK_END);
         MIRROR_SMOOTH = builder
                 .comment("Smooth the mirror reflection with bilinear texture filtering. Enabled gives a softer, less pixelated reflection; disabled keeps it crisp and pixelated.")
@@ -69,7 +69,7 @@ public class ClientConfigs {
 
         builder.push("recursion");
         MIRROR_RECURSION_MODE = builder
-                .comment("How mirrors-inside-mirrors are handled. OFF: nested mirrors don't render at all (you see the frame, no reflection). SHARED (cheap): each mirror reuses its own self-reflection texture when seen inside another mirror — looks fine at a glance but parallax is wrong at depth >=1 (the deeper reflections won't slide correctly as you move). RECURSIVE (expensive): each chain gets its own off-axis render with correct parallax, up to max_depth. Beyond the depth cap the nested mirror is not drawn at all.")
+                .comment("How mirrors inside mirrors are handled. OFF: nested mirrors don't render at all, you just see the frame. SHARED (cheap): each mirror reuses its own reflection texture when seen inside another. Fine at a glance, but the deeper reflections won't slide correctly as you move. RECURSIVE (expensive): every chain gets its own render with correct parallax, up to max_depth. Past the cap the nested mirror isn't drawn.")
                 .define("mode", MirrorRecursionMode.RECURSIVE);
         MIRROR_MAX_RECURSION_DEPTH = builder
                 .comment("Max nesting depth in RECURSIVE recursion mode. 0 = no recursion (equivalent to OFF). 1 = one level of correct nested reflection. Each extra level multiplies cost, but resolution_divider and distance_divider attenuate per-level cost.")

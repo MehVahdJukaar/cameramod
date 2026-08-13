@@ -46,10 +46,9 @@ public class MirrorBlockEntity extends BlockEntity {
         this.connectedMirrorsAmount = size;
     }
 
-    // The mirror surface leaves a 1px frame on the outer edge of the whole group (FRAME_PIXELS = 2,
-    // i.e. 1px per side), so the visible area is 16*N - 2 px. Sizing the framebuffer to that keeps a
-    // pixel-perfect texel:screen ratio for any connected size — the frame is a fixed 1px regardless
-    // of how many blocks wide the mirror is (matches the TV's fixed-bezel sizing).
+    // The surface leaves a fixed 1px frame per outer side no matter how wide the group is (same as
+    // the TV's bezel), so the visible area is 16*N - 2 px. Sizing the framebuffer to exactly that
+    // keeps the texel to screen ratio 1:1 at any size.
     public static final int FRAME_PIXELS = 2;
 
     public Vec2i getScreenPixelSize() {
@@ -58,11 +57,9 @@ public class MirrorBlockEntity extends BlockEntity {
                 Math.max(1, connectedMirrorsAmount.y()) * 16 - FRAME_PIXELS);
     }
 
-    // Raw BlockEntity#setChanged only flags the chunk for saving — it does NOT push to clients.
-    // The connection size lives on the BE (synced via getUpdatePacket), so without this a grid
-    // reshape (grow/shrink) updates the size server-side but the client keeps rendering at the old
-    // dimensions (e.g. a shrunk mirror stays stretched at its former size). Mirror TVs get this for
-    // free from Moonlight's ItemDisplayTile; do the same here (flag 2 = notify clients only).
+    // Raw setChanged only flags the chunk for saving, it doesn't push to clients. Connection size
+    // lives on the BE, so without this a reshaped grid updates server-side while the client keeps
+    // rendering the old dimensions. Mirror TVs get this free from Moonlight's ItemDisplayTile.
     @Override
     public void setChanged() {
         super.setChanged();

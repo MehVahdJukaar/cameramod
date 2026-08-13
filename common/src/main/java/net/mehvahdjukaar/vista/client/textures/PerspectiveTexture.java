@@ -8,10 +8,9 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 /**
- * Base for textures that hold a per-frame rendered view of the world: a camera feed displayed
- * on a TV, or the off-axis reflection rendered into a mirror. Subclasses own their own refresh
- * logic via {@link #refresh()}; the static {@link #REFRESH_DISPATCH} avoids the {@code this::}
- * footgun in the super constructor by routing back through a cast on the parameter.
+ * Base for textures holding a per-frame rendered view of the world: a camera feed on a TV, or a
+ * mirror's reflection. REFRESH_DISPATCH is static to dodge the {@code this::} footgun in the super
+ * constructor, routing back through a cast on the parameter instead.
  */
 public abstract class PerspectiveTexture extends RenderableDynamicTexture {
 
@@ -28,7 +27,6 @@ public abstract class PerspectiveTexture extends RenderableDynamicTexture {
 
     protected abstract void refresh();
 
-    /** Hook for applying a post-process shader chain to this texture. No-op by default. */
     public void applyPostChain() {
     }
 

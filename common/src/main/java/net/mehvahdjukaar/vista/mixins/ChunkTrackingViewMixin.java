@@ -14,22 +14,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.function.Consumer;
 
 /**
- * Injects an {@link ExtraChunkViewData} field into every {@link ChunkTrackingView.Positioned}
- * instance. {@link ChunkMapMixin} sets this field on the new view just before
- * {@code applyChunkTrackingView} calls {@code difference}.
- *
- * IMPORTANT — we do NOT patch {@code contains(x,z,includeOuter)}.
- * If we did, both the old and new stored views would report zone chunks as
- * "already tracked". When the player later walks into the zone's normal view range
- * the bounding-box fast path sees old.contains==true AND new.contains==true → no diff
- * → the chunk is never (re-)sent; the server wrongly believes the client already has it.
- *
- * By patching only {@code forEach}:
- *  - Zone chunks are emitted during the fallback path (initial join / teleport, where
- *    old==EMPTY or views don't intersect) → sent to the client on first opportunity.
- *  - Once a zone chunk enters the player's normal view distance, the bounding-box
- *    fast path sees old.contains==false, new.contains==true → toAdd → sent normally,
- *    just like any ordinary chunk coming into range.
+ * Carries the player's zone data on their tracking view. {@link ChunkMapMixin} sets it on the new
+ * view right before {@code difference} runs.
+ * <p>
+ * Only {@code forEach} is patched, deliberately. Patching {@code contains} instead would make both
+ * the old and new view report zone chunks as already tracked, so when the player walked into the
+ * zone the fast path would see no difference and never send the chunk. With forEach alone, zone
+ * chunks go out on the fallback path (join, teleport) and then behave like any ordinary chunk
+ * coming into range once they enter normal view distance.
  */
 @Mixin(ChunkTrackingView.Positioned.class)
 public class ChunkTrackingViewMixin implements IChunkViewWithZones {
@@ -47,12 +39,8 @@ public class ChunkTrackingViewMixin implements IChunkViewWithZones {
         this.vista$zones = data;
     }
 
-    /**
-     * Appends zone chunks that lie outside the player's normal view distance after
-     * the regular bounding-box iteration. Exercised by {@code difference}'s fallback
-     * path only (initial join / teleport); normal movement uses the fast path which
-     * never visits coordinates outside its bounding box.
-     */
+    // Appends zone chunks outside normal view distance after the regular iteration. Only the
+    // fallback path in difference() reaches this; normal movement takes the bounding box fast path.
     @Inject(method = "forEach", at = @At("RETURN"))
     private void vista$addExtraZoneChunks(Consumer<ChunkPos> action, CallbackInfo ci) {
         if (vista$zones == null || vista$zones.getZones().isEmpty()) return;

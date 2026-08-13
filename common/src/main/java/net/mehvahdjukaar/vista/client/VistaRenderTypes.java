@@ -58,8 +58,7 @@ public class VistaRenderTypes extends RenderType {
                         .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
                         .setLightmapState(LIGHTMAP)
                         .setCullState(NO_CULL)
-                        // Depth-bias the screen toward the camera so it wins over the coplanar
-                        // block-model face instead of needing a manual forward nudge.
+                        // wins over the coplanar block face without a manual forward nudge
                         .setLayeringState(POLYGON_OFFSET_LAYERING)
                         .setTextureState(textureStateBuilder.build())
                         .setTexturingState(new TexturingStateShard("set_texel_size",
@@ -95,15 +94,14 @@ public class VistaRenderTypes extends RenderType {
     }
 
     public static RenderType mirrorMaterial(ResourceLocation reflectionTexture, int wTiles, int hTiles) {
-        // Read the smoothing config here so toggling it picks a distinct cached render type
-        // (the blur flag is baked into the texture-state shard at build time, not per-draw).
+        // smoothing is part of the key because the blur flag bakes into the texture shard at build
+        // time, so toggling it has to land on a different cached render type
         return MIRROR_MATERIAL_RENDER_TYPE.apply(
                 new MirrorKey(reflectionTexture, wTiles, hTiles, ClientConfigs.MIRROR_SMOOTH.get()));
     }
 
     private static final Function<MirrorKey, RenderType> MIRROR_MATERIAL_RENDER_TYPE = Util.memoize(k -> {
         var textureState = MultiTextureStateShard.builder()
-                // Bilinear (smooth) vs nearest (crisp) sampling of the reflection, driven by config.
                 .add(k.reflectionTexture, k.smooth, false)
                 .add(VistaModClient.MIRROR_UNDERLAY, false, false)
                 .build();
@@ -112,22 +110,16 @@ public class VistaRenderTypes extends RenderType {
                 .setTransparencyState(NO_TRANSPARENCY)
                 .setLightmapState(LIGHTMAP)
                 .setOverlayState(NO_OVERLAY)
-                // Depth-bias the surface toward the camera so it wins over the coplanar
-                // block-model face instead of needing a manual forward nudge.
                 .setLayeringState(POLYGON_OFFSET_LAYERING)
                 .setTextureState(textureState)
-                // Sampler0/1 are bound by the texture-state shard (reflection, front),
-                // Sampler2 by LIGHTMAP. Bind the overlay directly to unit 3 here — putting it
-                // into MultiTextureStateShard would collide with LIGHTMAP at unit 2.
+                // Overlay goes straight to unit 3: the shard binds 0 and 1, LIGHTMAP takes 2, so
+                // adding it to MultiTextureStateShard would collide there.
                 .setTexturingState(new TexturingStateShard("set_mirror_uniforms",
                         () -> {
                             RenderSystem.setShaderTexture(3, VistaModClient.MIRROR_OVERLAY);
                             ShaderInstance shader = VistaModClient.MIRROR_MATERIAL_SHADER.get();
                             setFloat2(shader, "Tiles", k.wTiles, k.hTiles);
-                            // Look up the live reflection texture (cache hit; ResourceLocation
-                            // is unique per mirror) and pull its fade progress. If it's gone
-                            // for any reason, default to fully faded in so we never draw an
-                            // un-silvered mirror in the steady state.
+                            // default to fully faded so a missing texture never draws un-silvered
                             float fade = 1f;
                             var t = DynamicTextureRenderer.getTextureIfPresent(k.reflectionTexture);
                             if (t instanceof MirrorReflectionTexture mrt) fade = mrt.getFadeProgress();

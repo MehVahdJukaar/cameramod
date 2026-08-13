@@ -36,9 +36,8 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Texture backing a camera feed displayed on a TV or view-finder. Owns its post-process shader
- * chain, disconnect / paused overlay state, optional timestamp overlay, and the shared
- * {@link AdaptiveUpdateScheduler} that throttles per-frame refreshes across all feeds.
+ * Texture backing a camera feed on a TV or view finder. Owns its post chain and overlay state, plus
+ * the {@link AdaptiveUpdateScheduler} shared by every feed to throttle refreshes.
  */
 public class LiveFeedTexture extends PerspectiveTexture {
 

@@ -22,9 +22,9 @@ public abstract class CompatVeilMixin {
     // branch, which unbinds properly; suppressing the whole tail instead left Veil's framebuffer bound
     // and terrain vanished from feeds.
     //
-    // drawLights gained a renderInscattering param in Veil 4.4.0, and Sable still bundles 4.1.4, so both
-    // signatures are targeted. Per version only one descriptor exists; the other wrap gets dropped
-    // silently, without even a log (that silence is how the 4.4 change slipped by: Supplementaries#2136).
+    // drawLights gained a renderInscattering param in Veil 4.4.0, and Sable still bundles 4.1.x, so both
+    // signatures are targeted. Only one descriptor exists per version, so both need require = 0 or the
+    // one that misses crashes the game (Supplementaries#2136).
     @TargetHandler(
             mixin = "foundry.veil.mixin.pipeline.client.PipelineLevelRendererMixin",
             name = "blit"
@@ -33,7 +33,8 @@ public abstract class CompatVeilMixin {
             method = "@MixinSquared:Handler",
             at = @At(
                     value = "INVOKE",
-                    target = "Lfoundry/veil/api/client/render/VeilRenderSystem;drawLights(Lnet/minecraft/util/profiling/ProfilerFiller;Lfoundry/veil/api/client/render/CullFrustum;)Z")
+                    target = "Lfoundry/veil/api/client/render/VeilRenderSystem;drawLights(Lnet/minecraft/util/profiling/ProfilerFiller;Lfoundry/veil/api/client/render/CullFrustum;)Z"),
+            require = 0
     )
     private boolean vista$skipVeilLightPassInFeeds(ProfilerFiller profiler, CullFrustum cullFrustum,
                                                    Operation<Boolean> original) {
@@ -50,7 +51,8 @@ public abstract class CompatVeilMixin {
             method = "@MixinSquared:Handler",
             at = @At(
                     value = "INVOKE",
-                    target = "Lfoundry/veil/api/client/render/VeilRenderSystem;drawLights(Lnet/minecraft/util/profiling/ProfilerFiller;Lfoundry/veil/api/client/render/CullFrustum;Z)Z")
+                    target = "Lfoundry/veil/api/client/render/VeilRenderSystem;drawLights(Lnet/minecraft/util/profiling/ProfilerFiller;Lfoundry/veil/api/client/render/CullFrustum;Z)Z"),
+            require = 0
     )
     private boolean vista$skipVeilLightPassInFeeds44(ProfilerFiller profiler, CullFrustum cullFrustum,
                                                      boolean renderInscattering, Operation<Boolean> original) {

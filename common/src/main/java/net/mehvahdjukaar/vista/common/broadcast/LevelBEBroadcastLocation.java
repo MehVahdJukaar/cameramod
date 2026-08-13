@@ -135,7 +135,7 @@ public final class LevelBEBroadcastLocation implements IBroadcastLocation {
 
     /**
      * Projects a plot-grid position to the ship's world anchor, snapped to chunk granularity.
-     * Returns null when the projection no-ops (sublevel held/removed) — the result must never be
+     * Returns null when the projection no-ops (sublevel held or removed). The result must never be
      * a plot-grid coordinate.
      */
     @Nullable

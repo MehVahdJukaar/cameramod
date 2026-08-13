@@ -23,35 +23,26 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Texture backing a mirror's reflection. The BE renderer stamps the current frame's mirror and
- * camera-eye position on the texture via {@link #setPending}; the end-of-frame texture refresh
- * consumes both and draws the off-axis frustum render via {@link #renderReflection}.
- *
- * <p>Eye position is captured at BE-render time (not at refresh time) so the camera state matches
- * the frame this update was requested for.
- *
- * <p>The reflection is rendered with an <b>off-axis frustum</b>: the reflected camera is placed at
- * the viewer's mirror image, oriented to look perpendicularly into the mirror, and the projection
- * matrix is {@code glFrustum(l, r, b, t, near, far)} where {@code near} is the distance from the
- * reflected eye to the mirror plane and {@code (l, r, b, t)} are the mirror's frame corners
- * projected onto the near plane. This is what makes coplanar mirrors look different (each one
- * sees the reflected scene through *its own* frame), and it's what makes the reflection's
- * parallax line up with the mirror surface when you move.
+ * Texture backing a mirror's reflection. The BE renderer stamps the frame's mirror and eye position
+ * via {@link #setPending} (eye captured there, not at refresh, so it matches the requesting frame)
+ * and the end-of-frame refresh draws it.
+ * <p>
+ * The reflection uses an off-axis frustum: camera at the viewer's mirror image looking perpendicular
+ * into the mirror, near plane sitting exactly on the mirror plane and l/r/b/t taken from the mirror's
+ * frame corners. That's what makes coplanar mirrors each show a different view and keeps the
+ * reflection's parallax glued to the surface as you move.
  */
 public class MirrorReflectionTexture extends PerspectiveTexture {
 
-    // Minimum near-plane distance — only kicks in if the viewer's eye is essentially
-    // touching the mirror surface, where depth precision would collapse.
+    // only kicks in when the eye is basically touching the surface, where depth precision collapses
     private static final float MIN_NEAR = 0.05f;
     private static final float FAR = 1000f;
 
-    // Width (in blocks) of the mirror's frame across the whole group — a fixed 1px on each outer
-    // side (2px total), independent of grid size. Matches the quad inset in
-    // MirrorBlockEntityRenderer and MirrorBlockEntity.FRAME_PIXELS.
+    // Total frame width across the group: a fixed 1px per outer side regardless of grid size.
+    // Matches the quad inset in MirrorBlockEntityRenderer and MirrorBlockEntity.FRAME_PIXELS.
     private static final double FRAME_BLOCKS = 2.0 / 16.0;
 
-    // Wall-clock duration of the silvering fade-in (reflectivity 0 → full). Decoupled from
-    // tick rate so it stays snappy regardless of TPS / config update mode.
+    // wall clock so the silvering fade stays snappy regardless of TPS or config update mode
     private static final long FADE_DURATION_NANOS = 300_000_000L;
 
     @Nullable
@@ -59,21 +50,15 @@ public class MirrorReflectionTexture extends PerspectiveTexture {
     @Nullable
     private Vec3 pendingEye;
 
-    // Until the first successful reflection draw, the underlying framebuffer is uninitialised
-    // (samples as white). Callers use this to skip drawing the mirror surface on the first
-    // frame after the texture is allocated, so the white flash never reaches the screen.
+    // The framebuffer samples as white until the first draw lands, so callers skip the mirror surface
+    // entirely on that first frame and the flash never reaches the screen.
     private boolean hasRendered = false;
-    // Timestamp of the first successful draw; drives the shader fade-in. -1 means "not yet".
     private long firstRenderNanos = -1L;
 
-    // Recursion depth this texture represents: 0 = direct view (mirror seen by player),
-    // 1 = mirror seen inside one parent mirror, etc. Used in RECURSIVE mode to attenuate
-    // render distance per level.
+    // 0 = mirror seen by the player, 1 = mirror seen inside one parent mirror, and so on
     private final int recursionDepth;
-    // Ordered list of parent-mirror UUIDs that led to this texture's chain. Empty for
-    // depth-0 textures. VistaLevelRenderer reads this when pushing a render frame so nested
-    // BE-renderer calls inside this texture's render see the right chain context (their own
-    // chain = parentChain + this texture's mirror UUID).
+    // Parent mirrors that led here, empty at depth 0. VistaLevelRenderer reads it when pushing a
+    // render frame so nested mirrors inside this one build their own chain from it.
     private final List<UUID> parentChain;
 
     public MirrorReflectionTexture(ResourceLocation resourceLocation, int width, int height, UUID id) {
@@ -99,11 +84,6 @@ public class MirrorReflectionTexture extends PerspectiveTexture {
         return hasRendered;
     }
 
-    /**
-     * Reflection fade-in factor in [0, 1] — 0 right after the first draw, 1 once
-     * {@link #FADE_DURATION_NANOS} has elapsed. Read once per batch flush by the mirror
-     * render-type uniform setup; cheap (two longs + a divide).
-     */
     public float getFadeProgress() {
         if (firstRenderNanos < 0) return 0f;
         long elapsed = System.nanoTime() - firstRenderNanos;
@@ -137,23 +117,15 @@ public class MirrorReflectionTexture extends PerspectiveTexture {
         double recession = MirrorBlock.surfaceRecession(mirror.getBlockState());
         Vec3 normal = Vec3.atLowerCornerOf(dir.getNormal());
 
-        // Build the mirror's local right axis in world space, FROM THE VIEWER'S POV (viewer
-        // stands in front of the mirror, looking back along -normal). worldUp × normal gives
-        // viewer-right for every facing direction. The other cross-product order (normal ×
-        // worldUp) yields viewer-LEFT instead — visually equivalent for a 1x1 mirror (the
-        // group centre coincides with the master centre), but for w>1 it walks `groupCenter`
-        // away from the rest of the group instead of toward it. That offset propagates into
-        // the frustum corners and the user sees the reflected scene shifted by one block per
-        // unit of (w-1)/2 in the wrong direction.
+        // Right axis from the VIEWER's POV, i.e. standing in front looking back along -normal.
+        // Flipping the cross order gives viewer-left instead, which looks identical on a 1x1 mirror
+        // but walks groupCenter away from the group for w>1 and shifts the whole reflection.
         Vec3 worldUp = new Vec3(0, 1, 0);
         Vec3 camRight = normal.cross(worldUp).normalize();
 
-        // For connected mirrors the master is at the bottom-left of the group.
-        // The group centre is offset right by (W-1)/2 and up by (H-1)/2 from the master centre.
+        // master sits at the bottom-left of a connected group, so the group centre is offset from it
         Vec2i connection = mirror.getConnectedCount();
-        // The reflective surface is the group's block face minus a fixed 1px frame on each outer
-        // side, so the off-axis frustum corners use the inset extent — this keeps the reflection's
-        // parallax matched to the visible mirror area rather than the full block face.
+        // frustum corners use the inset extent, matching the visible surface rather than the whole face
         double halfW = (connection.x() - FRAME_BLOCKS) * 0.5;
         double halfH = (connection.y() - FRAME_BLOCKS) * 0.5;
 
@@ -162,25 +134,18 @@ public class MirrorReflectionTexture extends PerspectiveTexture {
                 .add(camRight.scale((1-connection.x() ) * 0.5))
                 .add(worldUp.scale((connection.y() - 1) * 0.5));
 
-        // Use groupCenter as the plane-point for the reflection so the reflected-eye
-        // distance is computed relative to the actual surface midpoint.
         MirrorReflection reflection = MirrorReflection.compute(groupCenter, normal, eye);
         if (!reflection.viewerInFront()) return;
 
-        // Mirror surface corners in world space (WxH block face, anchored at group centre).
         Vec3 halfRight = camRight.scale(halfW);
         Vec3 halfUp    = worldUp.scale(halfH);
         Vec3 bottomLeft  = groupCenter.subtract(halfRight).subtract(halfUp);
         Vec3 bottomRight = groupCenter.add(halfRight).subtract(halfUp);
         Vec3 topLeft     = groupCenter.subtract(halfRight).add(halfUp);
 
-        // Off-axis frustum bounds, computed in the reflected camera's eye space.
-        // All four corners lie on the mirror plane, so they share the same depth from the eye
-        // (= signedDistance, the perpendicular distance from the reflected eye to the plane).
-        // Setting near = depth makes the projection's near plane coincide with the mirror plane,
-        // so anything between the reflected camera and the mirror (the wall it's mounted on,
-        // the viewer's legs jutting through the plane, etc.) is z-clipped without any oblique
-        // matrix trickery.
+        // All four corners lie on the mirror plane so they share one depth from the eye. Setting
+        // near to it puts the near plane on the mirror, which z-clips everything between the
+        // reflected camera and the surface (the wall behind it, the viewer's own legs) for free.
         double depth = reflection.signedDistance();
         float near = Math.max(MIN_NEAR, (float) depth);
 
@@ -200,14 +165,11 @@ public class MirrorReflectionTexture extends PerspectiveTexture {
         SceneCameraSetup setup = (camera, pt) ->
                 setupMirrorCamera(camera, level, reflection.reflectedEye(), camYaw);
 
-        // BFS start override: a point one block in front of the mirror's center. That chunk is
-        // guaranteed visible (the player can see the mirror's front face, so the chunk between
-        // them is on-screen) and has its mesh built. Without this, mirrors mounted on walls
-        // would have BFS seeded inside the wall block, stalling smart culling.
+        // One block in front of the mirror. If the player can see the front face then this chunk is
+        // visible and meshed, unlike the wall block a flush-mounted mirror would otherwise seed into.
         Vec3 bfsStart = groupCenter.add(normal.scale(1.0));
 
-        // Attenuate chunk render distance per nesting level so depth-N reflections cost
-        // exponentially less. Falls back to base config at depth 0.
+        // attenuate render distance per level so deep reflections cost exponentially less
         Integer renderDistanceOverride = null;
         if (recursionDepth > 0) {
             double divider = Math.pow(ClientConfigs.MIRROR_RECURSION_DIST_DIVIDER.get(), recursionDepth);
@@ -215,16 +177,13 @@ public class MirrorReflectionTexture extends PerspectiveTexture {
                     ClientConfigs.RENDER_DISTANCE.get() / divider);
         }
 
-        // fov is ignored because we pass a custom projection; planar reflection via a moved
-        // camera preserves winding so we leave back-face culling alone.
+        // fov is ignored since we pass a projection. Moving the camera preserves winding, so
+        // back-face culling stays as-is.
         VistaLevelRenderer.render(this, mirror, setup, 0f, false, projection, bfsStart,
                 renderDistanceOverride);
 
-        // Blit the freshly-rendered write target onto the read target so the next frame's quad
-        // samples the new image (matches RenderableDynamicTexture.redraw()'s tail).
-        // No overlay is composited here — mirror_material.fsh consumes this reflection as
-        // Sampler0, MIRROR_UNDERLAY as Sampler1 (base material), and MIRROR_OVERLAY as Sampler3
-        // (per-tile decal applied last).
+        // Nothing is composited here: mirror_material.fsh takes this as Sampler0 and layers the
+        // underlay and overlay itself.
         swapBackToFront();
         if (!hasRendered) {
             hasRendered = true;
@@ -232,12 +191,8 @@ public class MirrorReflectionTexture extends PerspectiveTexture {
         }
     }
 
-    /**
-     * Sets the dummy camera at the reflected eye position, oriented to look perpendicularly
-     * into the mirror plane (yaw drives the orientation; pitch is always 0 because horizontal
-     * mirrors don't tilt the eye axis). The off-axis projection in {@link MirrorReflectionTexture}
-     * does the rest — it bends the frustum to fit the mirror's frame from that vantage point.
-     */
+    // Pitch stays 0: the camera only needs to face into the plane, the off-axis projection bends the
+    // frustum to the mirror's frame from there.
     private void setupMirrorCamera(Camera camera, Level level, Vec3 reflectedEye, float yaw) {
         camera.initialized = true;
         camera.level = level;

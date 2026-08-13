@@ -30,62 +30,42 @@ public class ViewAreaMixin implements IViewAreaExt {
     @Shadow protected int sectionGridSizeY;
     @Shadow public SectionRenderDispatcher.RenderSection[] sections;
 
-    /** Stored dispatcher so we can create new sections outside the constructor. */
+    // kept so new sections can be built outside the constructor
     @Unique private SectionRenderDispatcher vista$dispatcher;
 
-    /**
-     * Index at which the pinned (extra-zone) sections begin in {@link #sections}.
-     * Captured right before we append them so we always know where the normal
-     * torus grid ends.
-     */
+    // where the pinned sections start, i.e. where the normal torus grid ends
     @Unique private int vista$normalSectionCount = -1;
 
-    /**
-     * Reverse lookup from exact {@link SectionPos} long to the pinned RenderSection living
-     * at that world position. The torus {@code sections} array can't be indexed by true
-     * coordinates (it's floorMod'd), so block/light dirtying for far zone chunks resolves
-     * the section through this map instead.
-     */
+    // The torus array is floorMod'd and can't be indexed by true coordinates, so dirtying a far zone
+    // chunk resolves its section through here instead.
     @Unique
     private final Map<Long, SectionRenderDispatcher.RenderSection> vista$pinnedBySection = new HashMap<>();
-
-    // ── Constructor hook ───────────────────────────────────────────────────────
 
     @Inject(method = "createSections", at = @At("HEAD"))
     private void vista$captureDispatcher(SectionRenderDispatcher dispatcher, CallbackInfo ci) {
         this.vista$dispatcher = dispatcher;
     }
 
-    /**
-     * After the normal torus grid is built, append one extra Y-column of RenderSections
-     * for every chunk position registered in ExtraChunkViewData. These slots sit beyond
-     * the torus index range so repositionCamera never moves them.
-     */
+    // Appends a Y-column of sections per registered extra chunk, past the end of the torus index
+    // range so repositionCamera never moves them.
     @Inject(method = "createSections", at = @At("TAIL"))
     private void vista$appendPinnedSections(SectionRenderDispatcher dispatcher, CallbackInfo ci) {
         this.vista$normalSectionCount = this.sections.length;
         vista$buildPinnedSections(dispatcher);
     }
 
-    // ── IViewAreaExt ───────────────────────────────────────────────────────────
-
-    /**
-     * Replaces the pinned section slots in-place without destroying any existing
-     * compiled section geometry. Called from {@link ILevelRendererExt} instead of
-     * the heavy {@code allChanged()} rebuild when zone data changes.
-     */
+    // Swaps the pinned slots without touching compiled geometry elsewhere, so zone data changes don't
+    // need a full allChanged().
     @Override
     public void vista$rebuildPinnedSections() {
         if (vista$dispatcher == null || vista$normalSectionCount < 0) return;
 
-        // Release GPU buffers of old pinned sections so they don't leak.
         for (int i = vista$normalSectionCount; i < this.sections.length; i++) {
             if (this.sections[i] != null) {
                 this.sections[i].releaseBuffers();
             }
         }
 
-        // Truncate to normal grid, then append fresh pinned sections.
         this.sections = Arrays.copyOf(this.sections, vista$normalSectionCount);
         vista$buildPinnedSections(vista$dispatcher);
     }
@@ -107,8 +87,6 @@ public class ViewAreaMixin implements IViewAreaExt {
                 && section.getCompiled() != SectionRenderDispatcher.CompiledSection.UNCOMPILED;
     }
 
-    // ── Shared builder ─────────────────────────────────────────────────────────
-
     @Unique
     private void vista$buildPinnedSections(SectionRenderDispatcher dispatcher) {
         this.vista$pinnedBySection.clear();
@@ -126,7 +104,6 @@ public class ViewAreaMixin implements IViewAreaExt {
             for (int yIndex = 0; yIndex < this.sectionGridSizeY; yIndex++) {
                 int newIndex = base + slotOffset;
                 int yOrigin = this.level.getMinBuildHeight() + yIndex * 16;
-                // RenderSection is a non-static inner class with a public constructor.
                 SectionRenderDispatcher.RenderSection section = dispatcher.new RenderSection(newIndex, blockX, yOrigin, blockZ);
                 extended[newIndex] = section;
                 if (section instanceof IPinnableRenderSection ps) {

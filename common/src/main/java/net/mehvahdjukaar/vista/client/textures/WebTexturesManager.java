@@ -61,7 +61,6 @@ public class WebTexturesManager {
                 }
             });
 
-    // Track which session and texture keys belong to each URL for fast invalidation.
     private static final Map<URI, Set<String>> URL_TO_SESSIONS = new ConcurrentHashMap<>();
     private static final Map<URI, Set<ResourceLocation>> URL_TO_TEXTURES = new ConcurrentHashMap<>();
 
@@ -93,7 +92,6 @@ public class WebTexturesManager {
             this.uri = uri;
             this.screenSize = screenSize;
 
-            // Register mappings so we can invalidate by URL later.
             URL_TO_TEXTURES.computeIfAbsent(uri, k -> ConcurrentHashMap.newKeySet()).add(this.textureId);
             URL_TO_SESSIONS.computeIfAbsent(uri, k -> ConcurrentHashMap.newKeySet()).add(this.sessionId);
         }
@@ -142,12 +140,7 @@ public class WebTexturesManager {
         URL_TO_TEXTURES.clear();
     }
 
-    /**
-     * Invalidates all media sessions and textures associated with the given URL.
-     * This forces a fresh load the next time any screen requests that URL.
-     */
     public static void invalidateUrl(String url) {
-        // Invalidate all sessions registered for this URL
         Set<String> sessionKeys = URL_TO_SESSIONS.remove(url);
         if (sessionKeys != null) {
             for (String key : sessionKeys) {
@@ -156,7 +149,6 @@ public class WebTexturesManager {
         }
         SESSION_CACHE.cleanUp();
 
-        // Invalidate all textures registered for this URL
         Set<ResourceLocation> textureKeys = URL_TO_TEXTURES.remove(url);
         if (textureKeys != null) {
             for (ResourceLocation key : textureKeys) {

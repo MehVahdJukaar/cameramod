@@ -27,12 +27,8 @@ public abstract class ChunkMapMixin {
     @Nullable
     public abstract LevelChunk getChunkToSend(long chunkPos);
 
-    /**
-     * Attach the player's zone data to the incoming view before {@code difference}
-     * runs. Because {@code player.setChunkTrackingView} stores the same Positioned
-     * instance, the field survives into the next call as the "old view", so old and
-     * new carry identical zone sets → no spurious re-sends on every section change.
-     */
+    // The stored Positioned instance is reused as the next call's old view, so attaching the zone
+    // data here means old and new carry identical sets and no chunk gets re-sent on every move.
     @Inject(method = "applyChunkTrackingView", at = @At("HEAD"))
     private void vista$attachZonesToView(ServerPlayer player, ChunkTrackingView view, CallbackInfo ci) {
         if (view instanceof IChunkViewWithZones zv) {
@@ -40,13 +36,8 @@ public abstract class ChunkMapMixin {
         }
     }
 
-    /**
-     * After the normal diff runs, sweep through the player's zone chunks and
-     * force-queue any that are now sendable but were not inside the normal view.
-     * This catches chunks that were not yet loaded when the camera first registered
-     * (so markChunkPendingToSend silently failed in the packet handler) and became
-     * available later.
-     */
+    // Catches zone chunks that weren't loaded yet when the camera registered, so the packet handler's
+    // markChunkPendingToSend silently failed, and that have since become available.
     @Inject(method = "applyChunkTrackingView", at = @At("RETURN"))
     private void vista$flushPendingZoneChunks(ServerPlayer player, ChunkTrackingView view, CallbackInfo ci) {
         ServerExtraChunkViewData data = VistaMod.EXTRA_VIEW_AREAS.getOrCreate(player);
@@ -66,14 +57,9 @@ public abstract class ChunkMapMixin {
         }
     }
 
-    /**
-     * Subscribes the player to LIVE updates for camera-zone chunks. Block changes,
-     * block-entity updates and entity tracking all gate on {@code isChunkTracked}
-     * (-> {@code getChunkTrackingView().contains}, which we deliberately do NOT
-     * patch — see {@link ChunkTrackingViewMixin}). Without this, zone chunks only
-     * ever get their one-shot initial snapshot and never receive live updates, so
-     * a moving piston never changes and entities are never broadcast.
-     */
+    // Block changes, BE updates and entity tracking all gate on isChunkTracked, which routes through
+    // the contains() we deliberately leave unpatched (see ChunkTrackingViewMixin). Without this hook
+    // zone chunks get their initial snapshot and nothing else: pistons freeze, entities never sync.
     @ModifyReturnValue(method = "isChunkTracked", at = @At("RETURN"))
     private boolean vista$trackZoneChunksForBroadcast(boolean original, ServerPlayer player, int x, int z) {
         if (original) return true;
@@ -81,10 +67,7 @@ public abstract class ChunkMapMixin {
         return data != null && data.containsChunk(x, z);
     }
 
-    /**
-     * Prevents the server from sending a chunk-forget packet to the client for any
-     * chunk that still belongs to the player's camera zones.
-     */
+    // don't tell the client to forget a chunk that's still in one of its camera zones
     @Inject(method = "dropChunk", at = @At("HEAD"), cancellable = true)
     private static void vista$preventDropCameraZoneChunk(ServerPlayer player, ChunkPos chunkPos, CallbackInfo ci) {
         ExtraChunkViewData data = VistaMod.EXTRA_VIEW_AREAS.getOrCreate(player);

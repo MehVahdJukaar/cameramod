@@ -105,7 +105,6 @@ public class GifPathSpriteSource implements SpriteSource {
         return null;
     }
 
-// --- helpers ---
 
     private static ImageReader gifReader(ImageInputStream iis) throws IOException {
         Iterator<ImageReader> it = ImageIO.getImageReadersByFormatName("gif");
@@ -166,7 +165,6 @@ public class GifPathSpriteSource implements SpriteSource {
 
     private static List<BufferedImage> readFramesComposited(ImageReader reader, int count, int[] outWH) throws IOException {
 
-        // --- logical screen size only ---
         IIOMetadata streamMeta = reader.getStreamMetadata();
 
         int screenW = -1;
@@ -199,7 +197,6 @@ public class GifPathSpriteSource implements SpriteSource {
         outWH[0] = screenW;
         outWH[1] = screenH;
 
-        // --- compositing canvas ---
         BufferedImage canvas =
                 new BufferedImage(screenW, screenH, BufferedImage.TYPE_INT_ARGB);
 
@@ -246,7 +243,7 @@ public class GifPathSpriteSource implements SpriteSource {
 
             BufferedImage frameImg = reader.read(i);
 
-            // Some readers return already composited full-size frames.
+            // some readers hand back already composited full-size frames
             boolean fullCanvasFrame =
                     frameImg.getWidth() == screenW &&
                             frameImg.getHeight() == screenH;
@@ -356,7 +353,6 @@ public class GifPathSpriteSource implements SpriteSource {
         return fm;
     }
 
-    // --- Original atlas layout (no padding) ---
     public static Vec2i computeAtlasLayout(int frameCount, int frameW, int frameH, int maxWidth, int maxHeight) {
         int bestRows = 1;
         int bestCols = frameCount;
@@ -398,7 +394,6 @@ public class GifPathSpriteSource implements SpriteSource {
         return out;
     }
 
-    // Vertical strip variant (unchanged)
     private static NativeImage buildVerticalStrip(List<BufferedImage> frames, int w, int h) {
         NativeImage out = new NativeImage(NativeImage.Format.RGBA, w, h * frames.size(), true);
         for (int i = 0; i < frames.size(); i++) {
@@ -407,7 +402,6 @@ public class GifPathSpriteSource implements SpriteSource {
         return out;
     }
 
-    // Faster pixel copy using a single array fetch
     private static void copyArgbToAbgr(BufferedImage src, NativeImage dst, int dx, int dy, int w, int h) {
         int[] srcPixels = src.getRGB(0, 0, w, h, null, 0, w);
         for (int y = 0; y < h; y++) {
@@ -423,7 +417,6 @@ public class GifPathSpriteSource implements SpriteSource {
         }
     }
 
-    // Animation metadata (unchanged)
     private static AnimationMetadataSection buildAnimationMeta(List<Integer> ticks, int w, int h, int frameCount) {
         if (ticks.size() < frameCount) {
             int last = ticks.isEmpty() ? 1 : Math.max(1, ticks.getLast());

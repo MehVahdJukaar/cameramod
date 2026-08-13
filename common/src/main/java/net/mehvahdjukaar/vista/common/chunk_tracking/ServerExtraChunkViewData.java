@@ -13,11 +13,11 @@ import java.util.Set;
  *
  * <p>Adds two pieces of runtime state that are meaningless to the client:
  * <ul>
- *   <li>{@link #trackedWantedZoneCenters} — the complete set of ViewFinder
+ *   <li>{@link #trackedWantedZoneCenters}: the complete set of ViewFinder
  *       {@link GlobalPos}es this player is currently watching (including
  *       cross-dimension ones that don't yet produce a zone). Replaces the old
  *       external {@code playerViewfinders} map in {@code ServerCameraChunkManager}.</li>
- *   <li>{@link #queuedZoneChunks} — zone chunk positions that have already been
+ *   <li>{@link #queuedZoneChunks}: zone chunk positions that have already been
  *       handed to {@code markChunkPendingToSend}, so the periodic flush doesn't
  *       re-queue them unnecessarily.</li>
  * </ul>

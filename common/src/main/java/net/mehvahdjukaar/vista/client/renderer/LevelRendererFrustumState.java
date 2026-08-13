@@ -30,14 +30,9 @@ public class LevelRendererFrustumState {
         VistaLevelRenderer.registerManagedState(this);
     }
 
-    /**
-     * Drops references that go stale when {@link LevelRenderer#allChanged()}
-     * releases every section buffer and swaps in a new {@link ViewArea}.
-     * Without this, the cached visibleSections list and feed
-     * {@link SectionOcclusionGraph} keep pointing at closed VertexBuffers,
-     * crashing in {@code LevelRenderer.renderSectionLayer} with a NPE on
-     * {@code mode == null}.
-     */
+    // Drops what goes stale when allChanged() releases every section buffer and swaps in a new
+    // ViewArea. Otherwise the cached visibleSections and feed graph keep pointing at closed
+    // VertexBuffers and renderSectionLayer NPEs on a null mode.
     public void resetForLevelRendererReload() {
         this.sectionOcclusionGraph = null;
         this.visibleSections.clear();

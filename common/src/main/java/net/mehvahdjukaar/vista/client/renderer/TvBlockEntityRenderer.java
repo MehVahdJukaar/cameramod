@@ -99,10 +99,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         poseStack.pushPose();
         poseStack.translate(0.5, 0.5, 0.5);
         poseStack.mulPose(Axis.YP.rotationDegrees(180 - yaw));
-        // Screen sits coplanar with the block-model front face; POLYGON_OFFSET_LAYERING on the
-        // crt render type biases its depth toward the camera so it wins without a forward nudge.
-        // Inside nested level renders and under FAST graphics the polygon offset doesn't hold, so
-        // nudge the screen forward manually there to avoid z-fighting with the block face.
+        // see VistaLevelRenderer#needsManualSurfaceOffset
         float screenZ = VistaLevelRenderer.needsManualSurfaceOffset() ? -0.505f : -0.5f;
         poseStack.translate(-screenCenter.x, screenCenter.y, screenZ);
 
@@ -189,7 +186,6 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
     }
 
 
-    // ========== DEBUG RENDERING ========== //
 
 
     private void renderDebug(UUID tex, PoseStack poseStack, MultiBufferSource buffer, float partialTick,

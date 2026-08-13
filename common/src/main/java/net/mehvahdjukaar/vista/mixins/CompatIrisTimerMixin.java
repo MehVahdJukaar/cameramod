@@ -8,12 +8,9 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-// Same reasoning as CompatIrisFrameCounterMixin but for the float side. Packs that
-// implement procedural per-frame offsets via frameTimeCounter / frameTime instead of
-// frameCounter would otherwise see wall-clock-from-game-start values that jump by
-// the feed interval (~100 ms at 10 Hz) per observation — too coarse for any temporal
-// resolve. Feed-local timer advances by real elapsed time between consecutive feed
-// renders.
+// Same reasoning as CompatIrisFrameCounterMixin, for packs that drive their per-frame offsets off
+// frameTimeCounter / frameTime instead. Those would see jumps of a whole feed interval (~100ms at
+// 10Hz), far too coarse for a temporal resolve.
 @Pseudo
 @Mixin(value = SystemTimeUniforms.Timer.class, remap = false)
 public class CompatIrisTimerMixin {

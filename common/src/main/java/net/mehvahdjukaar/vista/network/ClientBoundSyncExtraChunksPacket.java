@@ -13,10 +13,7 @@ import net.minecraft.world.level.ChunkPos;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * Server → Client: replaces the client's {@link ExtraChunkViewData#CLIENT_INSTANCE}
- * with the player's current server-side zone set and triggers a ViewArea rebuild.
- */
+/** Replaces the client's zone set with the server's and rebuilds the ViewArea. */
 public record ClientBoundSyncExtraChunksPacket(ExtraChunkViewData data) implements Message {
 
     public static final TypeAndCodec<RegistryFriendlyByteBuf, ClientBoundSyncExtraChunksPacket> CODEC =
@@ -35,7 +32,6 @@ public record ClientBoundSyncExtraChunksPacket(ExtraChunkViewData data) implemen
     public void handle(Context context) {
         ExtraChunkViewData client = VistaModClient.CLIENT_EXTRA_CHUNK_VIEW_DATA;
 
-        // Capture old chunk set before mutation so we can decide whether a rebuild is needed.
         Set<ChunkPos> oldChunks = new HashSet<>(client.getAllChunks());
 
         client.clearZones();
@@ -47,13 +43,12 @@ public record ClientBoundSyncExtraChunksPacket(ExtraChunkViewData data) implemen
         VistaMod.LOGGER.debug("[Vista/Chunks] Client received zone sync: {} zones, {} total chunks",
                 client.getZones().size(), newChunks.size());
 
-        if (newChunks.equals(oldChunks)) return; // ViewArea already has the right sections — nothing to do.
+        if (newChunks.equals(oldChunks)) return; // ViewArea already has the right sections
 
         Minecraft mc = Minecraft.getInstance();
 
         if (mc.levelRenderer instanceof ILevelRendererExt ext) {
-            // Surgical rebuild: only recreates pinned section slots, preserving all
-            // existing compiled geometry and avoiding the full renderer reset.
+            // only recreates the pinned slots, keeping compiled geometry
             ext.vista$refreshPinnedSections();
         } else {
             mc.levelRenderer.allChanged();

@@ -66,16 +66,12 @@ public class TvScreenVertexConsumers {
         return createAnimatedStripVC(buffer, VistaModClient.BLACK_LOADING_SCREEN, scale, tickCount, CrtOverlay.NONE, switchAnim);
     }
 
-    /**
-     * Same loading dots as {@link #getWaitingVc} but orange: a transient failure is being retried.
-     */
+    // same loading dots as getWaitingVc but orange, for a transient failure being retried
     public static @NotNull VertexConsumer getRetryingVc(MultiBufferSource buffer, Vec2i scale, int tickCount, IntAnimationState switchAnim) {
         return createAnimatedStripVC(buffer, VistaModClient.RETRYING_SCREEN, scale, tickCount, CrtOverlay.NONE, switchAnim);
     }
 
-    /**
-     * Full-screen error card (403/404/bad link/ffmpeg): a standalone black screen with the symbol.
-     */
+    // full screen error card: black screen with just the symbol
     public static @NotNull VertexConsumer getErrorVc(MultiBufferSource buffer, Vec2i scale, ResourceLocation screen, IntAnimationState switchAnim) {
         return createAnimatedStripVC(buffer, screen, scale, 0, CrtOverlay.NONE, switchAnim);
     }
@@ -89,10 +85,8 @@ public class TvScreenVertexConsumers {
         return createAnimatedStripVC(buffer, VistaModClient.BARS_SCREEN, scale, 0, CrtOverlay.NONE, switchAnim);
     }
 
-    /**
-     * Draws a cassette asset by id, with no tape entry behind it. For places that have no level and so can't reach
-     * the cassette_tape datapack registry, like the config screen showcase.
-     */
+    // Draws a cassette asset by id with no tape entry behind it, for places with no level and so no
+    // access to the cassette_tape registry, like the config screen showcase.
     public static VertexConsumer getChannelVC(MultiBufferSource buffer, ResourceLocation assetId, Vec2i scale, int tickCount) {
         return createAnimatedStripVC(buffer, assetId, scale, tickCount, CrtOverlay.NONE, IntAnimationState.NO_ANIM);
     }

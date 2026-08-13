@@ -20,11 +20,9 @@ public class CompatIrisRenderingMixin {
         return !IrisCompat.shouldSkipShadows();
     }
 
-    // The first beginLevelRendering on a fresh IrisRenderingPipeline calls
-    // LevelRenderer.allChanged(), which releases every section's VertexBuffer.
-    // Doing that mid-feed-render tears down the geometry we're trying to draw.
-    // Skip it whenever we're in a feed pass — the dedicated feed pipeline will
-    // get its block IDs initialized lazily on the next call instead.
+    // The first beginLevelRendering on a fresh pipeline calls allChanged(), releasing every section's
+    // VertexBuffer, which mid-feed tears down the geometry we're drawing. Skipping it just defers the
+    // feed pipeline's block ID init to the next call.
     @WrapWithCondition(method = "beginLevelRendering", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/LevelRenderer;allChanged()V"))
     private boolean vista$skipFirstFrameAllChanged(LevelRenderer instance) {
         return !IrisCompat.shouldSkipShadows();

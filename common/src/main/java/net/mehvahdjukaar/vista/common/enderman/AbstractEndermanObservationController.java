@@ -16,18 +16,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-/**
- * Common pipeline for any block that lets a player observe endermen indirectly (TV through a
- * remote ViewFinder, mirror via reflection, ...). Subclasses provide:
- * <ul>
- *   <li>{@link #level()}, {@link #fakePlayerProfile()}, distance constants, {@link #isInvalid()}</li>
- *   <li>{@link #openTick()} — per-tick context (screen geometry, endermen anchor, and the
- *   per-hit fake-player orient function). Return null to skip the tick (e.g. TV broadcast not
- *   resolvable).</li>
- * </ul>
- * Also hosts the shared math helpers, exposed as protected statics so subclasses can reuse them
- * when building their {@link TickContext}.
- */
 public abstract class AbstractEndermanObservationController {
 
     protected record ScreenInfo(Vec3 center, Vec3 normal, Vec3 right, Vec3 up, float width, float height) {
@@ -57,7 +45,6 @@ public abstract class AbstractEndermanObservationController {
 
     protected abstract float endermenSearchDist();
 
-    /** True if the controller's backing block is gone — observed endermen should drop the goal. */
     public abstract boolean isInvalid();
 
     @Nullable

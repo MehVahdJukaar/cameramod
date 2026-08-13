@@ -70,7 +70,6 @@ public final class ImageRescaler {
                 throw new IllegalArgumentException("Unknown fit mode: " + fitMode);
         }
 
-        // Adjust for FIT_WIDTH if scaled height exceeds target
         if (fitMode == FIT_WIDTH && dstRect.height() > targetH) {
             int newHeight = targetH;
             double ratio = (double) newHeight / dstRect.height();
@@ -78,7 +77,6 @@ public final class ImageRescaler {
             srcRect = new Rect2D(srcRect.x(), srcRect.y(), srcRect.width(), newSrcHeight);
             dstRect = new Rect2D(dstRect.x(), dstRect.y(), dstRect.width(), newHeight);
         }
-        // Adjust for FIT_HEIGHT if scaled width exceeds target
         if (fitMode == FIT_HEIGHT && dstRect.width() > targetW) {
             int newWidth = targetW;
             double ratio = (double) newWidth / dstRect.width();
@@ -87,7 +85,6 @@ public final class ImageRescaler {
             dstRect = new Rect2D(dstRect.x(), dstRect.y(), newWidth, dstRect.height());
         }
 
-        // Clip destination rectangle to target bounds and adjust source proportionally
         if (dstRect.x() < 0) {
             int offset = -dstRect.x();
             double ratio = (double) offset / dstRect.width();
@@ -117,7 +114,6 @@ public final class ImageRescaler {
             dstRect = new Rect2D(dstRect.x(), dstRect.y(), dstRect.width(), dstRect.height() - overflow);
         }
 
-        // Center if needed
         if (fitMode == FIT_WIDTH && dstRect.height() < targetH) {
             int newY = (targetH - dstRect.height()) / 2;
             dstRect = new Rect2D(dstRect.x(), newY, dstRect.width(), dstRect.height());
@@ -127,7 +123,6 @@ public final class ImageRescaler {
             dstRect = new Rect2D(newX, dstRect.y(), dstRect.width(), dstRect.height());
         }
 
-        // --- FIX: Clamp source rectangle to source image bounds ---
         int clampedSrcX = Math.clamp(srcRect.x(), 0, srcW - 1);
         int clampedSrcY = Math.clamp(srcRect.y(), 0, srcH - 1);
         int maxSrcWidth = srcW - clampedSrcX;
@@ -136,7 +131,6 @@ public final class ImageRescaler {
         int clampedSrcH = Math.clamp(srcRect.height(), 1, maxSrcHeight);
         srcRect = new Rect2D(clampedSrcX, clampedSrcY, clampedSrcW, clampedSrcH);
 
-        // Also ensure destination rectangle is within target bounds and positive
         int clampedDstX = Math.clamp(dstRect.x(), 0, targetW - 1);
         int clampedDstY = Math.clamp(dstRect.y(), 0, targetH - 1);
         int maxDstWidth = targetW - clampedDstX;

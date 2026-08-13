@@ -51,9 +51,8 @@ public class MirrorBlock extends HorizontalDirectionalBlock implements EntityBlo
     // model element runs z=14..16, so its mirror face sits 14px deeper than the near model's.
     public static final double FAR_RECESSION = 14.0 / 16.0;
 
-    // Collision/outline shapes matching the 2px-thick block models, keyed by FACING. The base shape
-    // is defined for NORTH (front face at z=0) and rotated for the other horizontal directions — the
-    // same convention the blockstate uses to rotate the model.
+    // Shapes for the 2px-thick models, defined for NORTH and rotated for the other horizontals, the
+    // same convention the blockstate uses on the model.
     private static final Map<Direction, VoxelShape> NEAR_SHAPES =
             MthUtils.getAllRotatedVoxelShapesHorizontal(Block.box(0, 0, 0, 16, 16, 2));
     private static final Map<Direction, VoxelShape> FAR_SHAPES =
@@ -67,10 +66,7 @@ public class MirrorBlock extends HorizontalDirectionalBlock implements EntityBlo
                 .setValue(CONNECTION, ConnectionType.SINGLE));
     }
 
-    /**
-     * Depth (in blocks) from the block's front face to the mirror surface for this state.
-     * 0 for the near model, {@link #FAR_RECESSION} for the far model.
-     */
+    // depth from the front face to the mirror surface, 0 for the near model
     public static double surfaceRecession(BlockState state) {
         return state.hasProperty(FAR) && state.getValue(FAR) ? FAR_RECESSION : 0.0;
     }
@@ -130,10 +126,7 @@ public class MirrorBlock extends HorizontalDirectionalBlock implements EntityBlo
         return state.setValue(CONNECTION, type);
     }
 
-    /**
-     * Resolves near vs far for placement, honoring the {@link CommonConfigs#MIRROR_PLACEMENT} config:
-     * NEAR/FAR force the respective model, BOTH defers to where the player clicked ({@link #isFarHalf}).
-     */
+    // NEAR/FAR force a model, BOTH goes by where the player clicked
     private static boolean shouldPlaceFar(BlockPlaceContext context, Direction facing) {
         return switch (CommonConfigs.MIRROR_PLACEMENT.get()) {
             case NEAR -> false;
@@ -142,11 +135,7 @@ public class MirrorBlock extends HorizontalDirectionalBlock implements EntityBlo
         };
     }
 
-    /**
-     * Decides near vs far from where along the facing (depth) axis the player clicked inside the
-     * target cell. {@code facing} points back toward the viewer, so a hit in the half nearer the
-     * viewer places the near model; a hit in the far half places the recessed model.
-     */
+    // facing points back toward the viewer, so a hit in the near half places the near model
     private static boolean isFarHalf(BlockPlaceContext context, Direction facing) {
         Vec3 hit = context.getClickLocation();
         BlockPos pos = context.getClickedPos();
@@ -231,11 +220,9 @@ public class MirrorBlock extends HorizontalDirectionalBlock implements EntityBlo
         public void planBeMove(@Nullable Rect2D fromRec, Rect2D toRec) {
             super.planBeMove(fromRec, toRec);
             if (fromRec == null) return;
-            // Reset the OLD master's cached connection size before any cells in (from - to)
-            // get re-stated to SINGLE. Without this, when a grid shrinks and the old master
-            // ends up outside the new rect, its BE persists but keeps reporting the old
-            // multi-block dimensions — the BE renderer then asks the texture manager for
-            // the wrong screen-pixel size and never lands on a fresh 1x1 texture.
+            // Reset the old master's cached size before anything gets re-stated to SINGLE. If a grid
+            // shrinks past its master, that BE survives still reporting multi-block dimensions, and
+            // the renderer keeps asking for the wrong screen size instead of a fresh 1x1 texture.
             BlockPos target = targetPos(fromRec.bottomLeft());
             if (level.getBlockEntity(target) instanceof MirrorBlockEntity mirror) {
                 mirror.setConnectionSize(Vec2i.ONE);
@@ -247,9 +234,7 @@ public class MirrorBlock extends HorizontalDirectionalBlock implements EntityBlo
         protected void onMasterApplied(BlockPos target, Rect2D rect) {
             if (level.getBlockEntity(target) instanceof MirrorBlockEntity mirror) {
                 mirror.setConnectionSize(rect.getSize());
-                // MirrorBlockEntity#setChanged pushes the new connection size to clients, so the
-                // reflection re-sizes to match the reshaped grid.
-                mirror.setChanged();
+                mirror.setChanged(); // pushes the size to clients so the reflection resizes
             }
         }
     }

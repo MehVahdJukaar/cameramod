@@ -35,15 +35,9 @@ public class IrisCompat {
     private static final ThreadLocal<Boolean> VISTA_RENDERING = ThreadLocal.withInitial(() -> false);
     private static Supplier<Boolean> irisShaderPacksOff;
 
-    // Iris's SystemTimeUniforms.COUNTER (int frameCounter) and TIMER (float
-    // frameTimeCounter / lastFrameTime) advance once per game frame in iris$startFrame.
-    // Feed renders run at a lower rate (default 10 Hz), so between two consecutive
-    // feed renders these jump by several samples. Many shader packs implement TAA
-    // sub-pixel jitter or procedural per-frame offsets using one of these uniforms,
-    // and the composite TAA pass can't resolve when the jitter samples skip values
-    // between observations — every pixel wobbles. We shim both to feed-local values
-    // that advance +1 / +(real elapsed) per feed render so TAA can accumulate
-    // properly. Mixin'd via CompatIrisFrameCounterMixin / CompatIrisTimerMixin.
+    // Iris's frame counter and timer advance once per game frame, but feeds run slower (10Hz by
+    // default), so shader pack TAA jitter would skip samples between observations and never resolve.
+    // These feed-local clocks advance one step per feed render instead. See the two Compat mixins.
     private static int feedFrameCounter = 0;
     private static float feedFrameTimeCounter = 0F;
     private static float feedLastFrameTime = 1F / 60F;
@@ -53,9 +47,8 @@ public class IrisCompat {
         return VISTA_RENDERING.get();
     }
 
-    // ImmediateState.isRenderingLevel is a bare static that Iris flips true/false at the head and
-    // return of LevelRenderer#renderLevel. Nesting a second renderLevel inside the main one leaves
-    // it stuck false — see the call site in VistaLevelRenderer#renderLevel.
+    // A bare static Iris flips at the head and return of renderLevel, so nesting a second one inside
+    // the main pass leaves it stuck false. See the call site in VistaLevelRenderer#renderLevel.
     public static boolean isIrisRenderingLevel() {
         return ImmediateState.isRenderingLevel;
     }
@@ -90,14 +83,10 @@ public class IrisCompat {
         feedLastFrameNanos = now;
     }
 
-    // Iris's RenderTargets.resizeIfNeeded uses iris$depthBufferVersion / iris$colorBufferVersion
-    // to detect whether the main render target has been recreated, but those versions only
-    // increment in destroyBuffers — a freshly-constructed RenderTarget starts at 0. When a TV
-    // is resized, Vista swaps to a *new* PerspectiveTexture instance whose RenderTarget has version
-    // 0 — same as the previous canvas's initial version — so Iris's check misses the swap and
-    // keeps its gbuffers attached to the old canvas's depth texture (which may also have been
-    // freed). Force a bump whenever the canvas instance changes so Iris's next beginLevelRendering
-    // sees the change and re-attaches.
+    // Iris detects a recreated render target through version counters that only increment in
+    // destroyBuffers, so a brand new RenderTarget starts at 0 just like the old one did. Resizing a TV
+    // swaps in exactly that, and Iris keeps its gbuffers on the old (possibly freed) depth texture.
+    // Bumping on every canvas change makes the next beginLevelRendering re-attach.
     private static WeakReference<RenderTarget> lastFeedCanvas = new WeakReference<>(null);
 
     public static void onFeedCanvasBound(RenderTarget canvas) {
@@ -136,17 +125,15 @@ public class IrisCompat {
     @Nullable
     private static final Field COLOR_BUFFER_VERSION_FIELD = lookupIrisRtField("iris$colorBufferVersion");
 
-    // VanillaRenderingPipeline's constructor is not inert: it rewrites WorldRenderingSettings.INSTANCE as
-    // if a pack had just been unloaded (vertex format back to Sodium's compact one, block type ids
-    // dropped, AO and entity draw settings reset), and each of those setters arms Iris's reload flag on
-    // change. Today it lands on untouched defaults because addConfigs touches this class at startup,
-    // before any pack exists, but that's incidental: loaded any later, it would reset the vertex format
-    // under a live pack and force a full terrain rebuild mid-frame. So snapshot and restore around it.
+    // VanillaRenderingPipeline's constructor is not inert: it rewrites WorldRenderingSettings as if a
+    // pack had just unloaded, and each setter arms Iris's reload flag. It happens to land on untouched
+    // defaults today only because addConfigs touches the class at startup before any pack exists. Load
+    // it later and it would reset the vertex format under a live pack, forcing a terrain rebuild
+    // mid-frame. Hence the snapshot and restore.
     //
-    // Copied field by field rather than through the getters: several of those name Sodium or Minecraft
-    // types, and the Iris artifact on the NeoForge compile classpath still carries Fabric mappings, so
-    // getVertexFormat and getBlockTypeIds are unusable from common. Walking the declared fields also
-    // covers the reload flag the setters arm on their own.
+    // Fields are copied directly rather than through the getters: those name Sodium and Minecraft
+    // types, and the Iris artifact on the NeoForge compile classpath still carries Fabric mappings,
+    // so they're unusable from common. Walking the fields also covers the reload flag itself.
     private static WorldRenderingPipeline createFeedPipeline() {
         WorldRenderingSettings settings = WorldRenderingSettings.INSTANCE;
         Map<Field, Object> snapshot = new LinkedHashMap<>();
@@ -178,11 +165,9 @@ public class IrisCompat {
         return VISTA_RENDERING.get() && irisShaderPacksOff.get() ? VISTA_PIPELINE : null;
     }
 
-    // True when we want PipelineManager to spin up a dedicated IrisRenderingPipeline
-    // for the feed pass (separate per-fake-dimension entry). Otherwise the single
-    // shared pipeline keeps its render targets resized back-and-forth between the
-    // feed canvas and the main framebuffer each frame, which causes the flicker
-    // and big perf hit since RenderTargets reallocates every gbuffer on size change.
+    // Whether the feed pass gets its own IrisRenderingPipeline. Sharing one means its render targets
+    // get resized between the feed canvas and the main framebuffer every frame, and RenderTargets
+    // reallocates every gbuffer on a size change, so it flickers and costs a lot.
     public static boolean shouldSwapDimensionForFeed() {
         return VISTA_RENDERING.get() && !irisShaderPacksOff.get();
     }
@@ -196,20 +181,17 @@ public class IrisCompat {
             OldRenderState oldState = OldRenderState.loadFrom(CapturedRenderingState.INSTANCE);
 
             WorldRenderingPipeline oldLrPipeline = getCurrentPipeline(lr);
-            // PipelineManager.pipeline is the singleton field every Iris caller reads
-            // via Iris.getPipelineManager().getPipelineNullable(). Iris's MixinLevelRenderer
-            // only restores the LevelRenderer-side copy, so without saving this one too
-            // anything querying the pipeline manager between the feed render and the next
-            // main renderLevel sees the stub VanillaRenderingPipeline.
+            // Iris's own MixinLevelRenderer only restores the LevelRenderer-side copy, so this
+            // singleton has to be saved too or anything reading the pipeline manager between the feed
+            // render and the next main renderLevel gets the stub VanillaRenderingPipeline.
             WorldRenderingPipeline oldPmPipeline = getPipelineManagerPipeline(pm);
 
             try {
                 ShadowRenderer.ACTIVE = false;
                 VISTA_RENDERING.set(true);
                 releaseIrisStateLocks();
-                // Only the outermost pass counts as one feed frame. Recursive mirrors nest through
-                // here too, and bumping the (pipeline-global) jitter clock once per nesting level
-                // would put us right back to the skipping-samples case this shim exists to avoid.
+                // Only the outermost pass is one feed frame. Recursive mirrors nest through here, and
+                // bumping the global jitter clock per level lands right back on skipped samples.
                 if (!oldVistaRendering) advanceFeedClocks();
                 renderTask.run();
             } finally {
@@ -222,16 +204,15 @@ public class IrisCompat {
         };
     }
 
-    // A pack program that overrode blend or killed the color/depth mask leaves Iris's global storages
-    // locked: from then on every GlStateManager blend/mask call is recorded, not applied, until an Iris
-    // program hands the state back on clear. Feed passes run on a VanillaRenderingPipeline, so no Iris
-    // program applies inside them and nothing releases the lock, and the whole nested render (plus the
-    // RenderSystem restore after it) draws with the pack's frozen state. That's what makes blended
-    // geometry come out opaque in a TV or mirror.
+    // A pack program that overrode blend or the color/depth mask leaves Iris's global storages locked,
+    // recording every later GlStateManager call instead of applying it until an Iris program hands the
+    // state back. Feeds run on a VanillaRenderingPipeline where no Iris program ever applies, so
+    // nothing releases the lock and the whole nested render draws with the pack's frozen state. That's
+    // what makes blended geometry come out opaque in a TV or mirror.
     //
-    // Releasing applies the correct state rather than a stale one, since the locked calls were deferred
-    // into the storages and hold what the last vanilla caller asked for. The lock doesn't need putting
-    // back: the next pack program re-applies its override on the following apply.
+    // Releasing applies the right state, not a stale one: the locked calls were deferred into the
+    // storages and hold what the last vanilla caller asked for. No need to re-lock either, the next
+    // pack program re-applies its override anyway.
     private static void releaseIrisStateLocks() {
         BlendModeStorage.restoreBlend();
         DepthColorStorage.unlockDepthColor();

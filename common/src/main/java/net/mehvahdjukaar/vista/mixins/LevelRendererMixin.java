@@ -43,11 +43,8 @@ public class LevelRendererMixin implements ILevelRendererExt {
     @Shadow @Nullable
     public ViewArea viewArea;
 
-    /**
-     * Rebuilds only the pinned (extra-zone) render section slots, leaving all
-     * existing compiled chunk geometry intact. Replaces the heavy
-     * {@code allChanged()} call for zone-data changes.
-     */
+    // Rebuilds just the pinned section slots, keeping compiled chunk geometry. Stands in for
+    // allChanged() on zone data changes, which would be far heavier.
     @Unique
     @Override
     public void vista$refreshPinnedSections() {
@@ -57,8 +54,6 @@ public class LevelRendererMixin implements ILevelRendererExt {
         if (sectionOcclusionGraph != null) {
             sectionOcclusionGraph.invalidate();
         }
-        // Also invalidate all feed graphs so they redo their BFS and pick up
-        // the newly created pinned sections on the next feed render.
         VistaLevelRenderer.invalidateManagedGraphs();
     }
 
@@ -88,13 +83,7 @@ public class LevelRendererMixin implements ILevelRendererExt {
         return original;
     }
 
-    /**
-     * Hide entities that shouldn't appear on reflective/recorded surfaces (e.g. vampires) while
-     * rendering a mirror reflection or a camera/TV feed. Mirrors use the
-     * {@code cant_see_through_mirror} tag, feeds use {@code cant_see_through_tv}; vampires from mods
-     * (queried via {@link VampirismCompat} and {@link SupernaturalCompat}) are hidden from both. The
-     * main view is never affected.
-     */
+    // Keeps vampires and friends off reflective and recorded surfaces. Main view is never affected.
     @Inject(method = "renderEntity", at = @At("HEAD"), cancellable = true)
     private void vista$hideMirrorInvisibleEntities(Entity entity, double camX, double camY, double camZ,
                                                    float partialTick, PoseStack poseStack,
@@ -106,11 +95,9 @@ public class LevelRendererMixin implements ILevelRendererExt {
         boolean hidden = (mirror && entity.getType().is(VistaMod.CANT_SEE_THROUGH_MIRROR))
                 || (tv && entity.getType().is(VistaMod.CANT_SEE_THROUGH_TV));
 
-        // Vampire players are still minecraft:player, and some vampire mods flag mobs through an API
-        // rather than a tag, so the entity-type tags above can't catch either — ask each vampire compat.
-        // The mod-loaded flags gate the calls so the compat impls (which reference mod types) are never
-        // classloaded when the mod is absent. Supernatural handles both its mobs and players; Vampirism
-        // only knows about players.
+        // Vampire players are still minecraft:player and some mods flag mobs through an API instead of
+        // a tag, so entity type tags catch neither. The mod-loaded flags keep the compat impls from
+        // being classloaded when the mod is absent.
         if (!hidden && entity instanceof LivingEntity living) {
             hidden = (CompatHandler.SUPERNATURAL && SupernaturalCompat.isVampire(living))
                     || (CompatHandler.VAMPIRISM && living instanceof Player player && VampirismCompat.isVampire(player));
@@ -136,12 +123,9 @@ public class LevelRendererMixin implements ILevelRendererExt {
         VistaLevelRenderer.onRecentlyCompiledSection(renderSection, this.sectionOcclusionGraph);
     }
 
-    /**
-     * A block/light change calls {@code setSectionDirty} -> {@code ViewArea.setDirty}, which is
-     * {@code floorMod}-indexed into the normal torus and can never reach the appended pinned
-     * sections — so far zone chunks compile once and their mesh freezes (water/sculk/piston-base
-     * never update). Route the dirty to the pinned section at the exact coordinates as well.
-     */
+    // ViewArea.setDirty is floorMod-indexed into the normal torus and can never reach the appended
+    // pinned sections, so far zone chunks compile once and then their mesh freezes. Dirty the pinned
+    // section at the exact coordinates too.
     @Inject(method = "setSectionDirty(IIIZ)V", at = @At("HEAD"))
     private void vista$dirtyPinnedSection(int sectionX, int sectionY, int sectionZ, boolean reRenderOnMainThread, CallbackInfo ci) {
         if (viewArea instanceof IViewAreaExt va
@@ -150,12 +134,8 @@ public class LevelRendererMixin implements ILevelRendererExt {
         }
     }
 
-    /**
-     * Vanilla skips rendering any entity whose section "isn't compiled", resolved via
-     * {@code ViewArea.getRenderSectionAt} (floorMod torus) — which can't see pinned
-     * sections, so far zone-chunk entities (armor stands, items, mobs) never draw even
-     * though they exist on the client. Satisfy the gate from the pinned section instead.
-     */
+    // Same torus problem as above: vanilla skips entities whose section "isn't compiled", so far zone
+    // entities never draw despite existing on the client. Answer the gate from the pinned section.
     @ModifyReturnValue(method = "isSectionCompiled", at = @At("RETURN"))
     private boolean vista$pinnedSectionCompiled(boolean original, BlockPos pos) {
         if (original) return true;
@@ -168,9 +148,8 @@ public class LevelRendererMixin implements ILevelRendererExt {
         return original;
     }
 
-    // F3+A (and any other reload path that funnels through allChanged) releases
-    // every section VertexBuffer. Reset all cached feed states so they don't try
-    // to draw closed buffers.
+    // F3+A and friends release every section VertexBuffer, so cached feed states have to be reset or
+    // they draw closed buffers.
     @Inject(method = "allChanged", at = @At("TAIL"))
     public void vista$onAllChanged(CallbackInfo ci) {
         VistaLevelRenderer.onLevelRendererAllChanged();

@@ -34,22 +34,12 @@ public class SectionOcclusionGraphMixin {
     }
 
     /**
-     * Seed every pinned section as an additional BFS root — but only for feed graphs,
-     * never for the player's own graph.
-     *
-     * <p>The full BFS runs asynchronously on a background thread, so we cannot use
-     * {@code isRenderingLiveFeed()} here. Instead we compare {@code this} against the
-     * The check uses {@code instanceof} {@link FeedSectionOcclusionGraph} which is safe
-     * from any thread, requires no external registry, and is never ambiguous.
-     *
-     * <p>Excluding the player's graph prevents pinned sections (at the ViewFinder,
-     * potentially hundreds of chunks away) from entering the player's {@code renderSections}
-     * and leaking into the player's world view when the player looks toward the ViewFinder.
-     *
-     * <p>For feed graphs the camera IS at the ViewFinder, so seeding ensures pinned
-     * sections enter the BFS even though they lie outside the normal torus. Frustum
-     * culling in {@code addSectionsInFrustum} then correctly limits which ones actually
-     * appear in {@code visibleSections}.
+     * Seeds pinned sections as extra BFS roots, but only on feed graphs. The full BFS runs off
+     * thread so isRenderingLiveFeed() is useless here; the instanceof check works from anywhere.
+     * <p>
+     * On a feed graph the camera is at the ViewFinder, so seeding is what gets pinned sections into
+     * the BFS at all given they sit outside the torus. On the player's graph it would instead leak
+     * far-away sections into their own view whenever they looked toward the ViewFinder.
      */
     @SuppressWarnings("unchecked")
     @Inject(method = "initializeQueueForFullUpdate", at = @At("TAIL"))
@@ -58,7 +48,6 @@ public class SectionOcclusionGraphMixin {
         if (this.viewArea == null) return;
         for (SectionRenderDispatcher.RenderSection section : this.viewArea.sections) {
             if (section instanceof IPinnableRenderSection ps && ps.vista$isPinned()) {
-                // Node constructor widened via vista.accesswidener.
                 nodeQueue.add(new SectionOcclusionGraph.Node(section, null, 0));
             }
         }

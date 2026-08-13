@@ -6,10 +6,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * AdaptiveUpdateScheduler
- * <p>
- * Driven entirely by render frames to eliminate Tick-vs-Frame desynchronization.
- * Guarantees uniform update rates across all objects for perfect convergence and fairness.
+ * Spreads a set of expensive per-object updates over frames, keeping their total cost near a ms
+ * budget. Driven off render frames rather than ticks, and every object advances by the same rate each
+ * frame so they all converge to the same frequency.
  */
 public final class AdaptiveUpdateScheduler<ID> {
 
@@ -25,7 +24,7 @@ public final class AdaptiveUpdateScheduler<ID> {
 
     private final Map<ID, Entry> entries = new HashMap<>();
 
-    // Config (Normalized to per-frame values)
+    // normalized to per-frame values
     private final double baseUpdateRatePerFrame;
     private final double minUpdateRatePerFrame;
     private final double updateTimeTargetMs;
@@ -39,20 +38,18 @@ public final class AdaptiveUpdateScheduler<ID> {
     private final double minFpsScale;
     private final int evictAfterFrames;
 
-    // Runtime State
     public double smoothedAverageUpdateTimeMs = 0.0;
     private double smoothedAverageFrameTimeMs;
     private long thisFrameAccumulatedUpdateTimeNano = 0L;
     private double smoothedBudgetScale = 1.0;
 
-    // Core Frame Drivers
     private long currentFrame = 0L;
     private double effectiveRateThisFrame = 1.0;
 
     public AdaptiveUpdateScheduler(
-            double baseRatePerFrame,         // e.g., 0.1 means update once every 10 frames baseline
-            double minRatePerFrame,          // e.g., 0.01 means minimum once every 100 frames
-            double targetBudgetMs,           // Max ms to spend per frame on these updates
+            double baseRatePerFrame,         // 0.1 = once every 10 frames baseline
+            double minRatePerFrame,          // 0.01 = at worst once every 100 frames
+            double targetBudgetMs,
             double smoothingWindowMs,
             double scaleSmoothingTimeConstantMs,
             double maxScaleChangePerFrame,
@@ -77,21 +74,15 @@ public final class AdaptiveUpdateScheduler<ID> {
         this.smoothedAverageFrameTimeMs = this.fpsGuardTargetFrameMs;
     }
 
-    /**
-     * Returns the smoothed average time spent in these updates per frame (in milliseconds).
-     */
     public double getAverageUpdateTimeMs() {
         return this.smoothedAverageUpdateTimeMs;
     }
 
     /**
-     * Attempts to update an object, tracking budgets globally.
-     *
-     * @param id        The unique identifier of the object.
-     * @param update    The expensive logic to run.
+     * Runs {@code update} only if this object's turn has come around, and charges it to the budget.
      */
     public void runIfShouldUpdate(ID id, Runnable update) {
-        // Fetch or create entry without allocating a lambda capture on every call
+        // not computeIfAbsent: this runs per object per frame and we'd rather not capture a lambda
         Entry e = entries.get(id);
         if (e == null) {
             e = new Entry(id, currentFrame);
@@ -110,12 +101,10 @@ public final class AdaptiveUpdateScheduler<ID> {
     }
 
     private boolean stepPhaseAndGrant(Entry e) {
-        // Every visible object increments by the EXACT same scale this frame,
-        // guaranteeing convergence to an identical frequency.
         double newPhase = e.phase01 + effectiveRateThisFrame;
 
         if (newPhase >= 1.0) {
-            e.phase01 = newPhase - 1.0; // Wrap around to preserve alignment integrity
+            e.phase01 = newPhase - 1.0; // wrap rather than reset, so phases stay spread out
             return true;
         }
 
@@ -123,20 +112,17 @@ public final class AdaptiveUpdateScheduler<ID> {
         return false;
     }
 
-    /**
-     * Must be called exactly once at the absolute END of every rendered frame.
-     */
+    /** Must be called exactly once at the very end of every rendered frame. */
     public void onEndOfFrame() {
         double lastFrameMs = Math.max(0.001, Minecraft.getInstance().getFrameTimeNs() / 1_000_000.0);
 
-        // 1. Smooth the actual time spent executing updates during this specific frame
         double updateMsThisFrame = thisFrameAccumulatedUpdateTimeNano / 1_000_000.0;
         double alpha = 1.0 - Math.exp(-lastFrameMs / updateTimeSmoothingWindowMs);
 
         smoothedAverageUpdateTimeMs = (1.0 - alpha) * smoothedAverageUpdateTimeMs + alpha * updateMsThisFrame;
-        thisFrameAccumulatedUpdateTimeNano = 0L; // Reset frame accumulator
+        thisFrameAccumulatedUpdateTimeNano = 0L;
 
-        // 2. Compute how much headroom we have against our budget target
+        // headroom against the budget target
         double rawScale = (smoothedAverageUpdateTimeMs <= 0.0)
                 ? 1.0
                 : Mth.clamp(updateTimeTargetMs / smoothedAverageUpdateTimeMs, 0.0, 1.0);
@@ -144,20 +130,18 @@ public final class AdaptiveUpdateScheduler<ID> {
         double beta = 1.0 - Math.exp(-lastFrameMs / scaleSmoothingTimeConstantMs);
         double targetScale = (1.0 - beta) * smoothedBudgetScale + beta * rawScale;
 
-        // Rate limit changes to avoid jittery frame pacing
+        // rate limited, otherwise frame pacing gets jittery
         double delta = Mth.clamp(targetScale - smoothedBudgetScale, -maxScaleChangePerFrame, +maxScaleChangePerFrame);
         smoothedBudgetScale += delta;
 
-        // 3. Process FPS Guardrail if enabled
         if (useFpsGuard) {
             smoothedAverageFrameTimeMs = (1.0 - fpsEmaAlpha) * smoothedAverageFrameTimeMs + fpsEmaAlpha * lastFrameMs;
         }
 
-        // 4. Advance frame clock and recalculate the frozen rate for the upcoming frame
+        // rate is frozen for the whole upcoming frame so every object steps by the same amount
         currentFrame++;
         effectiveRateThisFrame = computeEffectiveUpdateRate();
 
-        // Evict stale entries periodically
         if ((currentFrame & 0xFF) == 0) {
             long cutoff = currentFrame - evictAfterFrames;
             entries.entrySet().removeIf(en -> en.getValue().lastFrameSeen < cutoff);
@@ -213,33 +197,26 @@ public final class AdaptiveUpdateScheduler<ID> {
     }
 
     public static final class Builder {
-        // Required
         private double baseRatePerTick;    // updates/tick/object at healthy perf
         private double minRatePerTick;     // hard floor
 
-        // Budget
-        private double updateTimeTargetMs = 5.0;          // e.g., 5 ms per frame for these updates
-        private double updateTimeSmoothingTimeWindowMs = 300; // EMA tau for update time (ms). time window in real time for decay
+        private double updateTimeTargetMs = 5.0;
+        private double updateTimeSmoothingTimeWindowMs = 300; // EMA tau, real time
+        private double scaleSmoothingTimeWindowMs = 350;
+        private double maxScaleChangePerFrame = 0.08;
 
-        // Scale smoothing
-        private double scaleSmoothingTimeWindowMs = 350; // EMA tau for budget scale (ms)
-        private double maxScaleChangePerFrame = 0.08;      // ≤ 8% change per frame
-
-        // FPS guard (optional)
         private boolean useFpsGuard = false;
-        private double fpsGuardTargetFrameMs = 16.667; // 60 FPS target
+        private double fpsGuardTargetFrameMs = 16.667;
         private double fpsEmaAlpha = 0.2;
-        private double minFpsScale = 0.2; // min 20% scale when guard engages
+        private double minFpsScale = 0.2;
 
-        // Eviction
-        private int evictAfterTicks = 20 * 5; // evict after ~5s at 20 TPS
+        private int evictAfterTicks = 20 * 5;
 
-        /** Desired per-object base rate (updates per tick per object). */
         public Builder baseRatePerTick(double v) {
             if (v <= 0) throw new IllegalArgumentException("baseRatePerTick must be > 0");
             this.baseRatePerTick = v; return this;
         }
-        /** Convenience: desired update every N ticks. */
+
         public Builder basePeriodTicks(int ticks) {
             if (ticks <= 0) throw new IllegalArgumentException("ticks must be > 0");
             return baseRatePerTick(1.0 / ticks);
@@ -250,12 +227,11 @@ public final class AdaptiveUpdateScheduler<ID> {
             return baseRatePerTick(fps / 20.0); // assuming 20 TPS
         }
 
-        /** Minimum per-object rate (never below). */
         public Builder minRatePerTick(double v) {
             if (v <= 0) throw new IllegalArgumentException("minRatePerTick must be > 0");
             this.minRatePerTick = v; return this;
         }
-        /** Convenience: minimum update every N ticks. */
+
         public Builder minPeriodTicks(int ticks) {
             if (ticks <= 0) throw new IllegalArgumentException("ticks must be > 0");
             return minRatePerTick(1.0 / ticks);
@@ -266,38 +242,33 @@ public final class AdaptiveUpdateScheduler<ID> {
             return minRatePerTick(fps / 20.0); // assuming 20 TPS
         }
 
-        /** Direct ms budget per frame for all scheduled updates. */
         public Builder targetBudgetMs(double v) {
             if (v <= 0) throw new IllegalArgumentException("targetBudgetMs must be > 0");
             this.updateTimeTargetMs = v; return this;
         }
 
-        /** Convenience: budget from FPS + share (0..1]. */
+        /** Budget as a share (0..1] of one frame at the given fps. */
         public Builder targetBudgetFromFps(double fps, double share) {
             if (fps <= 0) throw new IllegalArgumentException("fps must be > 0");
             if (share <= 0 || share > 1) throw new IllegalArgumentException("share must be in (0,1]");
             return targetBudgetMs((1000.0 / fps) * share);
         }
 
-        /** Update-time smoothing time-constant (ms). */
         public Builder smoothingTimeConstantMs(double v) {
             if (v <= 0) throw new IllegalArgumentException("smoothingTimeConstantMs must be > 0");
             this.updateTimeSmoothingTimeWindowMs = v; return this;
         }
 
-        /** Budget-scale smoothing time-constant (ms). */
         public Builder scaleSmoothingTimeConstantMs(double v) {
             if (v <= 0) throw new IllegalArgumentException("scaleSmoothingTimeConstantMs must be > 0");
             this.scaleSmoothingTimeWindowMs = v; return this;
         }
 
-        /** Max allowed scale change per frame (0..1]. */
         public Builder maxScaleChangePerFrame(double v) {
             if (v <= 0 || v > 1) throw new IllegalArgumentException("maxScaleChangePerFrame must be in (0,1]");
             this.maxScaleChangePerFrame = v; return this;
         }
 
-        /** FPS target for the guard (e.g., 60 → 16.667 ms). */
         public Builder guardTargetFps(double fps) {
             if (fps <= 0) throw new IllegalArgumentException("fps must be > 0");
             this.fpsGuardTargetFrameMs = 1000.0 / fps;
@@ -305,18 +276,17 @@ public final class AdaptiveUpdateScheduler<ID> {
             return this;
 
         }
-        /** FPS guard smoothing alpha (fixed-alpha is fine). */
+
         public Builder fpsGuardAlpha(double alpha) {
             if (alpha <= 0 || alpha > 1) throw new IllegalArgumentException("fpsEmaAlpha must be in (0,1]");
             this.fpsEmaAlpha = alpha; return this;
         }
-        /** Minimum FPS scale when guard engages. */
+
         public Builder minFpsScale(double v) {
             if (v <= 0 || v > 1) throw new IllegalArgumentException("minFpsScale must be in (0,1]");
             this.minFpsScale = v; return this;
         }
 
-        /** Evict objects not seen for this many ticks. */
         public Builder evictAfterTicks(int v) {
             if (v < 1) throw new IllegalArgumentException("evictAfterTicks must be >= 1");
             this.evictAfterTicks = v; return this;

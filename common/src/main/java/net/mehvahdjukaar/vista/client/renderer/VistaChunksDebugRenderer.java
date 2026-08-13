@@ -26,9 +26,6 @@ public class VistaChunksDebugRenderer implements DebugRenderer.SimpleDebugRender
 
     public static final VistaChunksDebugRenderer INSTANCE = new VistaChunksDebugRenderer();
 
-    /**
-     * How many chunks around the player to scan for the server/client loaded layers.
-     */
     private static final int SCAN_RADIUS = 32;
 
     @Override
@@ -47,11 +44,9 @@ public class VistaChunksDebugRenderer implements DebugRenderer.SimpleDebugRender
 
         VertexConsumer lines = buf.getBuffer(RenderType.lines());
 
-        // ── Optional server layer (single-player / LAN only) ─────────────────
         MinecraftServer server = PlatHelper.getCurrentServer();
         ServerLevel sl = (server != null) ? server.getLevel(mc.level.dimension()) : null;
 
-        // ── Scan rectangle around player ─────────────────────────────────────
         for (int dx = -SCAN_RADIUS; dx <= SCAN_RADIUS; dx++) {
             for (int dz = -SCAN_RADIUS; dz <= SCAN_RADIUS; dz++) {
                 int cx = pcx + dx;
@@ -61,12 +56,10 @@ public class VistaChunksDebugRenderer implements DebugRenderer.SimpleDebugRender
                 boolean clientHas = chunkSource.getChunk(cx, cz, ChunkStatus.FULL, false) != null;
 
                 if (serverHas) {
-                    // Dark green thin slab at Y 1.5–2.0
                     chunkBox(ps, lines, camX, camZ, cx, cz, -camY - 2, -camY - 3,
                             0.1f, 0.1f, 0.8f, 0.6f);
                 }
                 if (clientHas) {
-                    // Dark blue thin slab at Y 2.0–2.5
                     chunkBox(ps, lines, camX, camZ, cx, cz, -camY, -camY - 1,
                             0.25f, 0.55f, 0.9f, 0.7f);
                 }
@@ -76,14 +69,12 @@ public class VistaChunksDebugRenderer implements DebugRenderer.SimpleDebugRender
         ExtraChunkViewData zoneData = VistaModClient.CLIENT_EXTRA_CHUNK_VIEW_DATA;
         if (zoneData.getZones().isEmpty()) return;
 
-        // ── Player view-distance border ───────────────────────────────────────
        /*
         chunkRectBorder(ps, lines, camX, camZ,
                 pcx - viewDist, pcz - viewDist,
                 pcx + viewDist + 1, pcz + viewDist + 1,
                 1f, 1f, 1f, 0.3f);
 */
-        // ── Zone borders + centre pillars ─────────────────────────────────────
         for (ExtraChunkViewData.Zone zone : zoneData.getZones()) {
             ChunkPos c = zone.center();
             int r = zone.radius();
@@ -99,7 +90,6 @@ public class VistaChunksDebugRenderer implements DebugRenderer.SimpleDebugRender
                     1f, 0.53f, 0f, 1f);
         }
 
-        // ── Per zone chunk state ──────────────────────────────────────────────
         Set<ChunkPos> allZone = zoneData.getAllChunks();
         for (ChunkPos pos : allZone) {
             if (Math.abs(pos.x - pcx) > SCAN_RADIUS || Math.abs(pos.z - pcz) > SCAN_RADIUS) continue;
@@ -111,30 +101,26 @@ public class VistaChunksDebugRenderer implements DebugRenderer.SimpleDebugRender
             if (!hasPinned && !inView) {
                 r = 1f;
                 g = 0.2f;
-                b = 0.2f;   // RED   — missing
+                b = 0.2f;   // RED: missing
             } else if (hasPinned && inView) {
                 r = 1f;
                 g = 0.87f;
-                b = 0f;     // YELLOW — pinned + normal view
+                b = 0f;     // YELLOW: pinned + normal view
             } else if (hasPinned) {
                 r = 0.2f;
                 g = 1f;
-                b = 0.35f;   // LIME  — pinned outside view
+                b = 0.35f;   // LIME: pinned outside view
             } else {
                 r = 0f;
                 g = 0.87f;
-                b = 1f;     // CYAN  — normal view
+                b = 1f;     // CYAN: normal view
             }
-            // Taller 1-block slab at Y 3.0–4.0, slightly inset
+            // taller slab, slightly inset
             chunkBox(ps, lines, camX, camZ, pos.x, pos.z, -camY + 5, -camY, r, g, b, 1f);
         }
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
-    /**
-     * Camera-relative wireframe box for one chunk column.
-     */
+    // camera-relative wireframe box for one chunk column
     private static void chunkBox(PoseStack ps, VertexConsumer vc,
                                  double camX, double camZ, int cx, int cz,
                                  double yMin, double yMax,

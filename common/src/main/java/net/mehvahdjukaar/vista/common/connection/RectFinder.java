@@ -131,13 +131,13 @@ public final class RectFinder {
             ConnectionType t = at.type();
 
             if (t == null) {
-                return List.of(); // cell is empty/foreign — cannot expand into it
+                return List.of(); // cell is empty or foreign, can't expand into it
             }
 
             if (!t.isSingle() || at.hasBe()) {
                 // Cell belongs to an existing connected group (non-SINGLE) or is a 1x1
                 // group of its own (SINGLE+BE). Accumulate every absorbed owner into
-                // `touched` — the final `selection.contains(touched)` check at the
+                // `touched`, since the final `selection.contains(touched)` check at the
                 // validation step decides whether the selection has grown large enough
                 // to fully cover all absorbed groups. The old code bailed here on the
                 // second distinct owner, which blocked the 4-mirror 2x2 case (three

@@ -10,24 +10,14 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Keeps camera-zone chunks ticking even after the client's circular-buffer chunk
- * storage evicts them.
- *
- * <p>The client {@code ClientChunkCache.Storage} is a {@code floorMod}-indexed torus.
- * A far zone chunk and a normal nearby chunk can hash to the same slot; when the
- * nearby chunk streams in it overwrites the slot and {@code Storage.replace} calls
- * {@link ClientLevel#unload(LevelChunk)} on the evicted zone chunk. That
- * {@code unload} runs {@code clearAllBlockEntities()} (removing block-entity tickers,
- * e.g. a moving piston), {@code entityStorage.stopTicking()} (freezing entities) and
- * disables the chunk's light. Vista still returns the chunk from its pinned map so it
- * keeps <em>rendering</em>, but it stops <em>ticking</em> — the "rendered but frozen"
- * symptom on far feeds.
- *
- * <p>{@code Storage.replace} only fires for a slot whose current chunk differs from the
- * incoming one, so a zone chunk reaching {@code unload} is always a collision eviction,
- * never a same-position refresh — cancelling here is safe. When the zone is genuinely
- * removed the chunk is no longer in {@link VistaModClient#CLIENT_EXTRA_CHUNK_VIEW_DATA},
- * so normal unload proceeds.
+ * Keeps camera-zone chunks ticking after the client's chunk storage evicts them.
+ * <p>
+ * Storage is a floorMod torus, so a far zone chunk and a nearby one can share a slot. When the
+ * nearby one streams in, replace() unloads the zone chunk: block entity tickers go, entities stop
+ * ticking, light is disabled. Vista's pinned map keeps it rendering, so the feed shows a frozen
+ * scene. Cancelling is safe because replace() only fires when the slot's chunk actually differs,
+ * so this is always a collision and never a same-position refresh. Chunks whose zone is really
+ * gone are no longer in the view data and unload normally.
  */
 @Mixin(ClientLevel.class)
 public class ClientLevelMixin {

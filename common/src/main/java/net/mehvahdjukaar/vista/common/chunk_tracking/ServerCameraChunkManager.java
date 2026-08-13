@@ -41,8 +41,8 @@ import java.util.function.BiPredicate;
  *       client so the extra chunk zone system sends the ViewFinder chunks to them.</li>
  * </ol>
  *
- * <p>ViewFinders already inside the player's normal view distance are skipped —
- * the server sends those chunks naturally without any special treatment.
+ * <p>ViewFinders already inside the player's normal view distance are skipped, since the server
+ * sends those chunks anyway.
  *
  * <p>Cross-dimension ViewFinders are force-loaded in their own dimension but are
  * <em>not</em> added to the player's ExtraChunkViewData, since chunk-sending zones
@@ -52,31 +52,18 @@ public class ServerCameraChunkManager {
 
     public static final int RECURSIVE_SCAN_RADIUS = 4;
     private static final int TICK_INTERVAL = 40;
-    /**
-     * How often (in ticks) we retry sending zone chunks that weren't loaded on the first attempt.
-     */
+    // retry interval for zone chunks that weren't loaded on the first attempt
     private static final int FLUSH_INTERVAL = 5;
 
-    /**
-     * Maximum depth for recursive ViewFinder-through-TV chains.
-     * Depth 0 = TVs in player's normal view → their ViewFinders.
-     * Depth 1 = TVs inside those ViewFinder zones → their ViewFinders, etc.
-     */
+    // Depth of ViewFinder-through-TV chains. 0 is TVs in normal view and their ViewFinders, 1 adds
+    // the TVs inside those zones, and so on.
     private static final int MAX_RECURSION_DEPTH = 2;
 
-    /**
-     * ViewFinder GlobalPos → number of players currently watching it.
-     * Used for ref-counting {@code setChunkForced} across multiple players.
-     * Global server state — intentionally not per-player.
-     */
+    // Watcher count per ViewFinder, for ref-counting setChunkForced. Global on purpose, not per player.
     private static final Map<GlobalPos, Integer> linkedViewFindersTrackedByPlayers = new HashMap<>();
 
-    /**
-     * Live index of all server-side TVBlockEntities currently loaded, grouped by dimension.
-     * Populated via {@link #trackTv}/{@link #untrackTv} which are called from
-     * platform-specific chunk load/unload events (NeoForge) or LevelChunk mixins (Fabric).
-     * This replaces the per-player chunk scan in {@link #findViewFindersNeededForPlayer}.
-     */
+    // Every loaded TV, by dimension. Fed by trackTv/untrackTv off chunk load and unload, which saves
+    // findViewFindersNeededForPlayer from scanning chunks per player.
     private static final Map<ResourceKey<Level>, Set<TVBlockEntity>> loadedServerTVs = new HashMap<>();
 
     // ── TV lifecycle events (called from platform code) ───────────────────────
@@ -336,13 +323,12 @@ public class ServerCameraChunkManager {
     }
 
     /**
-     * Release every outstanding force-load ticket and clear all state on server stop.
-     *
-     * <p>{@code setChunkForced} writes to the level's persistent {@code ForcedChunksSavedData}, so
-     * tickets still held when the server stops would be saved to disk and reloaded orphaned next
-     * session (the in-memory ref-counts are gone, so nothing would ever release them). We unforce
-     * them here before the maps — which are {@code static} and would otherwise leak across worlds in
-     * a single client session — are cleared.
+     * Releases every outstanding force-load ticket and clears all state on server stop.
+     * <p>
+     * {@code setChunkForced} writes to the persistent {@code ForcedChunksSavedData}, so tickets still
+     * held at shutdown get saved to disk and come back orphaned next session, with the in-memory
+     * ref-counts gone and nothing left to release them. Unforcing happens before the maps are
+     * cleared, since those are static and would otherwise leak across worlds in one client session.
      */
     public static void clearAll(MinecraftServer server) {
         int chunkRadius = CommonConfigs.SEND_CHUNKS_VIEWED_BY_VIEW_FINDER.get();
