@@ -1,1 +1,1 @@
-even more compat stuff with veil this time
+updated veil compat to newest veil. requires newest veil

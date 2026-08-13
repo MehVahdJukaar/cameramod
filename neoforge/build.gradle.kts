@@ -59,7 +59,7 @@ dependencies {
     // It shadows corelib into its own package, so no extra dependency is needed.
     modImplementation("curse.maven:camera-mod-289310:6715623")
 
-    modImplementation("foundry.veil:veil-neoforge-1.21.1:4.1.2")
+    modImplementation("foundry.veil:veil-neoforge-1.21.1:4.4.1")
     modImplementation("curse.maven:fsable-1312371:8263584")
 
     // Light-beam mods to check against sublevel view finder feeds: one of them makes chunks seen

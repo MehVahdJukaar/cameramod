@@ -17,15 +17,10 @@ import org.spongepowered.asm.mixin.injection.At;
 @Mixin(value = LevelRenderer.class, priority = 1500)
 public abstract class CompatVeilMixin {
 
-    // Veil skips its own deferred light pass while rendering a nested perspective, so we do the same for
-    // feeds: that pass binds Veil's light framebuffer and wrecks the target we render into.
-    //
-    // Skip the drawLights call rather than faking isRenderingPerspective(). That flag guards the whole
-    // tail block, including the AdvancedFbo.unbind() Veil runs when there are no lights to draw, and
-    // suppressing that left Veil's framebuffer bound for the rest of the feed render: the deferred
-    // result never reached our target, so terrain went missing while entities and block entities (drawn
-    // straight to the bound target) survived. Returning false takes Veil's own no-lights branch, which
-    // unbinds as it should.
+    // Veil's deferred light pass binds its own framebuffers and wrecks the target feeds render into, so
+    // skip it like Veil does for its own nested perspectives. Returning false takes Veil's no-lights
+    // branch, which unbinds properly; suppressing the whole tail instead left Veil's framebuffer bound
+    // and terrain vanished from feeds.
     @TargetHandler(
             mixin = "foundry.veil.mixin.pipeline.client.PipelineLevelRendererMixin",
             name = "blit"
@@ -34,12 +29,12 @@ public abstract class CompatVeilMixin {
             method = "@MixinSquared:Handler",
             at = @At(
                     value = "INVOKE",
-                    target = "Lfoundry/veil/api/client/render/VeilRenderSystem;drawLights(Lnet/minecraft/util/profiling/ProfilerFiller;Lfoundry/veil/api/client/render/CullFrustum;)Z")
+                    target = "Lfoundry/veil/api/client/render/VeilRenderSystem;drawLights(Lnet/minecraft/util/profiling/ProfilerFiller;Lfoundry/veil/api/client/render/CullFrustum;Z)Z")
     )
     private boolean vista$skipVeilLightPassInFeeds(ProfilerFiller profiler, CullFrustum cullFrustum,
-                                                   Operation<Boolean> original) {
+                                                   boolean renderInscattering, Operation<Boolean> original) {
         if (VistaLevelRenderer.isRenderingLiveFeed()) return false;
-        return original.call(profiler, cullFrustum);
+        return original.call(profiler, cullFrustum, renderInscattering);
     }
 
 }

@@ -49,7 +49,7 @@ dependencies {
     modCompileOnly("curse.maven:alexs-caves-924854:4806837")
     modImplementation("curse.maven:watermedia-869524:7072353")
 
-    modCompileOnly("foundry.veil:veil-neoforge-1.21.1:4.0.0")
+    modCompileOnly("foundry.veil:veil-neoforge-1.21.1:4.4.1")
 
     // disables its global cloud renderer during nested TV/mirror feed renders (CompatSimpleCloudsMixin)
     modCompileOnly("curse.maven:simple-clouds-1121215:6928979")
