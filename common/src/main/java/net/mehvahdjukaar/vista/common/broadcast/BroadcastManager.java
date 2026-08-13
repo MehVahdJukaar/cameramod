@@ -136,7 +136,7 @@ public final class BroadcastManager extends WorldSavedData {
         }
     }
 
-    /* -------------------- PUBLIC API (READS – FAST) -------------------- */
+    /* -------------------- PUBLIC API (READS - FAST) -------------------- */
 
     @Nullable
     public IBroadcastLocation getFeedLocationById(UUID viewFinderUUID) {

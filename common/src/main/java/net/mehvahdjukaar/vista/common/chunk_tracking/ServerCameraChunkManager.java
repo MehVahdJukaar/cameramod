@@ -26,27 +26,15 @@ import java.util.*;
 import java.util.function.BiPredicate;
 
 /**
- * Server-authoritative camera chunk manager.
- *
- * <p>Every {@link #TICK_INTERVAL} game-ticks (staggered per player) this class:
- * <ol>
- *   <li>Scans every loaded chunk in the player's normal view distance for
- *       {@link TVBlockEntity} instances whose cassette has a linked ViewFinder UUID.</li>
- *   <li>Follows the {@link BroadcastManager} connection to find the ViewFinder's
- *       world position.</li>
- *   <li>Force-loads the circle of chunks around the ViewFinder via
- *       {@link ServerLevel#setChunkForced} (ref-counted across multiple players
- *       watching the same ViewFinder).</li>
- *   <li>Updates the player's {@link ExtraChunkViewData} attachment and syncs it to the
- *       client so the extra chunk zone system sends the ViewFinder chunks to them.</li>
- * </ol>
- *
- * <p>ViewFinders already inside the player's normal view distance are skipped, since the server
- * sends those chunks anyway.
- *
- * <p>Cross-dimension ViewFinders are force-loaded in their own dimension but are
- * <em>not</em> added to the player's ExtraChunkViewData, since chunk-sending zones
- * only apply to the player's current dimension.
+ * Keeps the chunks around ViewFinders loaded and sent to whoever is watching them through a TV.
+ * Every TICK_INTERVAL ticks, staggered per player, it walks the loaded TVs in that player's view
+ * distance, follows the feed to the ViewFinder position, force loads a circle of chunks there and
+ * writes the zones into the player's ExtraChunkViewData so the chunk sending code picks them up.
+ * Force loading is ref counted, so several players watching the same ViewFinder only load it once.
+ * <p>
+ * ViewFinders already in normal view distance are skipped, the server sends those anyway. Cross
+ * dimension ones get force loaded but no zone, since zones only apply to the player's current
+ * dimension.
  */
 public class ServerCameraChunkManager {
 
@@ -66,22 +54,14 @@ public class ServerCameraChunkManager {
     // findViewFindersNeededForPlayer from scanning chunks per player.
     private static final Map<ResourceKey<Level>, Set<TVBlockEntity>> loadedServerTVs = new HashMap<>();
 
-    // ── TV lifecycle events (called from platform code) ───────────────────────
-
-    /**
-     * Call when a {@link TVBlockEntity} becomes live on the server
-     * (chunk loaded or block placed).
-     */
+    // called from platform code when a TV goes live, chunk loaded or block placed
     public static void trackTv(TVBlockEntity tv) {
         if (tv.getLevel() instanceof ServerLevel sl) {
             loadedServerTVs.computeIfAbsent(sl.dimension(), k -> new HashSet<>()).add(tv);
         }
     }
 
-    /**
-     * Call when a {@link TVBlockEntity} is removed from the server
-     * (chunk unloaded or block broken).
-     */
+    // same, for chunk unloaded or block broken
     public static void untrackTv(TVBlockEntity tv) {
         if (tv.getLevel() instanceof ServerLevel sl) {
             Set<TVBlockEntity> set = loadedServerTVs.get(sl.dimension());
@@ -89,12 +69,7 @@ public class ServerCameraChunkManager {
         }
     }
 
-    // ── Per-player tick ───────────────────────────────────────────────────────
-
-    /**
-     * Called every server tick for each {@link ServerPlayer} (via {@code ServerPlayerMixin}).
-     * Updates are staggered so not all players recalculate on the same tick.
-     */
+    // called from ServerPlayerMixin every tick, staggered so players don't all recalculate together
     public static void onServerPlayerTick(ServerPlayer player) {
         int chunkRadius = CommonConfigs.SEND_CHUNKS_VIEWED_BY_VIEW_FINDER.get();
         boolean sends = chunkRadius > 0;
@@ -150,14 +125,8 @@ public class ServerCameraChunkManager {
                 player.getName().getString(), desired.size(), data.getZones().size());
     }
 
-    // ── Zone chunk flushing ───────────────────────────────────────────────────
-
-    /**
-     * Directly calls {@code markChunkPendingToSend} for every zone chunk that is now
-     * loaded but not yet queued. This is the server-side counterpart to
-     * {@code ChunkMapMixin.vista$flushPendingZoneChunks} and runs independently of
-     * player movement so chunks are sent promptly after force-loading completes.
-     */
+    // Queues every zone chunk that is loaded by now but wasn't sent yet. Server side counterpart to
+    // ChunkMapMixin.vista$flushPendingZoneChunks, but this one doesn't need the player to move.
     private static void flushPendingZoneChunks(ServerPlayer player) {
         ServerExtraChunkViewData data = VistaMod.EXTRA_VIEW_AREAS.getOrCreate(player);
         if (data.getZones().isEmpty()) return;
@@ -178,8 +147,6 @@ public class ServerCameraChunkManager {
         }
     }
 
-    // ── ViewFinder discovery ──────────────────────────────────────────────────
-
     private static Set<GlobalPos> findViewFindersNeededForPlayer(ServerPlayer player) {
         Set<GlobalPos> result = new HashSet<>();
         ServerLevel level = player.serverLevel();
@@ -189,13 +156,9 @@ public class ServerCameraChunkManager {
         return result;
     }
 
-    /**
-     * Recursively collects ViewFinder destinations reachable from TVs inside {@code inZone}.
-     *
-     * <p>At depth 0 the zone is the player's normal view distance. At each subsequent depth
-     * the zone is a CHUNK_RADIUS circle around a newly discovered ViewFinder, so that TVs
-     * already force-loaded inside a camera zone can chain to further ViewFinders.
-     */
+    // Collects the ViewFinders reachable from the TVs inside inZone. At depth 0 that zone is the
+    // player's view distance, deeper down it's a circle around a ViewFinder we just found, so TVs
+    // sitting inside a camera zone can chain on to further ViewFinders.
     private static void collectViewFinders(
             Set<TVBlockEntity> candidates,
             BiPredicate<Integer, Integer> inZone,
@@ -261,20 +224,15 @@ public class ServerCameraChunkManager {
         return centerChunk.getChessboardDistance(cx, cz) <= RECURSIVE_SCAN_RADIUS;
     }
 
-    /**
-     * Resolves the real-world chunk anchor for a ViewFinder destination.
-     *
-     * <p>Sublevels (movable "ships") store their blocks at plot-grid coordinates; a ViewFinder
-     * inside one resolves to where the ship is logically placed in the world. We project out of the
-     * sublevel (a no-op outside one) and snap to chunk granularity (Y dropped) so sub-chunk movement
-     * doesn't churn the desired-set or re-send packets. Everything downstream operates on
-     * {@link ChunkPos}, so this loses nothing.
-     *
-     * <p>Returns null when the position lies in a Sable plot grid and the projection no-ops
-     * (the sublevel is held/unloaded or removed). Plot-grid coordinates must never reach
-     * {@code setChunkForced} or the zone system: vanilla tickets/holders in the plot grid fight
-     * Sable's injected PlotChunkHolders (shutdown drain loop never ends, chunks never load).
-     */
+    // Finds the real world chunk a ViewFinder destination maps to. Sublevels (movable ships) keep
+    // their blocks at plot grid coords, so a ViewFinder inside one has to resolve to wherever the
+    // ship actually sits in the world. Projecting out is a no-op outside a sublevel. Snapping to
+    // chunk granularity (Y dropped) keeps small movements from churning the desired set and
+    // re-sending packets, and nothing downstream needs finer than a ChunkPos anyway.
+    //
+    // Null when the pos is in a plot grid and the projection did nothing, meaning the sublevel is
+    // held or gone. Plot grid coords must never reach setChunkForced or the zone system: vanilla
+    // tickets in there fight Sable's own PlotChunkHolders and the shutdown drain loop never ends.
     @Nullable
     private static GlobalPos normalizeGlobalPos(ServerLevel playerLevel, GlobalPos dest) {
         // Project against the ViewFinder's OWN level (it may be cross-dimension).
@@ -289,8 +247,6 @@ public class ServerCameraChunkManager {
         return GlobalPos.of(dest.dimension(), chunk.getWorldPosition());
     }
 
-    // ── Force-loading ─────────────────────────────────────────────────────────
-
     private static void setChunksForceLoaded(ServerLevel level, BlockPos viewFinderPos, int radius, boolean force) {
         ChunkPos cp = new ChunkPos(viewFinderPos);
         ChunkPos.rangeClosed(cp, radius)
@@ -298,11 +254,7 @@ public class ServerCameraChunkManager {
                 .forEach(p -> level.setChunkForced(p.x, p.z, force));
     }
 
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
-
-    /**
-     * Call when a player disconnects to release their force-loading references.
-     */
+    // drops the player's force load references on disconnect
     public static void onPlayerLeave(ServerPlayer player) {
         int chunkRadius = CommonConfigs.SEND_CHUNKS_VIEWED_BY_VIEW_FINDER.get();
         Set<GlobalPos> watching = VistaMod.EXTRA_VIEW_AREAS.getOrCreate(player).getTrackedWantedZoneCenters();
@@ -322,14 +274,10 @@ public class ServerCameraChunkManager {
         }
     }
 
-    /**
-     * Releases every outstanding force-load ticket and clears all state on server stop.
-     * <p>
-     * {@code setChunkForced} writes to the persistent {@code ForcedChunksSavedData}, so tickets still
-     * held at shutdown get saved to disk and come back orphaned next session, with the in-memory
-     * ref-counts gone and nothing left to release them. Unforcing happens before the maps are
-     * cleared, since those are static and would otherwise leak across worlds in one client session.
-     */
+    // Drops every force load ticket we still hold on server stop. setChunkForced writes into the
+    // saved ForcedChunksSavedData, so anything still held at shutdown comes back next session with
+    // no ref counts left to release it. Unforce before clearing the maps, they're static and would
+    // otherwise leak between worlds in the same client session.
     public static void clearAll(MinecraftServer server) {
         int chunkRadius = CommonConfigs.SEND_CHUNKS_VIEWED_BY_VIEW_FINDER.get();
         for (GlobalPos vf : linkedViewFindersTrackedByPlayers.keySet()) {

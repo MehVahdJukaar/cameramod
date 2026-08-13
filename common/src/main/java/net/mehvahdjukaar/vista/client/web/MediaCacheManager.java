@@ -17,12 +17,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Manages persistent disk cache for video files downloaded from HTTP URLs.
- * Features:
- * - URL -> local file mapping (using SHA-256 hash as filename)
- * - Reference counting (multiple TVs can share the same cached file)
- * - LRU eviction when total cache size exceeds a given limit
- * - Thread‑safe: concurrent downloads of the same URL are collapsed
+ * Disk cache for video files downloaded over HTTP. Maps a URL to a local file named after its
+ * SHA-256, ref counts it so several TVs can share one file, and evicts least recently used entries
+ * once the cache goes over the size limit. Thread safe, concurrent downloads of the same URL are
+ * collapsed into one.
  */
 public class MediaCacheManager {
     private static final String CACHE_SUBDIR = "vista_web_content_cache";

@@ -175,7 +175,7 @@ public class FFmpegMediaDecoder {
         return args.toArray(new String[0]);
     }
 
-    // ---------- FFprobe helpers (identical to original) ----------
+    // ---------- FFprobe helpers ----------
     private double probeFrameRate(String path) throws IOException {
         Process p = ffmpeg.runFFprobe("-v", "error", "-select_streams", "v:0",
                 "-show_entries", "stream=r_frame_rate", "-of", "csv=p=0", path);
