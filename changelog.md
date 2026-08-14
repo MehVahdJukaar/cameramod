@@ -1,2 +1,1 @@
-- fixed an issue with far away chunks handling
-- tested and verified working with veil 4.4.1
+- added a hack that should fixe an issue from veil
