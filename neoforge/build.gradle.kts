@@ -26,7 +26,7 @@ dependencies {
     implementation("com.github.bawnorton.mixinsquared:mixinsquared-forge:${mixin_squared_version}")
 
 
-    implementation("curse.maven:supplementaries-412082:8051628")
+    modCompileOnly("curse.maven:supplementaries-412082:8051628")
     modCompileOnly("curse.maven:quark-243121:7640331")
     modCompileOnly("curse.maven:zeta-968868:7640154")
 
@@ -69,7 +69,7 @@ dependencies {
     // Needs Create + Architectury at runtime, and Create is compileOnly here, so this one stays off
     // the dev runtime until Create's runtime stack (flywheel/ponder/registrate) is declared too.
     modCompileOnly("curse.maven:create-train-lights-1318080:7761822") // v1.1.1
-
+    modImplementation("maven.modrinth:flare-guns:1.0.0")
     // Create contraption view-finder integration (platform impl: CreatePlatStuffImpl)
     modCompileOnly("curse.maven:create-328085:7963363")
     modCompileOnly("curse.maven:create-aeronautics-676721:8240058") // 1.3.0, the newest 1.21.1 build

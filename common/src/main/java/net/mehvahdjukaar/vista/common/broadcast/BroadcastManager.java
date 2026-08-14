@@ -190,22 +190,4 @@ public final class BroadcastManager extends WorldSavedData {
         return VistaMod.VIEWFINDER_CONNECTION.getData(level);
     }
 
-    /**
-     * Returns the manager only when the server's levels are fully constructed and their saved-data
-     * storage is bound, null otherwise. During server boot some mods (e.g. Sable) force-load
-     * sub-level chunks from inside the {@code ServerLevel} constructor, when
-     * {@code server.overworld()} and its data storage are not available yet; linking must be
-     * deferred in that window or {@code WorldSavedDataType#getData} throws a NullPointerException.
-     */
-    @Nullable
-    public static BroadcastManager getInstanceIfReady(Level level) {
-        if (level instanceof ServerLevel sl) {
-            ServerLevel target = sl.getServer().overworld();
-            if (target != null && target.getDataStorage() != null) {
-                return getInstance(level);
-            }
-        }
-        return null;
-    }
-
 }

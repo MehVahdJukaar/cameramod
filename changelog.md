@@ -1,1 +1,2 @@
-updated veil compat to newest veil. requires newest veil
+- fixed an issue with far away chunks handling
+- tested and verified working with veil 4.4.1

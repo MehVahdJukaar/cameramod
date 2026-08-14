@@ -51,6 +51,9 @@ dependencies {
 
     modCompileOnly("foundry.veil:veil-neoforge-1.21.1:4.4.1")
 
+    // issue #184: flare entities + mirrors render wrong with veil
+    modImplementation("maven.modrinth:flare-guns:1.0.0")
+
     // disables its global cloud renderer during nested TV/mirror feed renders (CompatSimpleCloudsMixin)
     modCompileOnly("curse.maven:simple-clouds-1121215:6928979")
 

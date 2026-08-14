@@ -12,13 +12,11 @@ import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.GlobalPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -34,7 +32,6 @@ public class WaveGateBlockEntity extends BlockEntity implements IScreenProvider,
 
     private String url = "";
     private UUID myUUID;
-    private boolean linkDeferred = false; //true when setLevel ran before the server levels were fully bound
     private IVideoSource videoSource = IVideoSource.EMPTY;
 
     public WaveGateBlockEntity(BlockPos pos, BlockState state) {
@@ -65,14 +62,7 @@ public class WaveGateBlockEntity extends BlockEntity implements IScreenProvider,
     @Override
     public void setLevel(Level level) {
         super.setLevel(level);
-        this.linkDeferred = level instanceof ServerLevel &&
-                !this.linkFeedIfReady(level, LevelBEBroadcastLocation.of(this));
-    }
-
-    public static void tick(Level level, BlockPos pos, BlockState state, WaveGateBlockEntity tile) {
-        if (tile.linkDeferred) {
-            tile.linkDeferred = !tile.linkFeedIfReady(level, LevelBEBroadcastLocation.of(tile));
-        }
+        this.ensureLinked(level, LevelBEBroadcastLocation.of(this));
     }
 
     @Override
