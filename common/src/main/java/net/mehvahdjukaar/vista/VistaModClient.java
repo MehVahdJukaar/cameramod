@@ -160,7 +160,7 @@ public class VistaModClient {
     // Tries to make FFmpeg ready without any download: existing downloaded binaries,
     // or a system-wide install on the user's PATH. Returns true if FFmpeg is now ready.
     private static boolean tryReadyWithoutDownload() {
-        if (FFmpegManager.hasRequiredFiles()) {
+        if (FFmpegManager.hasManagedBinaries()) {
             instantiateFFmpeg(null);
             return true;
         }

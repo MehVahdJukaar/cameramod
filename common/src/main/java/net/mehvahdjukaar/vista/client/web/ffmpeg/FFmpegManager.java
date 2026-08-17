@@ -1,13 +1,15 @@
 package net.mehvahdjukaar.vista.client.web.ffmpeg;
 
-import com.google.gson.*;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
 import net.mehvahdjukaar.moonlight.api.util.ArchiveUtils;
 import net.mehvahdjukaar.moonlight.api.util.FileDownloadUtils;
 import net.mehvahdjukaar.moonlight.api.util.OsType;
 import net.mehvahdjukaar.vista.VistaMod;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -16,8 +18,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -27,20 +27,19 @@ public final class FFmpegManager {
 
     private static final Path SOURCES_CONFIG_PATH = Paths.get("vista_ffmpeg_sources.json");
     private static final String SOURCES_RESOURCE_PATH = "/vista_ffmpeg_sources.json";
-    private static final Path PROGRAM_FOLDER = Paths.get("vista_ffmpeg_bin");
     // Bump when the bundled sources file changes in a way that must reach users who already have one on disk.
     private static final int SOURCES_CONFIG_VERSION = 2;
-    private static volatile int downloadProgress = -1;
 
+    private static final Path PROGRAM_FOLDER = Paths.get("vista_ffmpeg_bin");
     private static final OsType OS_TYPE = OsType.current();
-    private static final Path FFMPEG_PATH = PROGRAM_FOLDER.resolve(OS_TYPE.executableName("ffmpeg"));
-    private static final Path FFPROBE_PATH = PROGRAM_FOLDER.resolve(OS_TYPE.executableName("ffprobe"));
+    private static final String FFMPEG_FILE_NAME = OS_TYPE.executableName("ffmpeg");
+    private static final String FFPROBE_FILE_NAME = OS_TYPE.executableName("ffprobe");
+    private static final Path FFMPEG_PATH = PROGRAM_FOLDER.resolve(FFMPEG_FILE_NAME);
+    private static final Path FFPROBE_PATH = PROGRAM_FOLDER.resolve(FFPROBE_FILE_NAME);
 
-    // A launcher started from Finder or the Dock gets a bare PATH, so a Homebrew ffmpeg is invisible there.
-    private static final List<String> EXTRA_MAC_BIN_DIRS = List.of("/opt/homebrew/bin", "/usr/local/bin");
-
-    private static final int MAX_MAGIC_LENGTH = 6;
     private static final long VERSION_CHECK_TIMEOUT_SECONDS = 20;
+
+    private static volatile int downloadProgress = -1;
 
     public static CompletableFuture<FFmpeg> getOrDownload(@Nullable String customUrl) {
         return CompletableFuture.supplyAsync(() -> initialize(customUrl));
@@ -51,36 +50,33 @@ public final class FFmpegManager {
     }
 
     private static FFmpeg initialize(@Nullable String customUrl) {
+        FFmpeg ffmpeg;
         try {
             Files.createDirectories(PROGRAM_FOLDER);
-            if (!hasRequiredFiles()) {
-                // Prefer a system-wide install (in PATH) before downloading our own copy,
-                // unless the user explicitly forced a custom download URL.
-                if (customUrl == null) {
-                    FFmpeg system = detectSystemFFmpeg();
-                    if (system != null) {
-                        downloadProgress = -1;
-                        return verified(system);
-                    }
-                }
-                downloadProgress = -1;
-                List<String> urls = customUrl != null ? List.of(customUrl) : getDownloadUrlsFromSources();
-                downloadAndInstall(urls);
-            }
-            downloadProgress = -1;
+            ffmpeg = findOrDownload(customUrl);
         } catch (Exception e) {
-            downloadProgress = -1;
             throw new RuntimeException("FFmpeg setup failed. Aborting.", e);
+        } finally {
+            downloadProgress = -1;
         }
-        VistaMod.LOGGER.info("Using managed FFmpeg binaries at {}", FFMPEG_PATH.toAbsolutePath());
-        return verified(new FFmpeg(FFMPEG_PATH, FFPROBE_PATH));
+        return verified(ffmpeg);
     }
 
-    /**
-     * Runs both binaries once to prove they actually start on this machine. Downloading the wrong
-     * build for the CPU, or a truncated archive, otherwise only shows up much later as a decode
-     * failure with no useful message.
-     */
+    private static FFmpeg findOrDownload(@Nullable String customUrl) throws IOException, InterruptedException {
+        if (!hasManagedBinaries()) {
+            if (customUrl == null) {
+                FFmpeg system = detectSystemFFmpeg();
+                if (system != null) return system;
+            }
+            List<String> urls = customUrl != null ? List.of(customUrl) : readDownloadUrls();
+            downloadAndInstall(urls);
+        }
+        VistaMod.LOGGER.info("Using managed FFmpeg binaries at {}", FFMPEG_PATH.toAbsolutePath());
+        return new FFmpeg(FFMPEG_PATH, FFPROBE_PATH);
+    }
+
+    // Runs both binaries once so a wrong-CPU build or a truncated archive fails here with a clear
+    // message instead of much later as a decode error.
     public static FFmpeg verified(FFmpeg ffmpeg) {
         checkRuns("ffmpeg", ffmpeg::runFFmpeg);
         checkRuns("ffprobe", ffmpeg::runFFprobe);
@@ -132,75 +128,37 @@ public final class FFmpegManager {
         }
     }
 
-    public static boolean hasRequiredFiles() {
+    public static boolean hasManagedBinaries() {
         return Files.exists(FFMPEG_PATH) && Files.exists(FFPROBE_PATH);
     }
 
-    /**
-     * Looks for a system-wide FFmpeg install on the user's PATH. Both ffmpeg and ffprobe
-     * must be present, otherwise we fall back to downloading our own copy.
-     * Cheap (a handful of filesystem stats) and never downloads anything, so it's safe
-     * to call on the main thread to decide whether a download is even needed.
-     */
     @Nullable
     public static FFmpeg detectSystemFFmpeg() {
-        Path ffmpeg = findInPath(OS_TYPE.executableName("ffmpeg"));
-        Path ffprobe = findInPath(OS_TYPE.executableName("ffprobe"));
-        if (ffmpeg != null && ffprobe != null) {
-            VistaMod.LOGGER.info("Using system FFmpeg from PATH: {} and {}", ffmpeg, ffprobe);
-            return new FFmpeg(ffmpeg, ffprobe);
-        }
-        return null;
+        Path ffmpeg = OS_TYPE.findExecutable("ffmpeg");
+        Path ffprobe = OS_TYPE.findExecutable("ffprobe");
+        if (ffmpeg == null || ffprobe == null) return null;
+        VistaMod.LOGGER.info("Using system FFmpeg from PATH: {} and {}", ffmpeg, ffprobe);
+        return new FFmpeg(ffmpeg, ffprobe);
     }
 
-    @Nullable
-    private static Path findInPath(String executableName) {
-        for (String dir : binarySearchDirs()) {
-            if (dir.isEmpty()) continue;
-            try {
-                Path candidate = Paths.get(dir).resolve(executableName);
-                if (Files.isRegularFile(candidate) && Files.isExecutable(candidate)) {
-                    return candidate.toAbsolutePath();
-                }
-            } catch (Exception ignored) {
-                // malformed PATH entry, skip
-            }
-        }
-        return null;
-    }
-
-    private static List<String> binarySearchDirs() {
-        List<String> dirs = new ArrayList<>();
-        String pathEnv = System.getenv("PATH");
-        if (pathEnv != null && !pathEnv.isEmpty()) {
-            Collections.addAll(dirs, pathEnv.split(File.pathSeparator));
-        }
-        if (OS_TYPE.isMac()) {
-            dirs.addAll(EXTRA_MAC_BIN_DIRS);
-        }
-        return dirs;
-    }
-
-    private static List<String> getDownloadUrlsFromSources() throws IOException {
+    private static List<String> readDownloadUrls() throws IOException {
         ensureSourcesConfigUpToDate();
 
         JsonObject root = readSourcesConfig();
         String key = OS_TYPE.key();
-        if (!root.has(key)) {
+        JsonElement value = root.get(key);
+        if (value == null) {
             throw new IOException("Missing key '" + key + "' in " + SOURCES_CONFIG_PATH);
         }
 
-        JsonElement value = root.get(key);
         List<String> urls = new ArrayList<>();
         if (value.isJsonArray()) {
-            JsonArray array = value.getAsJsonArray();
-            for (JsonElement e : array) {
+            for (JsonElement e : value.getAsJsonArray()) {
                 urls.add(normalizeUrl(e.getAsString(), key));
             }
         } else {
             urls.add(normalizeUrl(value.getAsString(), key));
         }
-
         if (urls.isEmpty()) {
             throw new IOException("No URLs for key '" + key + "' in " + SOURCES_CONFIG_PATH);
         }
@@ -226,7 +184,7 @@ public final class FFmpegManager {
 
     private static void ensureSourcesConfigUpToDate() throws IOException {
         if (Files.exists(SOURCES_CONFIG_PATH)) {
-            if (readConfigVersion() >= SOURCES_CONFIG_VERSION) return;
+            if (readSourcesConfigVersion() >= SOURCES_CONFIG_VERSION) return;
             // Old file has sources we know to be broken. Keep the user's copy around, but stop using it.
             Path backup = SOURCES_CONFIG_PATH.resolveSibling(SOURCES_CONFIG_PATH.getFileName() + ".old");
             Files.move(SOURCES_CONFIG_PATH, backup, StandardCopyOption.REPLACE_EXISTING);
@@ -242,7 +200,7 @@ public final class FFmpegManager {
         }
     }
 
-    private static int readConfigVersion() {
+    private static int readSourcesConfigVersion() {
         try {
             JsonObject root = readSourcesConfig();
             return root.has("config_version") ? root.get("config_version").getAsInt() : 1;
@@ -260,7 +218,7 @@ public final class FFmpegManager {
             for (Path archive : archives) {
                 ArchiveUtils.extract(archive, PROGRAM_FOLDER);
             }
-            moveRequiredBinariesFromProgramFolder();
+            moveExtractedBinariesIntoPlace();
             if (OS_TYPE.requiresExecutableBit()) {
                 markExecutables();
             }
@@ -280,62 +238,34 @@ public final class FFmpegManager {
         FileDownloadUtils.download(url, raw, null,
                 percent -> downloadProgress = (completedBefore + percent) / total);
 
-        Path archive = PROGRAM_FOLDER.resolve("download-" + index + archiveExtension(raw));
-        Files.move(raw, archive, StandardCopyOption.REPLACE_EXISTING);
-        if (!ArchiveUtils.isSupported(archive)) {
+        String extension = ArchiveUtils.detectExtension(raw);
+        if (extension == null) {
             throw new IOException("Unrecognized archive format downloaded from " + url);
         }
+        Path archive = raw.resolveSibling("download-" + index + extension);
+        Files.move(raw, archive, StandardCopyOption.REPLACE_EXISTING);
         return archive;
     }
 
-    // Leading bytes every file of that format starts with. See the "magic number" table in file(1).
-    private static final byte[] ZIP_MAGIC = {'P', 'K', 3, 4};
-    private static final byte[] XZ_MAGIC = {(byte) 0xFD, '7', 'z', 'X', 'Z', 0};
-    private static final byte[] GZIP_MAGIC = {0x1F, (byte) 0x8B};
-    private static final byte[] BZIP2_MAGIC = {'B', 'Z', 'h'};
-
-    private static String archiveExtension(Path file) throws IOException {
-        byte[] head;
-        try (InputStream in = Files.newInputStream(file)) {
-            head = in.readNBytes(MAX_MAGIC_LENGTH);
-        }
-        if (startsWith(head, ZIP_MAGIC)) return ".zip";
-        if (startsWith(head, XZ_MAGIC)) return ".tar.xz";
-        if (startsWith(head, GZIP_MAGIC)) return ".tar.gz";
-        if (startsWith(head, BZIP2_MAGIC)) return ".tar.bz2";
-        return ".unknown";
-    }
-
-    private static boolean startsWith(byte[] data, byte[] magic) {
-        if (data.length < magic.length) return false;
-        return Arrays.equals(data, 0, magic.length, magic, 0, magic.length);
-    }
-
-    private static void moveRequiredBinariesFromProgramFolder() throws IOException {
-        Path ffmpeg = null;
-        Path ffprobe = null;
-
-        try (Stream<Path> stream = Files.walk(PROGRAM_FOLDER)) {
-            for (Path p : (Iterable<Path>) stream.filter(Files::isRegularFile)::iterator) {
-                String name = p.getFileName().toString();
-                if (name.equals(FFMPEG_PATH.getFileName().toString())) {
-                    ffmpeg = p;
-                } else if (name.equals(FFPROBE_PATH.getFileName().toString())) {
-                    ffprobe = p;
-                }
-                if (ffmpeg != null && ffprobe != null) {
-                    break;
-                }
-            }
-        }
-
+    private static void moveExtractedBinariesIntoPlace() throws IOException {
+        Path ffmpeg = findExtractedFile(FFMPEG_FILE_NAME);
+        Path ffprobe = findExtractedFile(FFPROBE_FILE_NAME);
         if (ffmpeg == null || ffprobe == null) {
             throw new IOException("Archives do not contain required binaries: "
-                    + FFMPEG_PATH.getFileName() + ", " + FFPROBE_PATH.getFileName());
+                    + FFMPEG_FILE_NAME + ", " + FFPROBE_FILE_NAME);
         }
-
         Files.move(ffmpeg, FFMPEG_PATH, StandardCopyOption.REPLACE_EXISTING);
         Files.move(ffprobe, FFPROBE_PATH, StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    @Nullable
+    private static Path findExtractedFile(String fileName) throws IOException {
+        try (Stream<Path> files = Files.walk(PROGRAM_FOLDER)) {
+            return files.filter(Files::isRegularFile)
+                    .filter(p -> p.getFileName().toString().equals(fileName))
+                    .findFirst()
+                    .orElse(null);
+        }
     }
 
     private static void markExecutables() throws IOException {
