@@ -1,7 +1,10 @@
 {
-  "comment": "These are the most popular and trustworthy sources for pre compiled FFMPEG binaries. If you prefer not to use these swap them out for something else. Note that pre compiled FFMPEG from official sources do not exist.",
+  "comment": "These are the most popular and trustworthy sources for pre compiled FFMPEG binaries. If you prefer not to use these swap them out for something else. Note that pre compiled FFMPEG from official sources do not exist. A value can be a single url or a list of urls, for sources that ship ffmpeg and ffprobe as separate archives.",
+  "config_version": 2,
   "linux": "johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz",
   "windows": "gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip",
-  "macos": "evermeet.cx/ffmpeg/getrelease/zip"
-
+  "macos": [
+    "evermeet.cx/ffmpeg/getrelease/zip",
+    "evermeet.cx/ffprobe/getrelease/zip"
+  ]
 }

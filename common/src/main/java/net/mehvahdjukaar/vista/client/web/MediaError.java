@@ -1,6 +1,7 @@
 package net.mehvahdjukaar.vista.client.web;
 
 import net.mehvahdjukaar.moonlight.api.util.FileDownloadUtils;
+import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpegManager;
 import org.jetbrains.annotations.Nullable;
 
 
@@ -40,7 +41,13 @@ public enum MediaError {
                     default -> NONE;
                 };
             }
+            if (e instanceof FFmpegManager.UnusableFFmpegException) {
+                return NO_FFMPEG;
+            }
             String msg = e.getMessage();
+            if (msg != null && (msg.contains("Cannot run program") || msg.contains("Bad CPU type"))) {
+                return NO_FFMPEG;
+            }
             if (msg != null && (msg.contains("Unsupported protocol") || msg.contains("Malformed URL")
                     || msg.contains("does not exist"))) {
                 return BAD_LINK;

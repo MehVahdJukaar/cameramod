@@ -140,11 +140,21 @@ public class VistaModClient {
     }
 
     private static void instantiateFFmpeg(@Nullable String url) {
-        ffmpegFuture = FFmpegManager.getOrDownload(url);
+        ffmpegFuture = logFailure(FFmpegManager.getOrDownload(url));
     }
 
     private static void useFFmpeg(FFmpeg ffmpeg) {
-        ffmpegFuture = CompletableFuture.completedFuture(ffmpeg);
+        // Verification spawns processes, so keep it off the main thread.
+        ffmpegFuture = logFailure(CompletableFuture.supplyAsync(() -> FFmpegManager.verified(ffmpeg)));
+    }
+
+    // Without this the setup failure is only visible as unexplained static on every TV.
+    private static CompletableFuture<FFmpeg> logFailure(CompletableFuture<FFmpeg> future) {
+        return future.whenComplete((ffmpeg, error) -> {
+            if (error != null) {
+                VistaMod.LOGGER.error("FFmpeg is unavailable, TVs will not play anything", error);
+            }
+        });
     }
 
     // Tries to make FFmpeg ready without any download: existing downloaded binaries,

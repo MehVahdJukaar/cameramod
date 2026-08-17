@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
 
 public class FFmpegMediaSession implements IMediaSession {
@@ -56,7 +57,14 @@ public class FFmpegMediaSession implements IMediaSession {
             if (effectiveFfmpeg == null && VistaModClient.isFFmpegDownloading()) {
                 CompletableFuture<FFmpeg> ffmpegFuture = VistaModClient.getFFmpegFuture();
                 if (ffmpegFuture != null) {
-                    effectiveFfmpeg = ffmpegFuture.join();
+                    try {
+                        effectiveFfmpeg = ffmpegFuture.join();
+                    } catch (CompletionException e) {
+                        // setup already logged the real cause, don't repeat it once per TV
+                        this.failed = true;
+                        this.error = MediaError.NO_FFMPEG;
+                        return;
+                    }
                 }
             }
 
