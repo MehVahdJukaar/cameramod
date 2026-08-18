@@ -4,10 +4,12 @@ import net.mehvahdjukaar.candlelight.api.VirtualOverride;
 import net.mehvahdjukaar.moonlight.api.block.ItemDisplayTile;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
+import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaPlatStuff;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
+import net.mehvahdjukaar.vista.common.ScreenRect;
 import net.mehvahdjukaar.vista.common.cassette.IBroadcastSource;
 import net.mehvahdjukaar.vista.common.cassette.ITvCassette;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ServerCameraChunkManager;
@@ -353,6 +355,15 @@ public class TVBlockEntity extends ItemDisplayTile {
 
     public Vec2i getScreenPixelSize() {
         return new Vec2i(getScreenPixelWidth(), getScreenPixelHeight());
+    }
+
+    public ScreenRect getScreenRect() {
+        Direction facing = this.getBlockState().getValue(TVBlock.FACING);
+        Vec2 relativeCenter = getScreenBlockCenter();
+        Vec3 center = this.getBlockPos().getCenter()
+                .add(MthUtils.rotateVec3(new Vec3(relativeCenter.x, relativeCenter.y, 0.5), facing.getOpposite()));
+        Vec3 normal = new Vec3(facing.step()).normalize();
+        return new ScreenRect(center, normal, getScreenPixelWidth() / 16f, getScreenPixelHeight() / 16f);
     }
 
     public int getComparatorOutput() {

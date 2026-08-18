@@ -2,6 +2,7 @@ package net.mehvahdjukaar.vista.common.enderman;
 
 import com.mojang.authlib.GameProfile;
 import net.mehvahdjukaar.moonlight.api.util.FakePlayerManager;
+import net.mehvahdjukaar.vista.common.ScreenRect;
 import net.mehvahdjukaar.vista.common.view_finder.EndermanLookResult;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.monster.EnderMan;
@@ -18,9 +19,6 @@ import java.util.List;
 
 public abstract class AbstractEndermanObservationController {
 
-    protected record ScreenInfo(Vec3 center, Vec3 normal, Vec3 right, Vec3 up, float width, float height) {
-    }
-
     protected record ScreenSpectatorView(Player player, Vec2 localHit, double distance) {
     }
 
@@ -34,7 +32,7 @@ public abstract class AbstractEndermanObservationController {
         boolean orient(Player fakePlayer, ScreenSpectatorView hit);
     }
 
-    protected record TickContext(ScreenInfo screenBasis, BlockPos endermenAnchor, FakePlayerOrienter orient) {
+    protected record TickContext(ScreenRect screenBasis, BlockPos endermenAnchor, FakePlayerOrienter orient) {
     }
 
     protected abstract Level level();
@@ -84,7 +82,7 @@ public abstract class AbstractEndermanObservationController {
     // --- shared math helpers ---
 
     protected static List<ScreenSpectatorView> findPlayersLookingAtScreen(Collection<? extends Player> players,
-                                                                          ScreenInfo sb, float maxDist) {
+                                                                          ScreenRect sb, float maxDist) {
         if (players.isEmpty()) return List.of();
         List<ScreenSpectatorView> result = new ArrayList<>();
         for (Player p : players) {
@@ -119,33 +117,28 @@ public abstract class AbstractEndermanObservationController {
         return results;
     }
 
-    /** Ray-cast the player's view onto a screen rect. Returns local UV in [-0.5, 0.5], or null. */
+    // where the player is looking on the screen, null if they aren't looking at it
     @Nullable
-    protected static ScreenSpectatorView getPlayerHit(Player player, ScreenInfo sb, float maxDist) {
+    protected static ScreenSpectatorView getPlayerHit(Player player, ScreenRect sb, float maxDist) {
         final double EPS = 1e-6;
         Vec3 eyePos = player.getEyePosition(1.0F);
 
-        Vec3 eyeToCenter = sb.center.subtract(eyePos);
+        Vec3 eyeToCenter = sb.center().subtract(eyePos);
         double distSq = eyeToCenter.lengthSqr();
         if (distSq > (maxDist * maxDist)) return null;
         eyeToCenter = eyeToCenter.scale(1.0 / Math.sqrt(distSq));
 
-        if (eyeToCenter.dot(sb.normal) > 0.0) return null;
+        if (eyeToCenter.dot(sb.normal()) > 0.0) return null;
 
         Vec3 playerView = player.getViewVector(1.0F).normalize();
-        double denom = playerView.dot(sb.normal);
+        double denom = playerView.dot(sb.normal());
         if (Math.abs(denom) < EPS) return null;
-        double t = sb.center.subtract(eyePos).dot(sb.normal) / denom;
+        double t = sb.center().subtract(eyePos).dot(sb.normal()) / denom;
         if (t <= 0.0) return null;
 
         Vec3 hit = eyePos.add(playerView.scale(t));
-        Vec3 local = hit.subtract(sb.center);
-        double x = local.dot(sb.right);
-        double y = local.dot(sb.up);
-
-        if (Math.abs(x) <= (sb.width / 2f) && Math.abs(y) <= (sb.height / 2f)) {
-            return new ScreenSpectatorView(player, new Vec2((float) x / sb.width, (float) y / sb.height), t);
-        }
-        return null;
+        Vec2 local = sb.projectLocal(hit);
+        if (local == null) return null;
+        return new ScreenSpectatorView(player, local, t);
     }
 }

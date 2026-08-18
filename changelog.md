@@ -1,1 +1,2 @@
-- added a hack that should fixe an issue from veil
+- improved ffmpeg handling on mac os
+- enderman heads and ender watchers now react to players watching them on a tv

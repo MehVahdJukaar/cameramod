@@ -2,14 +2,17 @@ package net.mehvahdjukaar.vista.common.mirror;
 
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.common.ScreenRect;
 import net.mehvahdjukaar.vista.common.enderman.MirrorEndermanObservationController;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.UUID;
 
@@ -57,9 +60,20 @@ public class MirrorBlockEntity extends BlockEntity {
                 Math.max(1, connectedMirrorsAmount.y()) * 16 - FRAME_PIXELS);
     }
 
-    // Raw setChanged only flags the chunk for saving, it doesn't push to clients. Connection size
-    // lives on the BE, so without this a reshaped grid updates server-side while the client keeps
-    // rendering the old dimensions. Mirror TVs get this free from Moonlight's ItemDisplayTile.
+    // Master tile sits at the bottom-right corner of the grid (see MirrorBlockEntityRenderer);
+    // the grid extends right and up from the master.
+    public ScreenRect getScreenRect() {
+        Direction facing = this.getBlockState().getValue(MirrorBlock.FACING);
+        Vec3 normal = Vec3.atLowerCornerOf(facing.getNormal());
+        float w = connectedMirrorsAmount.x();
+        float h = connectedMirrorsAmount.y();
+        Vec3 center = Vec3.atCenterOf(this.getBlockPos())
+                .add(normal.scale(0.5))
+                .add(ScreenRect.rightOf(normal).scale((w - 1) * 0.5))
+                .add(ScreenRect.UP.scale((h - 1) * 0.5));
+        return new ScreenRect(center, normal, w, h);
+    }
+
     @Override
     public void setChanged() {
         super.setChanged();

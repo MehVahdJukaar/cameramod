@@ -26,9 +26,9 @@ dependencies {
     implementation("com.github.bawnorton.mixinsquared:mixinsquared-forge:${mixin_squared_version}")
 
 
-    modCompileOnly("curse.maven:supplementaries-412082:8051628")
-    modCompileOnly("curse.maven:quark-243121:7640331")
-    modCompileOnly("curse.maven:zeta-968868:7640154")
+    modImplementation("curse.maven:supplementaries-412082:8051628")
+    modImplementation("curse.maven:quark-243121:7640331")
+    modImplementation("curse.maven:zeta-968868:7640154")
 
     //modImplementation("cc.tweaked-cobalt:cobalt:0.93")
     modImplementation("curse.maven:exposure-871755:8223555")

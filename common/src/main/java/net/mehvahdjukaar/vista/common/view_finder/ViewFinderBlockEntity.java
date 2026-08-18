@@ -362,6 +362,21 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
         return forward;
     }
 
+    /**
+     * World direction shown at a point of this camera's picture. u and v are in [-0.5, 0.5].
+     */
+    public Vec3 getPixelRayDirection(float u, float v) {
+        float tanHalfFov = (float) Math.tan(getFOV() * Mth.DEG_TO_RAD * 0.5f);
+        Vector3f dirCam = new Vector3f(2 * u * tanHalfFov, 2 * v * tanHalfFov, -1).normalize();
+
+        float yRot = (float) (Math.toDegrees(Math.atan2(dirCam.z, dirCam.x)) + 90);
+        double horiz = Math.sqrt(dirCam.x * dirCam.x + dirCam.z * dirCam.z);
+        float xRot = (float) -Math.toDegrees(Math.atan2(dirCam.y, horiz));
+
+        EntityAngles ea = EntityAngles.fromQuaternion(getWorldOrientation(1));
+        return Vec3.directionFromRotation(xRot + ea.pitch(), yRot + ea.yaw());
+    }
+
     public Vec3 getGlobalPosition(float partialTicks) {
         return referenceFrame.position(partialTicks);
     }

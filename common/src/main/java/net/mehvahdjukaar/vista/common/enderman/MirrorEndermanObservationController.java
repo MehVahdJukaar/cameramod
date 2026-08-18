@@ -1,10 +1,8 @@
 package net.mehvahdjukaar.vista.common.enderman;
 
 import com.mojang.authlib.GameProfile;
-import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
-import net.mehvahdjukaar.vista.common.mirror.MirrorBlock;
+import net.mehvahdjukaar.vista.common.ScreenRect;
 import net.mehvahdjukaar.vista.common.mirror.MirrorBlockEntity;
-import net.minecraft.core.Direction;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -52,32 +50,13 @@ public class MirrorEndermanObservationController extends AbstractEndermanObserva
 
     @Override
     protected TickContext openTick() {
-        ScreenInfo sb = computeScreenBasis();
+        ScreenRect sb = myMirror.getScreenRect();
         return new TickContext(sb, myMirror.getBlockPos(), (fp, hit) -> orientAtReflection(sb, fp, hit));
     }
 
-    private ScreenInfo computeScreenBasis() {
-        Direction facing = myMirror.getBlockState().getValue(MirrorBlock.FACING);
-        Vec2i connected = myMirror.getConnectedCount();
-        // Master tile sits at the bottom-right corner of the grid (see MirrorBlockEntityRenderer);
-        // the grid extends along facing.getCounterClockWise() and +Y from the master.
-        Vec3 normal = Vec3.atLowerCornerOf(facing.getNormal());
-        Vec3 right = Vec3.atLowerCornerOf(facing.getCounterClockWise().getNormal());
-        Vec3 up = new Vec3(0, 1, 0);
-        float w = connected.x();
-        float h = connected.y();
-        Vec3 center = Vec3.atCenterOf(myMirror.getBlockPos())
-                .add(normal.scale(0.5))
-                .add(right.scale((w - 1) * 0.5))
-                .add(up.scale((h - 1) * 0.5));
-        return new ScreenInfo(center, normal, right, up, w, h);
-    }
-
-    private static boolean orientAtReflection(ScreenInfo sb, Player fakePlayer, ScreenSpectatorView hit) {
+    private static boolean orientAtReflection(ScreenRect sb, Player fakePlayer, ScreenSpectatorView hit) {
         // 1) reconstruct world-space hit point on the mirror surface
-        double localX = hit.localHit().x * sb.width();
-        double localY = hit.localHit().y * sb.height();
-        Vec3 hitWorld = sb.center().add(sb.right().scale(localX)).add(sb.up().scale(localY));
+        Vec3 hitWorld = sb.localToWorld(hit.localHit());
 
         // 2) reflect the player's view across the mirror normal
         Vec3 playerView = hit.player().getViewVector(1.0F).normalize();

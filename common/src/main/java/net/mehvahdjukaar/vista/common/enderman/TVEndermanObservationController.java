@@ -2,23 +2,16 @@ package net.mehvahdjukaar.vista.common.enderman;
 
 import com.mojang.authlib.GameProfile;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
-import net.mehvahdjukaar.moonlight.api.util.math.EntityAngles;
-import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
 import net.mehvahdjukaar.vista.client.renderer.ViewFinderBlockEntityRenderer;
 import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
-import net.mehvahdjukaar.vista.common.tv.TVBlock;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
-import net.minecraft.core.Direction;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Vector3f;
 
 import java.lang.ref.WeakReference;
 import java.util.UUID;
@@ -73,21 +66,8 @@ public class TVEndermanObservationController extends AbstractEndermanObservation
             return null;
         }
         // Endermen are searched around the *remote* ViewFinder, not the TV.
-        return new TickContext(computeScreenBasis(), vf.getBlockPos(),
+        return new TickContext(myTv.getScreenRect(), vf.getBlockPos(),
                 (fp, hit) -> orientAtViewFinder(vf, fp, hit));
-    }
-
-    private ScreenInfo computeScreenBasis() {
-        Direction facing = myTv.getBlockState().getValue(TVBlock.FACING);
-        float screenW = myTv.getScreenPixelWidth() / 16f;
-        float screenH = myTv.getScreenPixelHeight() / 16f;
-        Vec2 relativeCenter = myTv.getScreenBlockCenter();
-        Vec3 center = myTv.getBlockPos().getCenter()
-                .add(MthUtils.rotateVec3(new Vec3(relativeCenter.x, relativeCenter.y, 0.5), facing.getOpposite()));
-        Vec3 normal = new Vec3(facing.step()).normalize();
-        Vec3 up = new Vec3(0, 1, 0);
-        Vec3 right = normal.cross(up);
-        return new ScreenInfo(center, normal, right, up, screenW, screenH);
     }
 
     private static boolean orientAtViewFinder(ViewFinderBlockEntity vf, Player fakePlayer, ScreenSpectatorView hit) {
@@ -99,23 +79,16 @@ public class TVEndermanObservationController extends AbstractEndermanObservation
             ViewFinderBlockEntityRenderer.debugLastPlayer = new WeakReference<>(fakePlayer);
         }
 
-        float localX = -hit.localHit().x; // flip since tv faces the other way
-        float localY = hit.localHit().y;
+        Vec3 look = vf.getPixelRayDirection(hit.localHit().x, hit.localHit().y);
+        float yRot = (float) Math.toDegrees(Math.atan2(-look.x, look.z));
+        double horiz = Math.sqrt(look.x * look.x + look.z * look.z);
+        float xRot = (float) -Math.toDegrees(Math.atan2(look.y, horiz));
 
         Vec3 t = lensCenter.add(lensFacing.scale(-ViewFinderBlockEntity.NEAR_PLANE));
         fakePlayer.setPos(t.x, t.y - eyeH, t.z);
-
-        Vec3 look = pixelRayDir(vf, localX, localY);
-        float yRot = (float) (Math.toDegrees(Math.atan2(look.z, look.x)) + 90);
-        double horiz = Math.sqrt(look.x * look.x + look.z * look.z);
-        float xRot = (float) (-Math.toDegrees(Math.atan2(look.y, horiz)));
-
-        EntityAngles ea = EntityAngles.fromQuaternion(vf.getWorldOrientation(1));
-        float yaw = ea.yaw();
-        float pitch = ea.pitch();
-        fakePlayer.setYRot(yRot + yaw);
-        fakePlayer.setYHeadRot(yRot + yaw);
-        fakePlayer.setXRot(xRot + pitch);
+        fakePlayer.setYRot(yRot);
+        fakePlayer.setYHeadRot(yRot);
+        fakePlayer.setXRot(xRot);
 
         // move forward to skip our own BB since it cant be empty due to particles
         float offset = 0.8f;
@@ -126,17 +99,5 @@ public class TVEndermanObservationController extends AbstractEndermanObservation
                 fakePlayer.getZ() + forward.z * offset
         );
         return true;
-    }
-
-    private static Vec3 pixelRayDir(ViewFinderBlockEntity vf, float px, float py) {
-        float fovRad = vf.getFOV() * Mth.DEG_TO_RAD;
-        float ndcX = (2.0f * px);
-        float ndcY = (2.0f * py);
-        float aspect = 1;
-        float tanHalfFov = (float) Math.tan(fovRad * 0.5f);
-        float camX = ndcX * aspect * tanHalfFov;
-        float camY = ndcY * tanHalfFov;
-        Vector3f dirCam = new Vector3f(camX, camY, -1.0f).normalize();
-        return new Vec3(dirCam.x, dirCam.y, dirCam.z);
     }
 }
