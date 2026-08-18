@@ -31,7 +31,6 @@ import java.util.function.BiPredicate;
  * distance, follows the feed to the ViewFinder position, force loads a circle of chunks there and
  * writes the zones into the player's ExtraChunkViewData so the chunk sending code picks them up.
  * Force loading is ref counted, so several players watching the same ViewFinder only load it once.
- * <p>
  * ViewFinders already in normal view distance are skipped, the server sends those anyway. Cross
  * dimension ones get force loaded but no zone, since zones only apply to the player's current
  * dimension.

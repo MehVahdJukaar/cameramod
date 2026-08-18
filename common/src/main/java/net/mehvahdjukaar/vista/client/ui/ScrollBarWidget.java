@@ -57,9 +57,6 @@ public class ScrollBarWidget extends AbstractWidget {
         this.handleHeight = handleHeight;
     }
 
-    // ---- fluent configuration ----
-
-    // greyed-out sprite shown, and interaction blocked, while usableWhen reports false
     public ScrollBarWidget disabledSprite(ResourceLocation sprite) {
         this.disabledSprite = sprite;
         return this;
@@ -82,7 +79,6 @@ public class ScrollBarWidget extends AbstractWidget {
         return this;
     }
 
-    // draw the position mapped onto [min, max] as a number centered on the handle
     public ScrollBarWidget showValue(int min, int max) {
         this.showValue = true;
         this.minValue = min;
@@ -99,8 +95,6 @@ public class ScrollBarWidget extends AbstractWidget {
         setValue(fraction);
         return this;
     }
-
-    // ---- value access ----
 
     public double getValue() {
         return externalGetter != null ? externalGetter.getAsDouble() : internalValue;
@@ -132,8 +126,6 @@ public class ScrollBarWidget extends AbstractWidget {
         return usableCheck == null || usableCheck.getAsBoolean();
     }
 
-    // ---- geometry ----
-
     private int travel() {
         return orientation == Orientation.HORIZONTAL ? width - handleWidth : height - handleHeight;
     }
@@ -161,8 +153,6 @@ public class ScrollBarWidget extends AbstractWidget {
         if (onChanged != null) onChanged.accept(v);
     }
 
-    // ---- rendering ----
-
     @Override
     protected void renderWidget(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         ResourceLocation sprite = usable() || disabledSprite == null ? handleSprite : disabledSprite;
@@ -179,8 +169,6 @@ public class ScrollBarWidget extends AbstractWidget {
         }
     }
 
-    // ---- input ----
-
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         this.dragging = false;
@@ -192,7 +180,6 @@ public class ScrollBarWidget extends AbstractWidget {
         return false;
     }
 
-    // reached via VistaContainerScreen, which forwards drags the container screen would otherwise eat
     @Override
     protected void onDrag(double mouseX, double mouseY, double dragX, double dragY) {
         if (this.dragging) seek(mouseX, mouseY);

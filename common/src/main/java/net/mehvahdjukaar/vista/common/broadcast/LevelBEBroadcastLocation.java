@@ -22,15 +22,6 @@ import java.util.Optional;
 
 /**
  * Feed location backed by a block entity at a fixed position in a level.
- *
- * <p>Sable sublevel support: when the block entity sits inside a Sable plot grid (a movable "ship"),
- * {@link #globalPos} is the plot-grid storage coordinate, which must NEVER be fed into the vanilla
- * chunk system (tickets/holders in the plot grid fight Sable's injected {@code PlotChunkHolder}s:
- * shutdown hangs, chunks not loading). {@link #getChunkSendPosition()} therefore always resolves the
- * ship's real-world anchor instead. Because Sable projections silently no-op while a sublevel is
- * "held" (serialized when its anchor world chunk unloads), the last successfully projected anchor is
- * cached in {@link #subLevelAnchor} and persisted, so a far-away held ship can still be force-loaded
- * back into existence.
  */
 public final class LevelBEBroadcastLocation implements IBroadcastLocation {
 
@@ -45,12 +36,9 @@ public final class LevelBEBroadcastLocation implements IBroadcastLocation {
     );
 
     private final GlobalPos globalPos;
-    /**
-     * Chunk-snapped world position of the Sable sublevel this BE rides on, refreshed whenever the
-     * sublevel is resolvable. Null for normal in-world block entities. Mutable cache, deliberately
-     * excluded from {@link #equals}: unlink-by-value and linkFeed's no-op check must match on
-     * {@link #globalPos} alone.
-     */
+    // chunk-snapped world position of the Sable sublevel this BE rides on, null for normal block
+    // entities. Kept out of equals on purpose: unlink-by-value and linkFeed's no-op check must
+    // match on globalPos alone.
     @Nullable
     private BlockPos subLevelAnchor;
 
@@ -112,6 +100,9 @@ public final class LevelBEBroadcastLocation implements IBroadcastLocation {
         }
     }
 
+    // inside a Sable plot grid globalPos is a plot-grid storage coord, which must never reach the
+    // vanilla chunk system: its tickets and holders fight Sable's injected PlotChunkHolders and you
+    // get shutdown hangs and chunks that never load. Always resolve the ship's world anchor instead.
     @Override
     public @Nullable GlobalPos getChunkSendPosition() {
         MinecraftServer server = PlatHelper.getCurrentServer();

@@ -64,7 +64,6 @@ public final class VistaWelcomeScreen extends Screen {
 
         int centerButton = centerX - buttonWidth / 2;
 
-        // ---- Main mode buttons ----
         this.defaultButton = this.addRenderableWidget(
                 Button.builder(Component.translatable("gui.vista.welcome.install_defaults")
                                         .withStyle(ChatFormatting.GREEN)

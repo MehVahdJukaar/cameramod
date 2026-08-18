@@ -25,8 +25,8 @@ public abstract class AbstractEndermanObservationController {
     @FunctionalInterface
     protected interface FakePlayerOrienter {
         /**
-         * Position + orient the fake player so that {@link EnderMan#isLookingAtMe(Player)}
-         * answers "is this enderman in the path of the world ray emerging from the given hit".
+         * Position + orient the fake player so that EnderMan.isLookingAtMe answers
+         * "is this enderman in the path of the world ray emerging from the given hit".
          * Return false to skip this hit.
          */
         boolean orient(Player fakePlayer, ScreenSpectatorView hit);
@@ -48,7 +48,7 @@ public abstract class AbstractEndermanObservationController {
     @Nullable
     protected abstract TickContext openTick();
 
-    /** Called from {@link EndermanFreezeWhenLookedAtThroughTVGoal#canContinueToUse()}. */
+    // called from EndermanFreezeWhenLookedAtThroughTVGoal.canContinueToUse()
     public boolean isPlayerLookingAtEnderman(EnderMan enderMan, Player player) {
         TickContext ctx = openTick();
         if (ctx == null) return false;
@@ -78,8 +78,6 @@ public abstract class AbstractEndermanObservationController {
         }
         return anyAnger;
     }
-
-    // --- shared math helpers ---
 
     protected static List<ScreenSpectatorView> findPlayersLookingAtScreen(Collection<? extends Player> players,
                                                                           ScreenRect sb, float maxDist) {

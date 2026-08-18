@@ -9,22 +9,17 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
-/**
- * Subscribes the player to entity tracking for entities sitting in a camera-zone
- * chunk. Vanilla {@code TrackedEntity.updatePlayer} gates on
- * {@code e <= f && broadcastToPlayer && isChunkTracked}: the {@code isChunkTracked}
- * term is fixed by {@link ChunkMapMixin}, but the {@code e <= f} euclidean
- * distance check still fails because zone chunks are far outside view distance, so
- * entities there are never paired and never spawn on the client. We force the
- * computed {@code bl} flag true for zone-chunk entities that still want to be
- * broadcast.
- */
+// Subscribes the player to entity tracking for entities in a camera-zone chunk.
+// TrackedEntity.updatePlayer gates on e <= f && broadcastToPlayer && isChunkTracked. ChunkMapMixin
+// fixes isChunkTracked, but the e <= f distance check still fails since zone chunks sit far outside
+// view distance, so those entities never pair and never spawn on the client. Force the bl flag true
+// for zone-chunk entities that still want to be broadcast.
 @Mixin(targets = "net.minecraft.server.level.ChunkMap$TrackedEntity")
 public class ChunkMapTrackedEntityMixin {
 
     @Shadow
     @org.spongepowered.asm.mixin.Final
-    private Entity entity;
+    Entity entity;
 
     @ModifyVariable(method = "updatePlayer", at = @At("STORE"), ordinal = 0)
     private boolean vista$trackZoneEntities(boolean bl, ServerPlayer player) {

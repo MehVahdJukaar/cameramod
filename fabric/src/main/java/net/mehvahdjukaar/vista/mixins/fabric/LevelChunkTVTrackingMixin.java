@@ -9,13 +9,10 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/**
- * Fabric equivalent of NeoForge's IBlockEntityExtension.onLoad/onChunkUnloaded.
- * Calls {@link TVBlockEntity#onLoad()} and {@link TVBlockEntity#onChunkUnloaded()}
- * which are picked up automatically by NeoForge on that platform.
- * Also covers the block-placement case: addAndRegisterBlockEntity fires for both
- * chunk loading and in-game placement, so newly placed TVs are tracked immediately.
- */
+// Fabric equivalent of NeoForge's IBlockEntityExtension.onLoad/onChunkUnloaded. Calls
+// TVBlockEntity.onLoad() and onChunkUnloaded(), which NeoForge picks up on its own.
+// addAndRegisterBlockEntity fires for both chunk loading and in-game placement, so newly placed TVs
+// get tracked right away too.
 @Mixin(LevelChunk.class)
 public class LevelChunkTVTrackingMixin {
 
@@ -26,9 +23,7 @@ public class LevelChunkTVTrackingMixin {
         }
     }
 
-    /**
-     * Iterate before {@code setRemoved()} strips the level reference from each BE.
-     */
+    // iterate before setRemoved() strips the level reference from each BE
     @Inject(method = "clearAllBlockEntities", at = @At("HEAD"))
     private void vista$onChunkUnloading(CallbackInfo ci) {
         LevelChunk self = (LevelChunk) (Object) this;

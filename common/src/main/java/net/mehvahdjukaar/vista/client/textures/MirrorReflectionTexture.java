@@ -24,9 +24,8 @@ import java.util.UUID;
 
 /**
  * Texture backing a mirror's reflection. The BE renderer stamps the frame's mirror and eye position
- * via {@link #setPending} (eye captured there, not at refresh, so it matches the requesting frame)
- * and the end-of-frame refresh draws it.
- * <p>
+ * via setPending (eye captured there, not at refresh, so it matches the requesting frame) and the
+ * end-of-frame refresh draws it.
  * The reflection uses an off-axis frustum: camera at the viewer's mirror image looking perpendicular
  * into the mirror, near plane sitting exactly on the mirror plane and l/r/b/t taken from the mirror's
  * frame corners. That's what makes coplanar mirrors each show a different view and keeps the
@@ -145,7 +144,7 @@ public class MirrorReflectionTexture extends PerspectiveTexture {
 
         // All four corners lie on the mirror plane so they share one depth from the eye. Setting
         // near to it puts the near plane on the mirror, which z-clips everything between the
-        // reflected camera and the surface (the wall behind it, the viewer's own legs) for free.
+        // reflected camera and the surface: the wall behind it, the viewer's own legs.
         double depth = reflection.signedDistance();
         float near = Math.max(MIN_NEAR, (float) depth);
 

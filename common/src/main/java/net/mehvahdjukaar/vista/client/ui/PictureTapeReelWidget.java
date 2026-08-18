@@ -56,8 +56,6 @@ public class PictureTapeReelWidget extends AbstractWidget {
         this.clickHandler = clickHandler;
     }
 
-    // ---- scroll geometry ----
-
     private int contentWidth() {
         int cells = menu.getVisibleCells();
         return PAD * 2 + cells * CELL - GAP;
@@ -94,8 +92,6 @@ public class PictureTapeReelWidget extends AbstractWidget {
         }
         return -1;
     }
-
-    // ---- rendering ----
 
     @Override
     protected void renderWidget(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
@@ -145,8 +141,6 @@ public class PictureTapeReelWidget extends AbstractWidget {
         g.pose().popPose();
         g.disableScissor();
     }
-
-    // ---- input ----
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {

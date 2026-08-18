@@ -28,9 +28,7 @@ public interface TapeEntryRenderer {
         blitCentered(graphics, texture, x, y, size, getAspectRatio(stack));
     }
 
-    /**
-     * Fits the picture inside the square cell the gallery gives it, keeping its own shape.
-     */
+    // fits the picture inside the square cell the gallery gives it, keeping its own shape
     static void blitCentered(GuiGraphics graphics, ResourceLocation texture, int x, int y, int size, float aspectRatio) {
         int width = size;
         int height = size;

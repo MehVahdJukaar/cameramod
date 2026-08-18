@@ -13,16 +13,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.function.Consumer;
 
-/**
- * Carries the player's zone data on their tracking view. {@link ChunkMapMixin} sets it on the new
- * view right before {@code difference} runs.
- * <p>
- * Only {@code forEach} is patched, deliberately. Patching {@code contains} instead would make both
- * the old and new view report zone chunks as already tracked, so when the player walked into the
- * zone the fast path would see no difference and never send the chunk. With forEach alone, zone
- * chunks go out on the fallback path (join, teleport) and then behave like any ordinary chunk
- * coming into range once they enter normal view distance.
- */
+// Carries the player's zone data on their tracking view. ChunkMapMixin sets it on the new view
+// right before difference runs.
+// Only forEach is patched, on purpose. Patching contains would make both old and new view report
+// zone chunks as already tracked, so walking into the zone shows no difference on the fast path and
+// the chunk never gets sent. With forEach alone, zone chunks go out on the fallback path (join,
+// teleport) and then act like any other chunk coming into normal view distance.
 @Mixin(ChunkTrackingView.Positioned.class)
 public class ChunkTrackingViewMixin implements IChunkViewWithZones {
 

@@ -11,10 +11,8 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/**
- * Resolves camera zone chunks that live outside the circular buffer. See {@link PinnedChunks} for why
- * they are not in it; {@link ClientChunkCacheStorageMixin} is what keeps them out.
- */
+// Resolves camera zone chunks that live outside the circular buffer. See PinnedChunks for why they
+// aren't in it; ClientChunkCacheStorageMixin is what keeps them out.
 @Mixin(ClientChunkCache.class)
 public class ClientChunkCacheMixin {
 

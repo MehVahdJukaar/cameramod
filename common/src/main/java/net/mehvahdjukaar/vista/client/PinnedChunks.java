@@ -13,9 +13,8 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Camera zone chunks the client holds outside of ClientChunkCache. Its storage is a floorMod'd array
  * exactly as wide as the in range window, so every slot already belongs to one of the player's own
- * chunks and a far zone chunk written there would evict a real one.
- * <p>
- * Read from chunk building threads, hence the concurrent map.
+ * chunks and a far zone chunk written there would evict a real one. Read from chunk building
+ * threads, hence the concurrent map.
  */
 public class PinnedChunks {
 

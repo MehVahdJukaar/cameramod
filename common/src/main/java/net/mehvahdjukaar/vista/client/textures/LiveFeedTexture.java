@@ -10,7 +10,6 @@ import net.mehvahdjukaar.moonlight.api.client.PostShadersHelper;
 import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
-import net.mehvahdjukaar.vista.client.AdaptiveUpdateScheduler;
 import net.mehvahdjukaar.vista.client.CrtOverlay;
 import net.mehvahdjukaar.vista.client.SlidingWindowCounter;
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
@@ -37,7 +36,7 @@ import java.util.UUID;
 
 /**
  * Texture backing a camera feed on a TV or view finder. Owns its post chain and overlay state, plus
- * the {@link AdaptiveUpdateScheduler} shared by every feed to throttle refreshes.
+ * the AdaptiveUpdateScheduler shared by every feed to throttle refreshes.
  */
 public class LiveFeedTexture extends PerspectiveTexture {
 

@@ -79,7 +79,7 @@ public final class AdaptiveUpdateScheduler<ID> {
     }
 
     /**
-     * Runs {@code update} only if this object's turn has come around, and charges it to the budget.
+     * Runs update only if this object's turn has come around, and charges it to the budget.
      */
     public void runIfShouldUpdate(ID id, Runnable update) {
         // not computeIfAbsent: this runs per object per frame and we'd rather not capture a lambda

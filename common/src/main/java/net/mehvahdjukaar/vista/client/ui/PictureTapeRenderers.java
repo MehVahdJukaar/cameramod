@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Client-side registry of {@link TapeEntryRenderer}s, used both by the tape gallery and by TV playback.
+ * Client-side registry of TapeEntryRenderers, used both by the tape gallery and by TV playback.
  * The vanilla ones are built in; integrations register their own (gated behind their mod-compat check).
  * Renderers are tried in registration order and the first match wins.
  */

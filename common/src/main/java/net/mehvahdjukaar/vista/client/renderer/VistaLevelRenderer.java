@@ -98,11 +98,10 @@ public class VistaLevelRenderer {
 
     /**
      * Records the eye displacement view bob introduced this pass, read off the bob pose matrix the
-     * game already built so mods that alter bob (and the bob-disabled case) come along for free.
-     * <p>
+     * game already built, so mods that alter bob and the bob-disabled case work too.
      * Bob sits in view space between projection and modelview, so the effective eye solves
-     * {@code B * R_w2v * (eye - camPos) = 0}, i.e. the offset is {@code R_v2w * translation(B^-1)},
-     * and {@code camera.rotation()} is that {@code R_v2w}.
+     * B * R_w2v * (eye - camPos) = 0, i.e. the offset is R_v2w * translation(B^-1), and
+     * camera.rotation() is that R_v2w.
      *
      * @param bobPose pose after bobHurt + bobView, i.e. pure bob starting from identity
      */

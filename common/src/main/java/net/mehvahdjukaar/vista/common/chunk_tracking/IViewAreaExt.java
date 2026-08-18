@@ -1,6 +1,6 @@
 package net.mehvahdjukaar.vista.common.chunk_tracking;
 
-/** Lets the pinned section slots be rebuilt without a full {@code allChanged()}. */
+// Lets the pinned section slots be rebuilt without a full allChanged().
 public interface IViewAreaExt {
     void vista$rebuildPinnedSections();
 

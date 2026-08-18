@@ -335,8 +335,8 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     }
 
     /**
-     * Bakes a view finder's aim into save NBT (matching {@link #saveAdditional}/{@link #loadAdditional}) without a
-     * live block entity - used to persist aim into a Create contraption's stored block data. {@code localRot} is the
+     * Bakes a view finder's aim into save NBT (matching saveAdditional/loadAdditional) without a live
+     * block entity - used to persist aim into a Create contraption's stored block data. localRot is the
      * world-local orientation as sent over the network; the stored rig rotation strips the block's structural spin.
      */
     public static CompoundTag buildAimNbt(CompoundTag base, BlockState state, Quaternionf localRot, int zoom, boolean locked) {

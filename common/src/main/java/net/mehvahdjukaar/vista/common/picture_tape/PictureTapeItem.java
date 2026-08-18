@@ -79,8 +79,6 @@ public class PictureTapeItem extends Item implements ITvCassette {
         PlatHelper.openCustomMenu(player, menuProvider, buffer -> buffer.writeVarInt(tapeSlot));
     }
 
-    // ---- bundle-style editing: right-click to add/remove pictures without opening the gui ----
-
     // right-clicking the held tape onto another slot
     @Override
     public boolean overrideStackedOnOther(ItemStack tape, Slot slot, ClickAction action, Player player) {

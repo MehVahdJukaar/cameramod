@@ -1,2 +1,1 @@
-- improved ffmpeg handling on mac os
-- enderman heads and ender watchers now react to players watching them on a tv
+- improved interaction between enderman and heads and smilar and tvs and mirrors

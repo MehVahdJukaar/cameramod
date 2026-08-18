@@ -29,8 +29,8 @@ public enum MediaError {
 
     /**
      * Classifies a download/decode failure by walking the exception cause chain. HTTP failures
-     * arrive as a typed {@link FileDownloadUtils.HttpStatusException} (status code), while bad
-     * inputs surface as "Unsupported protocol" / "Malformed URL" messages or URL exceptions.
+     * arrive as a typed HttpStatusException (status code), while bad inputs show up as
+     * "Unsupported protocol" / "Malformed URL" messages or URL exceptions.
      */
     public static MediaError classify(@Nullable Throwable t) {
         for (Throwable e = t; e != null; e = e.getCause()) {

@@ -15,14 +15,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
-/**
- * Keeps far camera zone chunks out of the storage array.
- * <p>
- * The array is indexed {@code floorMod(x/z, viewRange)} and the in range window is exactly
- * {@code viewRange} wide, so every slot already belongs to one of the player's own chunks. A far zone
- * chunk stored here evicts the real chunk at the same residue, which unloads it and leaves a hole in
- * the world until the server sends it again. Those chunks go to {@link PinnedChunks} instead.
- */
+// Keeps far camera zone chunks out of the storage array. The array is indexed
+// floorMod(x/z, viewRange) and the in-range window is exactly viewRange wide, so every slot already
+// belongs to one of the player's own chunks. A far zone chunk stored here evicts the real chunk at
+// the same residue, unloading it and leaving a hole in the world until the server resends it. Those
+// chunks go to PinnedChunks instead.
 @Mixin(targets = "net.minecraft.client.multiplayer.ClientChunkCache$Storage")
 public class ClientChunkCacheStorageMixin {
 

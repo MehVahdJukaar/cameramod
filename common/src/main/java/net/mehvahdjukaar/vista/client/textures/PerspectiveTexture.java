@@ -9,7 +9,7 @@ import java.util.function.Consumer;
 
 /**
  * Base for textures holding a per-frame rendered view of the world: a camera feed on a TV, or a
- * mirror's reflection. REFRESH_DISPATCH is static to dodge the {@code this::} footgun in the super
+ * mirror's reflection. REFRESH_DISPATCH is static to dodge the this:: footgun in the super
  * constructor, routing back through a cast on the parameter instead.
  */
 public abstract class PerspectiveTexture extends RenderableDynamicTexture {

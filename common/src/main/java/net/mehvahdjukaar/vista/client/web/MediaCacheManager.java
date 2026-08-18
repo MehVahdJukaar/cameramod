@@ -45,10 +45,8 @@ public class MediaCacheManager {
     }
 
     /**
-     * Obtains a local path for the given URL.
-     * <p>
-     * For HTTP/HTTPS URLs, the video is downloaded (and cached) if not already present.
-     * For local filesystem paths or {@code file://} URLs, the path is used directly with no caching.
+     * Obtains a local path for the given URL. HTTP/HTTPS URLs are downloaded and cached if not
+     * already present. Local filesystem paths and file:// URLs are used directly, with no caching.
      */
     public Path getOrDownload(URI uri) throws Exception {
         return getOrDownload(uri, null, null);
@@ -87,7 +85,6 @@ public class MediaCacheManager {
             return existing.path;
         }
 
-        // Check if another thread is already downloading this URL
         CompletableFuture<Path> future = pendingDownloads.get(key);
         if (future != null && !future.isDone()) {
             VistaMod.LOGGER.info("Waiting for ongoing download of {}", uri.toString());
@@ -161,7 +158,6 @@ public class MediaCacheManager {
         }
     }
 
-    // ---------- private helpers ----------
     private Path downloadAndCache(String urlStr, String key, @Nullable FileDownloadUtils.ProgressCallback progressCallback,
                                   @Nullable FileDownloadUtils.RetryCallback retryCallback) throws Exception {
         // Deterministic client errors (403/404/...) fail fast inside moonlight's downloader now,

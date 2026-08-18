@@ -104,7 +104,6 @@ public class FFmpegMediaDecoder {
                         }
                         if (!running) break;
 
-                        // Check if a new seek was requested while we were decoding
                         if (seekToSeconds >= 0) {
                             VistaMod.LOGGER.info("Seek request detected, restarting FFmpeg");
                             ffmpegProcess.destroyForcibly();
@@ -175,7 +174,6 @@ public class FFmpegMediaDecoder {
         return args.toArray(new String[0]);
     }
 
-    // ---------- FFprobe helpers ----------
     private double probeFrameRate(String path) throws IOException {
         Process p = ffmpeg.runFFprobe("-v", "error", "-select_streams", "v:0",
                 "-show_entries", "stream=r_frame_rate", "-of", "csv=p=0", path);

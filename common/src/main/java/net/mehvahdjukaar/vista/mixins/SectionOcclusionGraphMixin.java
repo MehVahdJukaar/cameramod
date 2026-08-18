@@ -33,14 +33,11 @@ public class SectionOcclusionGraphMixin {
                 || VistaModClient.CLIENT_EXTRA_CHUNK_VIEW_DATA.containsChunk(x, z);
     }
 
-    /**
-     * Seeds pinned sections as extra BFS roots, but only on feed graphs. The full BFS runs off
-     * thread so isRenderingLiveFeed() is useless here; the instanceof check works from anywhere.
-     * <p>
-     * On a feed graph the camera is at the ViewFinder, so seeding is what gets pinned sections into
-     * the BFS at all given they sit outside the torus. On the player's graph it would instead leak
-     * far-away sections into their own view whenever they looked toward the ViewFinder.
-     */
+    // Seeds pinned sections as extra BFS roots, but only on feed graphs. The full BFS runs off
+    // thread so isRenderingLiveFeed() is useless here; the instanceof check works from anywhere.
+    // On a feed graph the camera is at the ViewFinder, so seeding is the only thing that gets
+    // pinned sections into the BFS at all, since they sit outside the torus. On the player's graph
+    // it would leak far-away sections into their own view whenever they looked at the ViewFinder.
     @SuppressWarnings("unchecked")
     @Inject(method = "initializeQueueForFullUpdate", at = @At("TAIL"))
     private void vista$seedPinnedSections(Camera camera, Queue nodeQueue, CallbackInfo ci) {

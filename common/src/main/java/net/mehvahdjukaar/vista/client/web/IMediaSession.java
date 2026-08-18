@@ -14,7 +14,7 @@ public interface IMediaSession extends AutoCloseable {
     boolean isFailed();
 
     /**
-     * Category of the failure when {@link #isFailed()} is true, otherwise {@link MediaError#NONE}.
+     * Category of the failure when isFailed() is true, otherwise MediaError.NONE.
      */
     default MediaError getError() {
         return MediaError.NONE;

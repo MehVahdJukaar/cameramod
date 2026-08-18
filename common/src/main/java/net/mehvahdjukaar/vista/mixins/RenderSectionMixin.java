@@ -6,13 +6,10 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 
-/**
- * Per-section pinned flag, set by {@link ViewAreaMixin} when it appends the extra-zone slots, so
- * pinned sections can be identified without global state.
- * <p>
- * Do NOT @Shadow the final index field: Mixin merges its initializer into every constructor, zeroing
- * all indices and breaking SectionToNodeMap.
- */
+// Per-section pinned flag, set by ViewAreaMixin when it appends the extra-zone slots, so pinned
+// sections can be identified without global state.
+// Do NOT @Shadow the final index field: Mixin merges its initializer into every constructor,
+// zeroing all indices and breaking SectionToNodeMap.
 @Mixin(targets = "net.minecraft.client.renderer.chunk.SectionRenderDispatcher$RenderSection")
 public class RenderSectionMixin implements IPinnableRenderSection {
 

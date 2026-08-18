@@ -22,7 +22,7 @@ import java.util.Map;
 /**
  * Renders a filled map as its actual map image. The gallery goes through the vanilla map renderer,
  * while TV playback needs a flat texture, so the map colours get baked into a cached
- * {@link DynamicTexture} instead.
+ * DynamicTexture instead.
  */
 public class MapTapeEntryRenderer implements TapeEntryRenderer {
 

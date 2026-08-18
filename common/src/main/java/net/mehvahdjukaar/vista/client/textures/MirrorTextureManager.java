@@ -19,8 +19,7 @@ import java.util.*;
 
 /**
  * Texture cache lookups and the pending render queue for mirror reflections. The rendering itself
- * lives on {@link MirrorReflectionTexture}.
- * <p>
+ * lives on MirrorReflectionTexture.
  * Entries are keyed by chain, so in RECURSIVE mode one physical mirror seen through different parent
  * chains queues independently and gets its own off-axis render per chain.
  */

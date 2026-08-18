@@ -52,16 +52,12 @@ public final class BroadcastManager extends WorldSavedData {
                     storage -> new HashMap<>(storage.snapshot)
             );
 
-    /* -------------------- STATE -------------------- */
-
     private final Object lock = new Object();
     private final HashBiMap<UUID, IBroadcastLocation> uuidToPos = HashBiMap.create(); //thread safe, mutable
     private volatile Map<UUID, IBroadcastLocation> snapshot = Map.of(); //fast read only
 
     private BroadcastManager() {
     }
-
-    /* -------------------- INTERNALS -------------------- */
 
     private void publishSnapshot() {
         snapshot = Map.copyOf(uuidToPos);
@@ -81,8 +77,6 @@ public final class BroadcastManager extends WorldSavedData {
 
         return changed;
     }
-
-    /* -------------------- PUBLIC API (WRITES) -------------------- */
 
     public void linkFeed(UUID feedUUID, IBroadcastLocation projectorPos) {
         boolean changed = false;
@@ -136,8 +130,6 @@ public final class BroadcastManager extends WorldSavedData {
         }
     }
 
-    /* -------------------- PUBLIC API (READS - FAST) -------------------- */
-
     @Nullable
     public IBroadcastLocation getFeedLocationById(UUID viewFinderUUID) {
         return snapshot.get(viewFinderUUID);
@@ -166,20 +158,10 @@ public final class BroadcastManager extends WorldSavedData {
         if (result.isValid()) {
             return result.getValue();
         } else {
-            // Do NOT auto-unlink here. getBroadcast is a hot read called every tick
-            // (enderman observation, feed rendering, ...). pos.get() returns "invalid"
-            // for transient states too: a chunk that is loaded mid-tick before its block
-            // entities are placed, or a position whose level/sub-level doesn't resolve
-            // this tick. Unlinking on that permanently destroys a valid TV<->ViewFinder
-            // link and syncs the deletion to clients, leaving the feed stuck on the
-            // disconnected (white) overlay. Links are removed explicitly when the
-            // ViewFinder / WaveGate block is broken (see ViewFinderBlock, WaveGateBlock,
-            // IBroadcastSource#setRemoved).
+            // Do NOT auto-unlink here. For complex reasons.
             return null;
         }
     }
-
-    /* -------------------- WORLD DATA -------------------- */
 
     @Override
     public WorldSavedDataType<BroadcastManager> getType() {
