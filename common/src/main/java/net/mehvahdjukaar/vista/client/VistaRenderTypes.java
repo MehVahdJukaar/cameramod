@@ -3,11 +3,9 @@ package net.mehvahdjukaar.vista.client;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import net.mehvahdjukaar.moonlight.api.client.texture_renderer.DynamicTextureRenderer;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
-import net.mehvahdjukaar.vista.client.textures.MirrorReflectionTexture;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.Util;
@@ -30,7 +28,6 @@ public class VistaRenderTypes extends RenderType {
 
     private static final ShaderStateShard CAMERA_SHADER_STATE = new ShaderStateShard(VistaModClient.CAMERA_VIEW_SHADER);
     private static final ShaderStateShard STATIC_SHADER_STATE = new ShaderStateShard(VistaModClient.STATIC_SHADER);
-    private static final ShaderStateShard MIRROR_MATERIAL_SHADER_STATE = new ShaderStateShard(VistaModClient.MIRROR_MATERIAL_SHADER);
     private static final ShaderStateShard WAVE_GATE_SHADER_STATE = new ShaderStateShard(VistaModClient.WAVE_GATE_SHADER);
 
     private record CrtKey(ResourceLocation texture, float frameW, float frameH, Vec2i scale,
@@ -89,47 +86,6 @@ public class VistaRenderTypes extends RenderType {
         setFloat(shader, "NoiseIntensity", key.staticAnim.getValue(pt));
         setFloat(shader, "FadeAnimation", key.turnOnAnim.getValue(pt));
     }
-
-    private record MirrorKey(ResourceLocation reflectionTexture, int wTiles, int hTiles, boolean smooth) {
-    }
-
-    public static RenderType mirrorMaterial(ResourceLocation reflectionTexture, int wTiles, int hTiles) {
-        // smoothing is part of the key because the blur flag bakes into the texture shard at build
-        // time, so toggling it has to land on a different cached render type
-        return MIRROR_MATERIAL_RENDER_TYPE.apply(
-                new MirrorKey(reflectionTexture, wTiles, hTiles, ClientConfigs.MIRROR_SMOOTH.get()));
-    }
-
-    private static final Function<MirrorKey, RenderType> MIRROR_MATERIAL_RENDER_TYPE = Util.memoize(k -> {
-        var textureState = MultiTextureStateShard.builder()
-                .add(k.reflectionTexture, k.smooth, false)
-                .add(VistaModClient.MIRROR_UNDERLAY, false, false)
-                .build();
-        CompositeState compositeState = CompositeState.builder()
-                .setShaderState(MIRROR_MATERIAL_SHADER_STATE)
-                .setTransparencyState(NO_TRANSPARENCY)
-                .setLightmapState(LIGHTMAP)
-                .setOverlayState(NO_OVERLAY)
-                .setLayeringState(POLYGON_OFFSET_LAYERING)
-                .setTextureState(textureState)
-                // Overlay goes straight to unit 3: the shard binds 0 and 1, LIGHTMAP takes 2, so
-                // adding it to MultiTextureStateShard would collide there.
-                .setTexturingState(new TexturingStateShard("set_mirror_uniforms",
-                        () -> {
-                            RenderSystem.setShaderTexture(3, VistaModClient.MIRROR_OVERLAY);
-                            ShaderInstance shader = VistaModClient.MIRROR_MATERIAL_SHADER.get();
-                            setFloat2(shader, "Tiles", k.wTiles, k.hTiles);
-                            // default to fully faded so a missing texture never draws un-silvered
-                            float fade = 1f;
-                            var t = DynamicTextureRenderer.getTextureIfPresent(k.reflectionTexture);
-                            if (t instanceof MirrorReflectionTexture mrt) fade = mrt.getFadeProgress();
-                            setFloat(shader, "Fade", fade);
-                        },
-                        () -> {}))
-                .createCompositeState(false);
-        return create("vista_mirror_material", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS,
-                1536, true, false, compositeState);
-    });
 
     public static final RenderType NOISE =
             create("vista_noise", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS,

@@ -18,8 +18,6 @@ import net.mehvahdjukaar.vista.common.chunk_tracking.ServerCameraChunkManager;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ServerExtraChunkViewData;
 import net.mehvahdjukaar.vista.common.enderman.AngeredFromTvCondition;
 import net.mehvahdjukaar.vista.common.enderman.EndermanFreezeWhenLookedAtThroughTVGoal;
-import net.mehvahdjukaar.vista.common.mirror.MirrorBlock;
-import net.mehvahdjukaar.vista.common.mirror.MirrorBlockEntity;
 import net.mehvahdjukaar.vista.common.picture_tape.PictureTapeContent;
 import net.mehvahdjukaar.vista.common.picture_tape.PictureTapeItem;
 import net.mehvahdjukaar.vista.common.picture_tape.PictureTapeMenu;
@@ -132,16 +130,6 @@ public class VistaMod {
     public static final Supplier<MenuType<ViewFinderMenu>> VIEWFINDER_MENU = RegHelper.registerMenuType(
             res("viewfinder"), ViewFinderMenu::create);
 
-    public static final Supplier<Block> MIRROR = RegHelper.registerBlockWithItem(res("mirror"),
-            () -> new MirrorBlock(Block.Properties.of()
-                    .sound(SoundType.GLASS)
-                    .mapColor(MapColor.METAL)
-                    .strength(0.3f)
-                    .noOcclusion()), new Item.Properties().rarity(Rarity.RARE));
-
-    public static final Supplier<BlockEntityType<MirrorBlockEntity>> MIRROR_TILE = RegHelper.registerBlockEntityType(
-            res("mirror"), MirrorBlockEntity::new, MIRROR);
-
     public static final RegSupplier<WaveGateBlock> WAVE_GATE =
             RegHelper.registerBlockWithItem(VistaMod.res("wave_gate"), //wideband reciver, wideband listener, signal harvester
                     () -> new WaveGateBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.COBBLESTONE)));
@@ -218,10 +206,6 @@ public class VistaMod {
     public static final TagKey<Item> GLASS_PANES_TAG = TagKey.create(
             Registries.ITEM, ResourceLocation.fromNamespaceAndPath("c", "glass_panes"));
 
-    // Entities of these types are not drawn in mirror reflections (e.g. vampires).
-    public static final TagKey<net.minecraft.world.entity.EntityType<?>> CANT_SEE_THROUGH_MIRROR = TagKey.create(
-            Registries.ENTITY_TYPE, res("cant_see_through_mirror"));
-
     // Entities of these types are not drawn in camera/TV feeds (e.g. vampires).
     public static final TagKey<net.minecraft.world.entity.EntityType<?>> CANT_SEE_THROUGH_TV = TagKey.create(
             Registries.ENTITY_TYPE, res("cant_see_through_tv"));
@@ -230,11 +214,6 @@ public class VistaMod {
             () -> new Item(new Item.Properties()
                     .jukeboxPlayable(SOJOURN_DISC_SONG.getKey())
                     .stacksTo(1).rarity(Rarity.RARE)));
-
-    public static final Supplier<Item> CRYSTALLINE = RegHelper.registerItem(res("crystalline"),
-            () -> new Item(new Item.Properties()
-                    .rarity(Rarity.RARE)
-                    .component(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true)));
 
     public static void init() {
         if (CompatHandler.IRIS) {
@@ -276,7 +255,6 @@ public class VistaMod {
         RegHelper.registerSimpleRecipeCondition(VistaMod.res("flag"),
                 s -> {
                     if (Objects.equals(s, "wave_gate")) return CommonConfigs.isWaveGateCraftable();
-                    if (Objects.equals(s, "mirror")) return CommonConfigs.isMirrorEnabled();
                     if (Objects.equals(s, "picture_tape")) return CommonConfigs.isPictureTapeEnabled();
                     return true;
                 });
@@ -295,10 +273,6 @@ public class VistaMod {
     private static void addItemsToTabs(RegHelper.ItemToTabEvent event) {
         event.add(CreativeModeTabs.REDSTONE_BLOCKS, VIEWFINDER.get());
         event.add(CreativeModeTabs.REDSTONE_BLOCKS, TV.get());
-        if (CommonConfigs.isMirrorEnabled()) {
-            event.add(CreativeModeTabs.FUNCTIONAL_BLOCKS, MIRROR.get());
-            event.addAfter(CreativeModeTabs.INGREDIENTS, (i) -> i.is(Items.NAUTILUS_SHELL), CRYSTALLINE.get());
-        }
         CreativeModeTab.ItemDisplayParameters parameters = event.getParameters();
         for (var v : parameters.holders().lookupOrThrow(CASSETTE_TAPE_REGISTRY_KEY).listElements().toList()) {
             if (v.is(SUPPORTER_TAPES_TAG)) continue;

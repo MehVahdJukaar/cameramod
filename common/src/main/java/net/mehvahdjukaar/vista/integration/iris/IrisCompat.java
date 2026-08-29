@@ -35,21 +35,6 @@ public class IrisCompat {
     private static final ThreadLocal<Boolean> VISTA_RENDERING = ThreadLocal.withInitial(() -> false);
     private static Supplier<Boolean> irisShaderPacksOff;
 
-    // Mirror reflections keep the vanilla pipeline. Iris's feed pipeline composites every pass into
-    // whichever canvas was bound when the pipeline was first constructed, and reflections come in
-    // many canvases and sizes, so running them through it leaves every canvas but the first blank or
-    // writing a depth-map wash with ghosting. Camera feeds (TV/viewfinder) can still take the shader
-    // path.
-    private static final ThreadLocal<Boolean> MIRROR_PASS = ThreadLocal.withInitial(() -> false);
-
-    public static void setMirrorPass(boolean mirrorPass) {
-        MIRROR_PASS.set(mirrorPass);
-    }
-
-    public static boolean isMirrorPass() {
-        return MIRROR_PASS.get();
-    }
-
     // Iris's frame counter and timer advance once per game frame, but feeds run slower (10Hz by
     // default), so shader pack TAA jitter would skip samples between observations and never resolve.
     // These feed-local clocks advance one step per feed render instead. See the two Compat mixins.
@@ -177,14 +162,14 @@ public class IrisCompat {
 
     @Nullable
     public static WorldRenderingPipeline getModifiedPipeline() {
-        return VISTA_RENDERING.get() && (irisShaderPacksOff.get() || MIRROR_PASS.get()) ? VISTA_PIPELINE : null;
+        return VISTA_RENDERING.get() && irisShaderPacksOff.get() ? VISTA_PIPELINE : null;
     }
 
     // Whether the feed pass gets its own IrisRenderingPipeline. Sharing one means its render targets
     // get resized between the feed canvas and the main framebuffer every frame, and RenderTargets
     // reallocates every gbuffer on a size change, so it flickers and costs a lot.
     public static boolean shouldSwapDimensionForFeed() {
-        return VISTA_RENDERING.get() && !irisShaderPacksOff.get() && !MIRROR_PASS.get();
+        return VISTA_RENDERING.get() && !irisShaderPacksOff.get();
     }
 
     public static Runnable decorateRendererWithoutShaderPacks(Runnable renderTask) {

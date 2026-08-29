@@ -15,7 +15,6 @@ import net.mehvahdjukaar.vista.client.VistaDynamicResources;
 import net.mehvahdjukaar.vista.client.renderer.*;
 import net.mehvahdjukaar.vista.client.textures.CassetteTexturesManager;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
-import net.mehvahdjukaar.vista.client.textures.MirrorTextureManager;
 import net.mehvahdjukaar.vista.client.textures.WebTexturesManager;
 import net.mehvahdjukaar.vista.client.ui.*;
 import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpeg;
@@ -54,7 +53,6 @@ public class VistaModClient {
 
     public static final CoreShaderContainer POSTERIZE_SHADER = new CoreShaderContainer(GameRenderer::getPositionTexColorShader);
     public static final CoreShaderContainer CAMERA_VIEW_SHADER = new CoreShaderContainer(GameRenderer::getRendertypeEntitySolidShader);
-    public static final CoreShaderContainer MIRROR_MATERIAL_SHADER = new CoreShaderContainer(GameRenderer::getRendertypeEntitySolidShader);
     public static final CoreShaderContainer STATIC_SHADER = new CoreShaderContainer(GameRenderer::getPositionColorShader);
     //for iris
     public static final CoreShaderContainer WAVE_GATE_SHADER = new CoreShaderContainer(GameRenderer::getPositionColorTexLightmapShader);
@@ -62,8 +60,6 @@ public class VistaModClient {
     public static final ModelLayerLocation VIEWFINDER_MODEL = loc("viewfinder");
     public static final Material WAVE_EFFECT = new Material(LOCATION_BLOCKS, VistaMod.res("block/wave_gate/wave"));
 
-    public static final ResourceLocation MIRROR_UNDERLAY = VistaMod.res("textures/block/mirror/underlay.png");
-    public static final ResourceLocation MIRROR_OVERLAY = VistaMod.res("textures/block/mirror/overlay.png");
     public static final ResourceLocation LL_OVERLAY = VistaMod.res("textures/cassette_tape/liveleak.png");
     public static final ResourceLocation PAUSE_OVERLAY = VistaMod.res("textures/cassette_tape/pause.png");
     public static final ResourceLocation PAUSE_PLAY_OVERLAY = VistaMod.res("textures/cassette_tape/pause_play.png");
@@ -242,13 +238,11 @@ public class VistaModClient {
         event.register(VistaMod.TV_TILE.get(), TvBlockEntityRenderer::new);
         event.register(VistaMod.VIEWFINDER_TILE.get(), ViewFinderBlockEntityRenderer::new);
         event.register(VistaMod.WAVE_GATE_TILE.get(), WaveGateBlockEntityRenderer::new);
-        event.register(VistaMod.MIRROR_TILE.get(), MirrorBlockEntityRenderer::new);
     }
 
     private static void registerShaders(ClientHelper.ShaderEvent event) {
         event.register(VistaMod.res("static_noise"), DefaultVertexFormat.NEW_ENTITY, STATIC_SHADER::assign);
         event.register(VistaMod.res("camera_view"), DefaultVertexFormat.NEW_ENTITY, CAMERA_VIEW_SHADER::assign);
-        event.register(VistaMod.res("mirror_material"), DefaultVertexFormat.NEW_ENTITY, MIRROR_MATERIAL_SHADER::assign);
         event.register(VistaMod.res("wave_gate"), DefaultVertexFormat.NEW_ENTITY, WAVE_GATE_SHADER::assign);
     }
 
@@ -259,7 +253,6 @@ public class VistaModClient {
     public static void onClientDisconnect() {
         LiveFeedTexturesManager.clear();
         WebTexturesManager.clear();
-        MirrorTextureManager.clear();
         VistaLevelRenderer.clear();
         MapTapeEntryRenderer.clear();
         CompatHandler.onClientDisconnect();
@@ -276,8 +269,6 @@ public class VistaModClient {
 
     public static void onRenderTickEnd(Minecraft minecraft) {
         LiveFeedTexturesManager.onRenderTickEnd();
-        // No-op when MIRROR_UPDATE_MODE = TEXTURE_REFRESH (queue stays empty).
-        MirrorTextureManager.processPending();
     }
 
 

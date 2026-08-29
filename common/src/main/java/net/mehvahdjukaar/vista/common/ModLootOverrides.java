@@ -15,10 +15,8 @@ public class ModLootOverrides {
     private static final ResourceLocation CHEST_LOOT = VistaMod.res("inject/treasure_tapes");
     private static final ResourceLocation CREEPER_LOOT = VistaMod.res("inject/creeper_tapes");
     private static final ResourceLocation ENDERMAN_LOOT = VistaMod.res("inject/enderman_disc");
-    private static final ResourceLocation ELDER_GUARDIAN_LOOT = VistaMod.res("inject/elder_guardian_crystalline");
     private static final ResourceLocation CREEPER_TABLE = ResourceLocation.withDefaultNamespace("entities/creeper");
     private static final ResourceLocation ENDERMAN_TABLE = ResourceLocation.withDefaultNamespace("entities/enderman");
-    private static final ResourceLocation ELDER_GUARDIAN_TABLE = ResourceLocation.withDefaultNamespace("entities/elder_guardian");
 
     public static void init() {
         RegHelper.addLootTableInjects(ModLootOverrides::addLootMod);
@@ -45,10 +43,6 @@ public class ModLootOverrides {
 
         if (ENDERMAN_TABLE.equals(key)) {
             event.addTableReference(ENDERMAN_LOOT);
-        }
-
-        if (CommonConfigs.isMirrorEnabled() && ELDER_GUARDIAN_TABLE.equals(key)) {
-            event.addTableReference(ELDER_GUARDIAN_LOOT);
         }
     }
 

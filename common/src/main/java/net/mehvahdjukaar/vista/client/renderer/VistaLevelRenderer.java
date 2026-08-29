@@ -8,9 +8,7 @@ import net.mehvahdjukaar.moonlight.api.misc.WeakHashSet;
 import net.mehvahdjukaar.moonlight.api.util.math.EntityAngles;
 import net.mehvahdjukaar.moonlight.core.client.DummyCamera;
 import net.mehvahdjukaar.vista.VistaPlatStuff;
-import net.mehvahdjukaar.vista.client.textures.MirrorReflectionTexture;
 import net.mehvahdjukaar.vista.client.textures.PerspectiveTexture;
-import net.mehvahdjukaar.vista.common.mirror.MirrorBlockEntity;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
@@ -65,10 +63,7 @@ public class VistaLevelRenderer {
     private record RenderFrame(
             Object token,
             boolean hasOffAxisFrustum,
-            @Nullable Vec3 bfsStartOverride,
-            @Nullable UUID mirrorUuid,
-            int textureRecursionDepth,
-            List<UUID> textureParentChain
+            @Nullable Vec3 bfsStartOverride
     ) {}
 
     private static ResourceKey<Level> lastLevel = null;
@@ -82,14 +77,8 @@ public class VistaLevelRenderer {
         return !RENDER_STACK.isEmpty();
     }
 
-    public static boolean isRenderingMirrorReflection() {
-        RenderFrame top = RENDER_STACK.peek();
-        return top != null && top.mirrorUuid != null;
-    }
-
     public static boolean isRenderingCameraFeed() {
-        RenderFrame top = RENDER_STACK.peek();
-        return top != null && top.mirrorUuid == null;
+        return !RENDER_STACK.isEmpty();
     }
 
     // Polygon offset layering doesn't take inside nested level renders, and z-fights under FAST
@@ -123,25 +112,6 @@ public class VistaLevelRenderer {
             if (f.token == vf) return true;
         }
         return false;
-    }
-
-    // Depth a child mirror found inside the current render should use, 0 if nothing is rendering.
-    // Derived from the frame rather than the stack size, see RenderFrame.
-    public static int getCurrentDepth() {
-        RenderFrame top = RENDER_STACK.peek();
-        if (top == null) return 0;
-        if (top.mirrorUuid == null) return 1;
-        return top.textureRecursionDepth + 1;
-    }
-
-    // Chain a child mirror found inside the current render should use. Empty outside a mirror render.
-    public static List<UUID> getCurrentMirrorChain() {
-        RenderFrame top = RENDER_STACK.peek();
-        if (top == null || top.mirrorUuid == null) return List.of();
-        List<UUID> chain = new ArrayList<>(top.textureParentChain.size() + 1);
-        chain.addAll(top.textureParentChain);
-        chain.add(top.mirrorUuid);
-        return chain;
     }
 
     public static void clear() {
@@ -237,15 +207,6 @@ public class VistaLevelRenderer {
         int depth = RENDER_STACK.size();
         boolean isOutermost = depth == 0;
 
-        // Mirror reflections render with the vanilla pipeline regardless of iris_off_hack: their
-        // off-axis frustum and per-canvas outputs are unusable under a real shader pipeline (white
-        // depth-map wash + ghosting). Camera feeds (TV/viewfinder) still take the shader path.
-        // Nested mirrors keep the flag ORed like the texture chain.
-        boolean wasMirrorPass = CompatHandler.IRIS && IrisCompat.isMirrorPass();
-        if (CompatHandler.IRIS) {
-            IrisCompat.setMirrorPass(wasMirrorPass || text instanceof MirrorReflectionTexture);
-        }
-
         // Capture the framebuffer bound on entry. The feed renders into its own canvas and, on the
         // outermost pass, does not hand the GL binding back to the caller. Minecraft tracks that
         // binding through a cache (and shader mods like Iris keep their own copy of it), so a feed
@@ -282,16 +243,8 @@ public class VistaLevelRenderer {
         // deferred targets. Kept in a local so re-entrant renders each restore their own values.
         FabulousDeferredState fabulousState = FabulousDeferredState.captureAndDisable(mc.levelRenderer);
 
-        UUID mirrorUuid = renderingToken instanceof MirrorBlockEntity m ? m.getId() : null;
-        int textureRecursionDepth = 0;
-        List<UUID> textureParentChain = List.of();
-        if (text instanceof MirrorReflectionTexture mrt) {
-            textureRecursionDepth = mrt.getRecursionDepth();
-            textureParentChain = mrt.getParentChain();
-        }
         RENDER_STACK.push(new RenderFrame(
-                renderingToken, customProjection != null, bfsStartOverride,
-                mirrorUuid, textureRecursionDepth, textureParentChain));
+                renderingToken, customProjection != null, bfsStartOverride));
 
         try {
             float partialTicks = mc.getTimer().getGameTimeDeltaTicks();
@@ -347,10 +300,6 @@ public class VistaLevelRenderer {
 
             RENDER_STACK.pop();
 
-            if (CompatHandler.IRIS) {
-                IrisCompat.setMirrorPass(wasMirrorPass);
-            }
-
             mc.mainRenderTarget = mainTarget;
             mc.gameRenderer.mainCamera = mainCamera;
 
@@ -396,9 +345,8 @@ public class VistaLevelRenderer {
 
         PoseStack poseStack = new PoseStack();
 
-        // Don't bake bobView/bobHurt in here. The mirror quad already bobs through the main pass, so
-        // bobbing the content too would double it up. Bob parallax is applied to the eye position
-        // instead, in MirrorBlockEntityRenderer, which is all reflection depends on.
+        // Don't bake bobView/bobHurt in here. The feed quad already bobs through the main pass, so
+        // bobbing the content too would double it up.
         Quaternionf cameraRotation = camera.rotation().conjugate(new Quaternionf());
         Matrix4f cameraMatrix = (new Matrix4f()).rotation(cameraRotation);
         Vec3 cameraPos = camera.getPosition();
