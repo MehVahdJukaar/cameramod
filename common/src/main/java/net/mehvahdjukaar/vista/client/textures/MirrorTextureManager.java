@@ -144,6 +144,10 @@ public class MirrorTextureManager {
             PENDING.clear();
             return;
         }
+        // While a screen (inventory, any GUI) is up, defer: a reflection render interleaving with the
+        // GUI's world pass would stamp the feed canvas / drop state and flash the scene. The pending
+        // queue is refilled next frame from the block-entity pass, so nothing is lost.
+        if (mc.screen != null) return;
         // Snapshot and clear first: each render walks block entities, and any mirror in there calls
         // requestUpdate again. Those re-queues land in a fresh PENDING for next frame instead of CMEing.
         List<Pending> snapshot = new ArrayList<>(PENDING.values());

@@ -237,6 +237,14 @@ public class VistaLevelRenderer {
         int depth = RENDER_STACK.size();
         boolean isOutermost = depth == 0;
 
+        // Mirror reflections render with the vanilla pipeline regardless of iris_off_hack: their
+        // off-axis frustum is unusable under a real shader pipeline. Camera feeds (TV/viewfinder)
+        // still take the shader path. Nested mirrors keep the flag ORed like the texture chain.
+        boolean wasMirrorPass = CompatHandler.IRIS && IrisCompat.isMirrorPass();
+        if (CompatHandler.IRIS) {
+            IrisCompat.setMirrorPass(wasMirrorPass || text instanceof MirrorReflectionTexture);
+        }
+
         // Capture the framebuffer bound on entry. The feed renders into its own canvas and, on the
         // outermost pass, does not hand the GL binding back to the caller. Minecraft tracks that
         // binding through a cache (and shader mods like Iris keep their own copy of it), so a feed
@@ -337,6 +345,10 @@ public class VistaLevelRenderer {
             RenderSystem.clear(GL11C.GL_DEPTH_BUFFER_BIT, ON_OSX);
 
             RENDER_STACK.pop();
+
+            if (CompatHandler.IRIS) {
+                IrisCompat.setMirrorPass(wasMirrorPass);
+            }
 
             mc.mainRenderTarget = mainTarget;
             mc.gameRenderer.mainCamera = mainCamera;

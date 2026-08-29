@@ -76,6 +76,7 @@ public class LiveFeedTexture extends PerspectiveTexture {
         Minecraft mc = Minecraft.getInstance();
         ClientLevel level = mc.level;
         if (!mc.isGameLoadFinished() || level == null) return;
+        if (mc.screen != null) return; // a GUI is up: skip, so a feed render can't interleave with it
         if (mc.isPaused()) return;
 
         Runnable runTask = () -> {
