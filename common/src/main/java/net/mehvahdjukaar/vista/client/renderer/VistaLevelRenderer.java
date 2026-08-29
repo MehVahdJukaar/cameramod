@@ -1,6 +1,7 @@
 package net.mehvahdjukaar.vista.client.renderer;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.mehvahdjukaar.moonlight.api.misc.WeakHashSet;
@@ -36,7 +37,9 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
+import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL11C;
+import org.lwjgl.opengl.GL30;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -234,6 +237,13 @@ public class VistaLevelRenderer {
         int depth = RENDER_STACK.size();
         boolean isOutermost = depth == 0;
 
+        // Capture the framebuffer bound on entry. The feed renders into its own canvas and, on the
+        // outermost pass, does not hand the GL binding back to the caller. Minecraft tracks that
+        // binding through a cache (and shader mods like Iris keep their own copy of it), so a feed
+        // leaving its canvas bound lets the resumed main pass draw into the feed texture instead of
+        // the screen -- the "TV screen turns black once shaders are turned on" report.
+        int previousFramebuffer = GL11.glGetInteger(GL30.GL_FRAMEBUFFER_BINDING);
+
         RenderTarget mainTarget = mc.getMainRenderTarget();
         RenderTarget canvas = text.getRenderTarget();
         mc.mainRenderTarget = canvas;
@@ -336,6 +346,15 @@ public class VistaLevelRenderer {
             if (!isOutermost) {
                 mainTarget.bindWrite(true);
                 RenderSystem.viewport(0, 0, mainTarget.width, mainTarget.height);
+            } else {
+                // By the same logic as the nested case, the outermost feed must hand the main
+                // framebuffer binding back: it rendered into its own canvas and there is nothing
+                // after it to re-bind before the main pass resumes drawing. Shader mods (Iris) keep
+                // their own copy of the bound framebuffer and skip redundant re-binds, so leaving
+                // the canvas bound there makes the world's next draw land in the feed texture (black
+                // TV). Going through the state manager keeps its cached binding in sync with the real
+                // GL state, so the restore cannot be skipped as a cached no-op.
+                GlStateManager._glBindFramebuffer(GL30.GL_FRAMEBUFFER, previousFramebuffer);
             }
 
             mc.gameRenderer.postEffect = oldPostEffect;

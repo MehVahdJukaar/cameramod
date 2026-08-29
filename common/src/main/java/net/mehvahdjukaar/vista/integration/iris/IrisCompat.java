@@ -322,7 +322,8 @@ public class IrisCompat {
 
     public static void addConfigs(ConfigBuilder builder) {
         irisShaderPacksOff = builder
-                .comment("Attempts to disable iris shaders in the live feed view")
-                .define("iris_off_hack", true);
+                .comment("Lets iris shaders render in the live feed view so the TV matches what the player sees. " +
+                        "Disable it if the feed flickers or renders black with your shaderpack")
+                .define("iris_off_hack", false);
     }
 }
