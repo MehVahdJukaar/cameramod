@@ -238,8 +238,9 @@ public class VistaLevelRenderer {
         boolean isOutermost = depth == 0;
 
         // Mirror reflections render with the vanilla pipeline regardless of iris_off_hack: their
-        // off-axis frustum is unusable under a real shader pipeline. Camera feeds (TV/viewfinder)
-        // still take the shader path. Nested mirrors keep the flag ORed like the texture chain.
+        // off-axis frustum and per-canvas outputs are unusable under a real shader pipeline (white
+        // depth-map wash + ghosting). Camera feeds (TV/viewfinder) still take the shader path.
+        // Nested mirrors keep the flag ORed like the texture chain.
         boolean wasMirrorPass = CompatHandler.IRIS && IrisCompat.isMirrorPass();
         if (CompatHandler.IRIS) {
             IrisCompat.setMirrorPass(wasMirrorPass || text instanceof MirrorReflectionTexture);

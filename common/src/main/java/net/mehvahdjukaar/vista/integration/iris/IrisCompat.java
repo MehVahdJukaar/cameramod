@@ -35,9 +35,11 @@ public class IrisCompat {
     private static final ThreadLocal<Boolean> VISTA_RENDERING = ThreadLocal.withInitial(() -> false);
     private static Supplier<Boolean> irisShaderPacksOff;
 
-    // Mirror reflections keep the vanilla pipeline: their off-axis projection frustum breaks down
-    // under a real shader pipeline (white wash, flicker, unusable parallax), so they bypass Iris
-    // regardless of iris_off_hack. Camera feeds (TV/viewfinder) can still take the shader path.
+    // Mirror reflections keep the vanilla pipeline. Iris's feed pipeline composites every pass into
+    // whichever canvas was bound when the pipeline was first constructed, and reflections come in
+    // many canvases and sizes, so running them through it leaves every canvas but the first blank or
+    // writing a depth-map wash with ghosting. Camera feeds (TV/viewfinder) can still take the shader
+    // path.
     private static final ThreadLocal<Boolean> MIRROR_PASS = ThreadLocal.withInitial(() -> false);
 
     public static void setMirrorPass(boolean mirrorPass) {
