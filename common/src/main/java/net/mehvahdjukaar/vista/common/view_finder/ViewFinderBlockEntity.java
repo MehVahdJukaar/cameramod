@@ -1,6 +1,7 @@
 package net.mehvahdjukaar.vista.common.view_finder;
 
 import com.mojang.math.Axis;
+import dev.ryanhcode.sable.companion.SableCompanion;
 import net.mehvahdjukaar.moonlight.api.block.IOneUserInteractable;
 import net.mehvahdjukaar.moonlight.api.block.ItemDisplayTile;
 import net.mehvahdjukaar.moonlight.api.misc.OrientationRig;
@@ -87,6 +88,9 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     @Override
     public void setLevel(Level level) {
         super.setLevel(level);
+        if (SableCompanion.INSTANCE.isInPlotGrid(level, this.worldPosition)) {
+            this.referenceFrame = new SubLevelReferenceFrame(this);
+        }
         this.ensureLinked(level, LevelBEBroadcastLocation.of(this));
     }
 
@@ -122,8 +126,9 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     @Override
     public void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
+        // wanted, not interpolated: the rig only catches up on tick and the chunk might not be ticking
         tag.put("orientation", ExtraCodecs.QUATERNIONF.encodeStart(NbtOps.INSTANCE,
-                orientation.getRotation(1)).getOrThrow());
+                orientation.getWantedRotation()).getOrThrow());
         tag.putUUID("UUID", this.myUUID);
         tag.putBoolean("locked", this.locked);
         tag.putInt("zoom", this.zoom);
@@ -317,7 +322,8 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     public Quaternionf getWorldOrientation(float partialTicks) {
         Quaternionf localRot = getLocalOrientation(partialTicks);
         Quaternionf referenceRot = referenceFrame.getRotation(partialTicks);
-        return localRot.mul(referenceRot);
+        // ship first, then the aim inside it: the inverse of what setWorldOrientation does
+        return localRot.premul(referenceRot);
     }
 
     public void setTrustedInternalAttributes(Quaternionf localRotation, int zoom, boolean locked) {

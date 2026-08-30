@@ -9,7 +9,7 @@ import org.joml.Quaternionf;
 
 public class WorldReferenceFrame implements ReferenceFrame {
 
-    private final BlockEntity be;
+    protected final BlockEntity be;
 
     public WorldReferenceFrame(BlockEntity be) {
         this.be = be;

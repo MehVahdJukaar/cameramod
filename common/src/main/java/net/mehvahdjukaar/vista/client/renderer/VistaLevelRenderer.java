@@ -406,7 +406,7 @@ public class VistaLevelRenderer {
             camera.entity = new Display.BlockDisplay(EntityType.BLOCK_DISPLAY, level);
         }
         Entity dummyCameraEntity = camera.getEntity();
-        Vec3 pos = tile.getBlockPos().getCenter();
+        Vec3 pos = tile.getGlobalPosition(partialTicks);
         dummyCameraEntity.setPos(pos);
         dummyCameraEntity.setXRot(pitch);
         dummyCameraEntity.setYRot(yaw + 180);

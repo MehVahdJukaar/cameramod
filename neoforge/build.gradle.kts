@@ -60,7 +60,7 @@ dependencies {
     modImplementation("curse.maven:camera-mod-289310:6715623")
 
     modImplementation("foundry.veil:veil-neoforge-1.21.1:4.4.1")
-    modImplementation("curse.maven:fsable-1312371:8263584")
+    modImplementation("curse.maven:fsable-1312371:8673825")
 
     // Light-beam mods to check against sublevel view finder feeds: one of them makes chunks seen
     // through a view finder on a sublevel render entities and block entities but no terrain.
