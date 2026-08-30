@@ -20,6 +20,14 @@ public class ClientConfigs {
     public static final ModConfigHolder SPEC;
 
     public static final Supplier<Integer> RENDER_DISTANCE;
+    public static final Supplier<Integer> MIRROR_RENDER_DISTANCE;
+    public static final Supplier<Integer> MIRROR_RESOLUTION_SCALE;
+    public static final Supplier<MirrorUpdateMode> MIRROR_UPDATE_MODE;
+    public static final Supplier<MirrorRecursionMode> MIRROR_RECURSION_MODE;
+    public static final Supplier<Integer> MIRROR_MAX_RECURSION_DEPTH;
+    public static final Supplier<Double> MIRROR_RECURSION_RES_DIVIDER;
+    public static final Supplier<Double> MIRROR_RECURSION_DIST_DIVIDER;
+    public static final Supplier<Boolean> MIRROR_SMOOTH;
     public static final Supplier<Double> UPDATE_FPS;
     public static final Supplier<Double> MIN_UPDATE_FPS;
     public static final Supplier<Double> THROTTLING_UPDATE_MS;
@@ -44,6 +52,36 @@ public class ClientConfigs {
 
     static {
         ConfigBuilder builder = ConfigBuilder.create(VistaMod.MOD_ID, ConfigType.CLIENT);
+
+        builder.icon("mirror").push("mirror");
+        MIRROR_RENDER_DISTANCE = builder
+                .comment("Block entity render distance for mirrors. Mirrors beyond this distance will not render their reflection.")
+                .define("render_distance", 64, 1, 2048);
+        MIRROR_RESOLUTION_SCALE = builder
+                .comment("Scale factor for mirror reflection resolution. Each mirror block is 16 virtual pixels wide; this multiplies that area. Higher values are sharper but more expensive.")
+                .define("resolution_scale", 8, 1, 32);
+        MIRROR_UPDATE_MODE = builder
+                .comment("How mirror reflections are dispatched. RENDER_TICK_END (default): mirrors are queued and flushed from a top level frame hook, which is guaranteed to run outside any level render and stays safe when other mods render the level recursively. TEXTURE_REFRESH: rides along with the live feed texture refresh instead, one render per visible mirror at the end of the frame. Try TEXTURE_REFRESH if you suspect a timing related rendering glitch.")
+                .define("update_mode", MirrorUpdateMode.RENDER_TICK_END);
+        MIRROR_SMOOTH = builder
+                .comment("Smooth the mirror reflection with bilinear texture filtering. Enabled gives a softer, less pixelated reflection; disabled keeps it crisp and pixelated.")
+                .define("smooth_reflection", false);
+
+        builder.push("recursion");
+        MIRROR_RECURSION_MODE = builder
+                .comment("How mirrors inside mirrors are handled. OFF: nested mirrors don't render at all, you just see the frame. SHARED (cheap): each mirror reuses its own reflection texture when seen inside another. Fine at a glance, but the deeper reflections won't slide correctly as you move. RECURSIVE (expensive): every chain gets its own render with correct parallax, up to max_depth. Past the cap the nested mirror isn't drawn.")
+                .define("mode", MirrorRecursionMode.RECURSIVE);
+        MIRROR_MAX_RECURSION_DEPTH = builder
+                .comment("Max nesting depth in RECURSIVE recursion mode. 0 = no recursion (equivalent to OFF). 1 = one level of correct nested reflection. Each extra level multiplies cost, but resolution_divider and distance_divider attenuate per-level cost.")
+                .define("max_depth", 1, 0, 8);
+        MIRROR_RECURSION_RES_DIVIDER = builder
+                .comment("Per-level resolution divider for RECURSIVE recursion mode. Texture resolution at depth D = base * (1 / divider^D). 2.0 means each nesting halves resolution.")
+                .define("resolution_divider", 2.0, 1.0, 16.0);
+        MIRROR_RECURSION_DIST_DIVIDER = builder
+                .comment("Per-level render-distance divider for RECURSIVE recursion mode. Render distance at depth D = base / divider^D. 2.0 means each nesting halves render distance.")
+                .define("distance_divider", 2.0, 1.0, 16.0);
+        builder.pop(); // recursion
+        builder.pop(); // mirror
 
         builder.icon("television").push("television");
         RENDER_DISTANCE = builder
@@ -170,6 +208,17 @@ public class ClientConfigs {
         TRY_FFMPEG_FIRST_THEN_VLC,
         USE_FFMPEG,
         USE_VLC
+    }
+
+    public enum MirrorUpdateMode {
+        TEXTURE_REFRESH,
+        RENDER_TICK_END
+    }
+
+    public enum MirrorRecursionMode {
+        OFF,
+        SHARED,
+        RECURSIVE
     }
 
     public enum LinkedFeedDisplayMode {

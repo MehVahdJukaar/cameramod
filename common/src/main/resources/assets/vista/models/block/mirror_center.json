@@ -1,0 +1,31 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "vista:block/mirror/side",
+    "front": "vista:block/mirror/front/center",
+    "back": "vista:block/mirror/back/center",
+    "side": "vista:block/mirror/side"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        16,
+        16,
+        2
+      ],
+      "faces": {
+        "north": {
+          "texture": "#front"
+        },
+        "south": {
+          "texture": "#back"
+        }
+      }
+    }
+  ]
+}

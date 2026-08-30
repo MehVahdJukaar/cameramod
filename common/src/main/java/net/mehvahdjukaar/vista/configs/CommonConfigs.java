@@ -17,6 +17,10 @@ public class CommonConfigs {
 
     public static final Supplier<Integer> TV_MAX_CONNECTED_TV_SIZE;
     public static final Supplier<Boolean> TV_SQUARE_ASPECT_RATIO;
+    public static final Supplier<Integer> MAX_CONNECTED_MIRROR_SIZE;
+    public static final Supplier<Boolean> MIRROR_SQUARE_ASPECT_RATIO;
+    public static final Supplier<MirrorPlacement> MIRROR_PLACEMENT;
+    public static final Supplier<Boolean> MIRROR_ENABLED;
     public static final Supplier<Boolean> CREEPER_DROP;
     public static final Supplier<Boolean> CHEST_DROP;
     public static final Supplier<Boolean> WAVE_GATE_ENABLED;
@@ -67,6 +71,26 @@ public class CommonConfigs {
                 .comment("Maximum number of pictures (filled maps) a single picture tape can hold.")
                 .define("max_entries", 32, 1, 256);
         builder.pop(); // picture_tape
+
+        // mirror is a feature-gated category: its "enabled" toggle gates every option under it in the config screen.
+        // Set the reload/pack flags after push so they land on the mainFeature() define, not on the push itself
+        // (NeoForge rejects a pending restart flag consumed by a push -> "Dangling restart value").
+        builder.icon("mirror").push("mirror");
+        builder.affectsDynamicPacks()
+                .worldReload()
+                .comment("Whether mirrors (and the crystalline item used to craft them) are enabled. Disabling hides them from creative tabs, disables the mirror recipe, and stops crystalline from dropping from elder guardians.");
+        MIRROR_ENABLED = builder.mainFeature();
+        MAX_CONNECTED_MIRROR_SIZE = builder
+                .worldReload()
+                .comment("Maximum size of connected mirrors (in blocks). Set to 1 to disable multi-block mirrors.")
+                .define("max_connected_size", 8, 1, 24);
+        MIRROR_SQUARE_ASPECT_RATIO = builder
+                .comment("Forces connected mirrors to have a square aspect ratio.")
+                .define("square_aspect_ratio", true);
+        MIRROR_PLACEMENT = builder
+                .comment("Which mirror placements are allowed. NEAR: surface always flush with the front face. FAR: surface always recessed into the block. BOTH: near or far is chosen from where you click along the block's depth axis (near half = near, far half = recessed).")
+                .define("placement", MirrorPlacement.BOTH);
+        builder.pop(); // mirror
 
         // wave gate: a feature "enabled" gate (was Mode.OFF) plus a 2-state "craftable" toggle (was CRAFTABLE vs
         // CREATIVE_ONLY). Both gate the recipe/obtainability, so both are world-reload + dynamic-pack flagged.
@@ -126,6 +150,10 @@ public class CommonConfigs {
         return isTvElectricityEnabled() || TV_CONSUME_ENERGY.get();
     }
 
+    public static boolean isMirrorEnabled() {
+        return MIRROR_ENABLED.get();
+    }
+
     public static boolean isViewFinderGuiEnabled() {
         return VIEW_FINDER_INTERACTION.get() == ViewFinderInteraction.GUI;
     }
@@ -147,6 +175,12 @@ public class CommonConfigs {
     //TODO:
     public static int distanceFromTvForServerToLoadViewFinders(ServerLevel level) {
         return level.getServer().getPlayerList().getViewDistance();
+    }
+
+    public enum MirrorPlacement {
+        NEAR,
+        FAR,
+        BOTH
     }
 
     public enum ViewFinderInteraction {

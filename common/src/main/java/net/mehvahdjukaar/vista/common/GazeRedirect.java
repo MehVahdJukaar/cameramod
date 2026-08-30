@@ -1,6 +1,7 @@
 package net.mehvahdjukaar.vista.common;
 
 import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
+import net.mehvahdjukaar.vista.common.mirror.MirrorBlock;
 import net.mehvahdjukaar.vista.common.tv.TVBlock;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
@@ -87,6 +88,16 @@ public final class GazeRedirect {
         BlockState state = level.getBlockState(hitPos);
         Vec3 hitLoc = hit.getLocation();
         double left = remaining - hitLoc.subtract(origin).length();
+
+        if (state.getBlock() instanceof MirrorBlock) {
+            Direction facing = state.getValue(HorizontalDirectionalBlock.FACING);
+            if (hit.getDirection() != facing) return null;
+
+            Vec3 normal = Vec3.atLowerCornerOf(facing.getNormal());
+            Vec3 reflectedDir = dir.subtract(normal.scale(2 * dir.dot(normal))).normalize();
+            Vec3 nextOrigin = hitLoc.add(reflectedDir.scale(EPSILON));
+            return bouncePick(level, player, nextOrigin, reflectedDir, left, bouncesLeft - 1, target);
+        }
 
         if (state.getBlock() instanceof TVBlock) {
             Ray camera = cameraRayThroughScreen(level, hitPos, state, hit);

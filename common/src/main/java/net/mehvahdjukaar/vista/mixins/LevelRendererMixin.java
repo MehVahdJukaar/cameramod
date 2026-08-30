@@ -88,9 +88,12 @@ public class LevelRendererMixin implements ILevelRendererExt {
     private void vista$hideMirrorInvisibleEntities(Entity entity, double camX, double camY, double camZ,
                                                    float partialTick, PoseStack poseStack,
                                                    MultiBufferSource bufferSource, CallbackInfo ci) {
-        if (!VistaLevelRenderer.isRenderingCameraFeed()) return;
+        boolean mirror = VistaLevelRenderer.isRenderingMirrorReflection();
+        boolean tv = VistaLevelRenderer.isRenderingCameraFeed();
+        if (!mirror && !tv) return;
 
-        boolean hidden = entity.getType().is(VistaMod.CANT_SEE_THROUGH_TV);
+        boolean hidden = (mirror && entity.getType().is(VistaMod.CANT_SEE_THROUGH_MIRROR))
+                || (tv && entity.getType().is(VistaMod.CANT_SEE_THROUGH_TV));
 
         // Vampire players are still minecraft:player and some mods flag mobs through an API instead of
         // a tag, so entity type tags catch neither. The mod-loaded flags keep the compat impls from
