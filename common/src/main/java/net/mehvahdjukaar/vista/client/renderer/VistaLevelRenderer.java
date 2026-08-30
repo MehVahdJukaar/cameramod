@@ -191,6 +191,12 @@ public class VistaLevelRenderer {
         Minecraft mc = Minecraft.getInstance();
 
         if (mc.level == null) return;
+        // While Sodium's section build queue is busy (world join, teleport, new terrain), a feed
+        // render sees a half-built world: missing sections leave fog-colored holes and entities
+        // stamp ghost copies that the pack's temporal effects then persist. Skip refreshes until
+        // the queue drains, keeping the last good frame on the tv; the escape hatch keeps a tv in
+        // a permanently-busy area (flowing water etc.) from freezing forever.
+        if (shouldSkipFeedForBuildQueue()) return;
         //debounce dimension changing for some reason idk yet
         if (mc.level.dimension() != lastLevel) {
             lastLevel = mc.level.dimension();
@@ -283,10 +289,25 @@ public class VistaLevelRenderer {
             // already wrapped outside; don't double-wrap this or it fucks everything over omg.
             renderLevel(mc, canvas, camera, fov, customProjection);
 
-            if (CompatHandler.IRIS && ClientConfigs.rendersDebug()) {
-                VistaMod.LOGGER.info("[VistaFeed] post-renderLevel pixels canvas=#{}/{}x{}: {}",
-                        System.identityHashCode(canvas), canvas.width, canvas.height,
-                        readSamplePixels(canvas));
+            if (CompatHandler.IRIS) {
+                int sections = visibleSectionCount(mc.levelRenderer);
+                Integer best = FEED_SECTION_PEAKS.get(canvas);
+                int peak = Math.max(best == null ? 0 : best, sections);
+                FEED_SECTION_PEAKS.put(canvas, peak);
+                // A collapsed render (far fewer sections than this canvas has ever shown) draws only
+                // sky and entities over the previous frame; shaderpack temporal effects then latch
+                // the ghost copies. Reset such frames to flat fog so nothing latches.
+                if (sections >= 0 && peak > 32 && sections < peak / 4) {
+                    VistaMod.LOGGER.warn("[VistaFeed] collapsed feed render ({} of peak {}) - resetting canvas",
+                            sections, peak);
+                    float[] fog = RenderSystem.getShaderFogColor();
+                    RenderSystem.clearColor(fog[0], fog[1], fog[2], 1.0f);
+                    RenderSystem.clear(GL11.GL_COLOR_BUFFER_BIT, ON_OSX);
+                } else if (ClientConfigs.rendersDebug()) {
+                    VistaMod.LOGGER.info("[VistaFeed] post-renderLevel pixels canvas=#{}/{}x{}: {} sections={}",
+                            System.identityHashCode(canvas), canvas.width, canvas.height,
+                            readSamplePixels(canvas), sections);
+                }
             }
 
             // save updated feed camera state
@@ -340,6 +361,33 @@ public class VistaLevelRenderer {
             mc.gameRenderer.postEffect = oldPostEffect;
             mc.gameRenderer.effectActive = wasEffectActive;
             mc.gameRenderer.renderDistance = oldRenderDistance;
+        }
+    }
+
+    private static int SKIPPED_BUSY_BUILDS;
+    // Highest section count ever seen per feed canvas; a render far below it is a collapse.
+    private static final Map<RenderTarget, Integer> FEED_SECTION_PEAKS = new WeakHashMap<>();
+
+    private static boolean shouldSkipFeedForBuildQueue() {
+        LevelRenderer lr = Minecraft.getInstance().levelRenderer;
+        if (lr == null) return false;
+        if (lr.hasRenderedAllSections()) {
+            SKIPPED_BUSY_BUILDS = 0;
+            return false;
+        }
+        // Shaderpack reloads tear down and rebuild every pipeline, which rebuilds all sections:
+        // the window is long (~10s), and rendering feeds inside it stamps vertex-layout-mismatched
+        // copies of entities into the pack's temporal buffers. Suppress until it settles.
+        return ++SKIPPED_BUSY_BUILDS < 200;
+    }
+
+    // Temporary diagnostics: how many sections Sodium considered visible for this feed render.
+    private static int visibleSectionCount(LevelRenderer lr) {
+        try {
+            Object renderer = lr.getClass().getMethod("sodium$getWorldRenderer").invoke(lr);
+            return (Integer) renderer.getClass().getMethod("getVisibleChunkCount").invoke(renderer);
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            return -1;
         }
     }
 

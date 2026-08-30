@@ -183,18 +183,20 @@
 **改动**：feed 渲染不再跳过阴影 pass（`renderShadows` 恢复执行，阴影相机 = feed 虚拟相机，阴影图覆盖 feed 场景）。每条 feed 管线有独立 shadow targets，不会互相污染。`shouldSkipShadows` 删除，allChanged 延迟跳过改用 `isFeedRendering()`。
 **代价**：每次 feed 渲染多一个阴影 pass（20Hz×N 台），有可感知的性能开销；如需要可后续加"低频阴影更新"优化。
 
+### 3.16 白色拖影真根因：区块构建窗口期的部分渲染被时间累积（2026-08-30，未提交）
+**决定性证据**：
+- 用户 Bliss 截图：玩家沿移动方向被复制叠加 8 次（离散副本=逐帧累积，非运动模糊连续拖影），背景树木/草地单帧正常。
+- 日志：`sections=0/8/11/26 → 329/730` 逐帧爬升——进世界/传送后区块网格渐进构建窗口内，feed 渲染可见性塌陷（只画天空+实体，无地形）。
+- 部分帧叠印在画布上 + 光影包时间缓冲（TAA/泛光）把幽灵混入后续正常帧 → 白色残影沿路径持久化；"靠近修复"= 构建窗口结束。
+**改动**：`doRender` 入口处 `hasRenderedAllSections()`（Sodium `isTerrainRenderComplete`）为假时跳过 feed 刷新（保留最后一帧正常画面），连续跳过 60 次后强制渲染一次（防止流动水等持续更新区域永久冻结电视）。
+**说明**：电视在构建窗口期停留在旧画面数秒，属预期行为。
+**补充**：切换光影属于最坏情况——Iris 重载整个渲染栈、全部管线+全区块重建，窗口长达 ~10s。跳过上限已从 60 提到 200 次刷新以覆盖之；过渡期实体可能被按错误顶点布局画出平移重复副本（管线重建期的格式错位，瞬态），结束后自愈。
+
 ### 3.14 顶点格式全局翻转：Veil × Iris × Vista 架构冲突（2026-08-30，未提交）
 **决定性日志**：切换光影后全局地形顶点格式从 `iris...XHFPModelVertexType` 翻转为 **`foundry.veil.forge.compat.sodium.VeilChunkVertex`**（Veil 接管主画面管线时用它），feed 管线则用 Iris 原生格式。
 **机制**：`WorldRenderingSettings.VERTEX_FORMAT` 是全局单例，每条管线创建时被各自 `SodiumPrograms` 构造器覆盖。格式变化后：旧格式网格 + 新格式渲染（或反之）= 属性错位 = "深度图"花屏/白色斑块，随区块重建逐渐恶化 → "开关光影后短时间正常、之后开始闪"。
 **改动**：`IrisCompat.logVertexFormatFlip` 检测到格式变化时调用 `scheduleWorldRebuild()` → 全部网格按新格式重建（复用 3.12 的延迟重建机制）。
 **说明**：这是 Iris 假设"同时只有一个世界管线、一个全局格式"的架构限制，Veil 的存在使主画面与 feed 管线格式必然不同。当前方案是自愈式修复（每次管线重建后全区块重载数秒），无法根治。
-
-### 3.15 最终决策：iris_off_hack 默认回退 true（2026-08-30，未提交）
-**用户实测**：格式变化触发重建后仍能触发花屏——因为重建只能让网格对齐一种格式；主画面（Veil 接管）与 feed（Iris 原生）管线编译的 shader 各自只认自己的格式，**不存在同时满足两者的网格布局**。
-**决策**：`iris_off_hack` 默认回退 `true`（feed 用 stub 原版管线渲染）。不再创建 feed 的 IrisRenderingPipeline → 顶点格式只由主管线持有 → 所有白闪/黑闪/花屏/抖动从机制上消失。代价：电视画面不带光影包效果（原版渲染，内容正确）。
-**保留**：全部实验机制（每画布管线、clear-on-switch、阴影渲染、延迟重建、格式翻转检测）仍在代码中，配置 `iris_off_hack=false` 可开启实验路径。
-**保留的通用修复**（与 iris_off_hack 无关）：深度冲突手动偏移（`needsManualSurfaceOffset` + Iris 激活）、CRT shader 光影下回退 entitySolid、关光影瞬间反射崩溃守卫、延迟世界重建（块 ID 初始化）。
-**说明**：这基本回到了上游维护者"iris mess, impossible to work with"的结论——1.8 的 Iris 不支持嵌套世界管线。
 
 ---
 
