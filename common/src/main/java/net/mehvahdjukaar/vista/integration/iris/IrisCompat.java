@@ -20,7 +20,6 @@ import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
 import org.joml.Vector3d;
 
-import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
@@ -86,12 +85,16 @@ public class IrisCompat {
     // Iris detects a recreated render target through version counters that only increment in
     // destroyBuffers, so a brand new RenderTarget starts at 0 just like the old one did. Resizing a TV
     // swaps in exactly that, and Iris keeps its gbuffers on the old (possibly freed) depth texture.
-    // Bumping on every canvas change makes the next beginLevelRendering re-attach.
-    private static WeakReference<RenderTarget> lastFeedCanvas = new WeakReference<>(null);
-
+    //
+    // The feed pipelines are cached per dimension and shared by every feed of that dimension (two TVs
+    // on the same world, say). Iris tracks a single "current depth texture" per pipeline. Bumping the
+    // counters on EVERY feed render makes the next beginLevelRendering re-attach that pipeline to
+    // the canvas actually bound for this pass. If this only happened on canvas *changes*, then once
+    // one feed's canvas is destroyed (turning a TV off evicts its texture and frees its GL buffers),
+    // the pipeline would keep pointing its depth attachment at that freed buffer forever: any other
+    // feed still sharing the pipeline would end up drawing into an incomplete framebuffer and go
+    // white + flicker.
     public static void onFeedCanvasBound(RenderTarget canvas) {
-        if (lastFeedCanvas.get() == canvas) return;
-        lastFeedCanvas = new WeakReference<>(canvas);
         bumpIrisVersionCounters(canvas);
     }
 
