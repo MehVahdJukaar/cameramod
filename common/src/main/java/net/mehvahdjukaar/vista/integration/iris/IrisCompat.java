@@ -4,15 +4,19 @@ import com.mojang.blaze3d.pipeline.RenderTarget;
 import net.irisshaders.iris.Iris;
 import net.irisshaders.iris.gl.blending.BlendModeStorage;
 import net.irisshaders.iris.gl.blending.DepthColorStorage;
+import net.irisshaders.iris.pipeline.IrisRenderingPipeline;
 import net.irisshaders.iris.pipeline.PipelineManager;
+import net.irisshaders.iris.pipeline.ShaderRenderingPipeline;
 import net.irisshaders.iris.pipeline.VanillaRenderingPipeline;
 import net.irisshaders.iris.pipeline.WorldRenderingPipeline;
 import net.irisshaders.iris.shaderpack.materialmap.WorldRenderingSettings;
 import net.irisshaders.iris.shadows.ShadowRenderer;
+import net.irisshaders.iris.targets.RenderTargets;
 import net.irisshaders.iris.uniforms.CapturedRenderingState;
 import net.irisshaders.iris.vertices.ImmediateState;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigBuilder;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
 import org.jetbrains.annotations.Nullable;
@@ -21,10 +25,15 @@ import org.joml.Matrix4fc;
 import org.joml.Vector3d;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.HashSet;
+import java.util.Objects;
 import java.util.Map;
+import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.function.Supplier;
 
 public class IrisCompat {
@@ -44,6 +53,13 @@ public class IrisCompat {
 
     public static boolean isFeedRendering() {
         return VISTA_RENDERING.get();
+    }
+
+    // Whether an Iris shaderpack pipeline is currently driving world rendering. Used to gate the
+    // custom CRT screen shader, which is not safe under an active pack (see hasSfx()).
+    public static boolean hasActiveShaderPack() {
+        return CompatHandler.IRIS
+                && Iris.getPipelineManager().getPipelineNullable() instanceof ShaderRenderingPipeline;
     }
 
     // A bare static Iris flips at the head and return of renderLevel, so nesting a second one inside
@@ -86,17 +102,140 @@ public class IrisCompat {
     // destroyBuffers, so a brand new RenderTarget starts at 0 just like the old one did. Resizing a TV
     // swaps in exactly that, and Iris keeps its gbuffers on the old (possibly freed) depth texture.
     //
-    // The feed pipelines are cached per dimension and shared by every feed of that dimension (two TVs
-    // on the same world, say). Iris tracks a single "current depth texture" per pipeline. Bumping the
-    // counters on EVERY feed render makes the next beginLevelRendering re-attach that pipeline to
-    // the canvas actually bound for this pass. If this only happened on canvas *changes*, then once
-    // one feed's canvas is destroyed (turning a TV off evicts its texture and frees its GL buffers),
-    // the pipeline would keep pointing its depth attachment at that freed buffer forever: any other
-    // feed still sharing the pipeline would end up drawing into an incomplete framebuffer and go
-    // white + flicker.
-    public static void onFeedCanvasBound(RenderTarget canvas) {
+    // The feed pipelines are cached per dimension and canvas size (see CompatIrisMixin) and shared
+    // by every feed matching that key (two TVs of the same size on the same world, say). Iris
+    // tracks a single "current depth texture" per pipeline. Bumping the counters on EVERY feed
+    // render makes the next beginLevelRendering re-attach that pipeline to the canvas actually
+    // bound for this pass. If this only happened on canvas *changes*, then once one feed's canvas
+    // is destroyed (turning a TV off evicts its texture and frees its GL buffers), the pipeline
+    // would keep pointing its depth attachment at that freed buffer forever: any other feed still
+    // sharing the pipeline would end up drawing into an incomplete framebuffer and go white +
+    // flicker.
+    public static void onFeedCanvasBound(RenderTarget canvas, String texturePath) {
+        CURRENT_FEED_TEXTURE.set(texturePath);
         bumpIrisVersionCounters(canvas);
     }
+
+    // The dimension key the feed pass renders under. One pipeline per CANVAS (each TV texture),
+    // not per size: same-size TVs sharing a pipeline alternate canvases every render, which either
+    // cross-blends the pack's temporal buffers between cameras or -- with the full-clear safety --
+    // wipes them (colortex1 clears to plain white) before every accumulation pass, washing the
+    // composite white. Separate pipelines isolate everything, at the cost of one shader program set
+    // and shadow target set per TV, so the number of issued keys is capped; past the cap feeds fall
+    // back to sharing a pipeline per canvas size (the pre-isolation behavior).
+    public static final int MAX_FEED_PIPELINES = 6;
+    private static final Set<String> ISSUED_FEED_KEYS = new HashSet<>();
+
+    @Nullable
+    public static String feedPipelineKey() {
+        String texturePath = CURRENT_FEED_TEXTURE.get();
+        if (texturePath == null) return null;
+        if (ISSUED_FEED_KEYS.contains(texturePath)) return texturePath;
+        if (ISSUED_FEED_KEYS.size() >= MAX_FEED_PIPELINES) {
+            // "<w>x<h>": the shared per-size key used before canvas isolation.
+            return texturePath.substring(texturePath.lastIndexOf('_') + 1);
+        }
+        ISSUED_FEED_KEYS.add(texturePath);
+        return texturePath;
+    }
+
+    // The per-size pipeline is still shared by every same-size canvas (two identical TVs in view).
+    // Its colortex ping-pong buffers hold the pack's temporal state -- TAA history, SSR, any
+    // per-frame accumulation -- and those are view-dependent: with two cameras alternating on one
+    // pipeline, each feed's composite blends the other camera's previous result into its own. The
+    // blended terrain reads as white flashing on one TV and as a slight shimmer on the other (the
+    // sky survives because it looks the same from any viewpoint). A single feed never switches
+    // canvases and keeps accumulating normally.
+    //
+    // So: whenever a pipeline is handed a canvas it was not last bound to, arm Iris's
+    // full-clear flag. The next beginLevelRendering runs clearPassesFull, wiping both halves of
+    // every colortex pair. Feeds sharing a pipeline lose cross-feed temporal accumulation while
+    // more than one of them is cycling (mild edge aliasing), which is far less visible than the
+    // cross-camera ghosting. Distinct-size feeds run on distinct pipelines and never hit this.
+    public static void onFeedPipelineBound(WorldRenderingPipeline pipeline, RenderTarget canvas) {
+        RenderTarget last = LAST_FEED_CANVAS.put(pipeline, canvas);
+        if (last != null && last != canvas) {
+            VistaMod.LOGGER.info("[VistaFeed] pipeline canvas switch #{} -> #{}: arming full clear",
+                    System.identityHashCode(last), System.identityHashCode(canvas));
+            clearTemporalBuffers(pipeline);
+        }
+        logVertexFormatFlip();
+    }
+
+    // Temporary diagnostics: each IrisRenderingPipeline constructor overwrites the global terrain
+    // vertex format with its own analysis; if the feed pipelines' formats differ from the main
+    // one, section meshes get built against one layout and rendered with another.
+    private static void logVertexFormatFlip() {
+        if (GET_VERTEX_FORMAT_METHOD == null) return;
+        try {
+            Object format = GET_VERTEX_FORMAT_METHOD.invoke(WorldRenderingSettings.INSTANCE);
+            if (!Objects.equals(format, LAST_FORMAT)) {
+                LAST_FORMAT = format;
+                VistaMod.LOGGER.info("[VistaFeed] world vertex format is now: {}", format);
+                // Pipeline (re)creation changed the global terrain layout (Veil wraps the main
+                // pipeline in its own chunk vertex type, feed pipelines use Iris's). Meshes built
+                // against the old layout render as garbage under the new one, so rebuild them all.
+                scheduleWorldRebuild();
+            }
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            VistaMod.LOGGER.warn("Failed to read Iris vertex format", e);
+        }
+    }
+
+    @Nullable
+    private static Object LAST_FORMAT;
+    // Returns a ChunkVertexType that is not on the compile classpath, hence reflection.
+    @Nullable
+    private static final Method GET_VERTEX_FORMAT_METHOD = lookupMethod(WorldRenderingSettings.class, "getVertexFormat");
+
+    @Nullable
+    private static Method lookupMethod(Class<?> clazz, String name) {
+        try {
+            return clazz.getMethod(name);
+        } catch (NoSuchMethodException e) {
+            return null;
+        }
+    }
+
+    // The feed pipeline's first beginLevelRendering registers the pack's block-id map and is due
+    // to rebuild every section so meshes carry it (CompatIrisRenderingMixin defers that rebuild
+    // out of the feed pass, since tearing down the geometry being drawn wrecks it). This runs the
+    // deferred rebuild once the outermost feed has fully finished: meshes built before the id map
+    // existed have no pack data, which reads as untinted grass/leaves ("depth map" patches) until
+    // a random block update happens to rebuild them.
+    public static void scheduleWorldRebuild() {
+        PENDING_WORLD_REBUILD = true;
+    }
+
+    private static boolean PENDING_WORLD_REBUILD;
+
+    public static void runPendingWorldRebuild(boolean outermostFeedFinished) {
+        if (!outermostFeedFinished || !PENDING_WORLD_REBUILD) return;
+        PENDING_WORLD_REBUILD = false;
+        LevelRenderer levelRenderer = Minecraft.getInstance().levelRenderer;
+        if (levelRenderer != null) {
+            VistaMod.LOGGER.info("[VistaFeed] running deferred world rebuild for block id init");
+            levelRenderer.allChanged();
+        }
+    }
+
+    private static void clearTemporalBuffers(WorldRenderingPipeline pipeline) {
+        // Toggling shaderpacks off mid-session makes preparePipeline hand back a bare
+        // VanillaRenderingPipeline for the feed dimension, which has no renderTargets field.
+        if (!(pipeline instanceof IrisRenderingPipeline)) return;
+        if (PIPELINE_RENDER_TARGETS_FIELD == null || FULL_CLEAR_REQUIRED_FIELD == null) return;
+        try {
+            Object renderTargets = PIPELINE_RENDER_TARGETS_FIELD.get(pipeline);
+            if (renderTargets != null) {
+                FULL_CLEAR_REQUIRED_FIELD.setBoolean(renderTargets, true);
+            }
+        } catch (ReflectiveOperationException e) {
+            VistaMod.LOGGER.warn("Failed to arm Iris full clear for feed pipeline switch", e);
+        }
+    }
+
+    // Main render thread only, keyed weakly so pipelines destroyed on a pack reload don't leak.
+    private static final Map<WorldRenderingPipeline, RenderTarget> LAST_FEED_CANVAS = new WeakHashMap<>();
 
     private static void bumpIrisVersionCounters(RenderTarget canvas) {
         if (DEPTH_BUFFER_VERSION_FIELD == null && COLOR_BUFFER_VERSION_FIELD == null) return;
@@ -113,9 +252,9 @@ public class IrisCompat {
     }
 
     @Nullable
-    private static Field lookupIrisRtField(String name) {
+    private static Field lookupField(Class<?> clazz, String name) {
         try {
-            Field f = RenderTarget.class.getDeclaredField(name);
+            Field f = clazz.getDeclaredField(name);
             f.setAccessible(true);
             return f;
         } catch (NoSuchFieldException e) {
@@ -124,9 +263,15 @@ public class IrisCompat {
     }
 
     @Nullable
-    private static final Field DEPTH_BUFFER_VERSION_FIELD = lookupIrisRtField("iris$depthBufferVersion");
+    private static final Field DEPTH_BUFFER_VERSION_FIELD = lookupField(RenderTarget.class, "iris$depthBufferVersion");
     @Nullable
-    private static final Field COLOR_BUFFER_VERSION_FIELD = lookupIrisRtField("iris$colorBufferVersion");
+    private static final Field COLOR_BUFFER_VERSION_FIELD = lookupField(RenderTarget.class, "iris$colorBufferVersion");
+    // IrisRenderingPipeline.renderTargets and RenderTargets.fullClearRequired: arming the flag makes
+    // the next beginLevelRendering run its full clear passes over every colortex, history included.
+    @Nullable
+    private static final Field PIPELINE_RENDER_TARGETS_FIELD = lookupField(IrisRenderingPipeline.class, "renderTargets");
+    @Nullable
+    private static final Field FULL_CLEAR_REQUIRED_FIELD = lookupField(RenderTargets.class, "fullClearRequired");
 
     // VanillaRenderingPipeline's constructor is not inert: it rewrites WorldRenderingSettings as if a
     // pack had just unloaded, and each setter arms Iris's reload flag. It happens to land on untouched
@@ -175,6 +320,8 @@ public class IrisCompat {
         return VISTA_RENDERING.get() && !irisShaderPacksOff.get();
     }
 
+    private static final ThreadLocal<String> CURRENT_FEED_TEXTURE = new ThreadLocal<>();
+
     public static Runnable decorateRendererWithoutShaderPacks(Runnable renderTask) {
         return () -> {
             LevelRenderer lr = Minecraft.getInstance().levelRenderer;
@@ -203,6 +350,7 @@ public class IrisCompat {
                 oldState.saveTo(CapturedRenderingState.INSTANCE);
                 setCurrentPipeline(lr, oldLrPipeline);
                 setPipelineManagerPipeline(pm, oldPmPipeline);
+                runPendingWorldRebuild(!oldVistaRendering);
             }
         };
     }
@@ -271,10 +419,6 @@ public class IrisCompat {
         }
     }
 
-    public static boolean shouldSkipShadows() {
-        return VISTA_RENDERING.get();
-    }
-
     public static boolean shouldSkipBobbing() {
         return VISTA_RENDERING.get();
     }
@@ -324,9 +468,17 @@ public class IrisCompat {
     }
 
     public static void addConfigs(ConfigBuilder builder) {
+        // Feeds render through their own IrisRenderingPipeline instances (one per TV), but Iris
+        // assumes a single world pipeline: every pipeline creation overwrites the global terrain
+        // vertex format, and when the main pipeline is wrapped by another mod (Veil) the two
+        // formats can never agree -- meshes built against either layout render as garbage in the
+        // other. The stub vanilla pipeline keeps the global format owned by the main pipeline and
+        // the TVs rock-solid, at the cost of no shaderpack effects inside the feed image.
         irisShaderPacksOff = builder
-                .comment("Lets iris shaders render in the live feed view so the TV matches what the player sees. " +
-                        "Disable it if the feed flickers or renders black with your shaderpack")
-                .define("iris_off_hack", false);
+                .comment("Renders the live feed view with the vanilla pipeline instead of the shaderpack. " +
+                        "Feeds stay stable with any shader/mod rendering setup, but won't show shader effects. " +
+                        "Set false to let iris shaders render in the feed (experimental: flickers/corrupts with " +
+                        "some shaderpacks and when Veil or similar pipeline-wrapping mods are installed)")
+                .define("iris_off_hack", true);
     }
 }

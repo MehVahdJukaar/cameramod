@@ -10,6 +10,7 @@ import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import net.mehvahdjukaar.vista.common.cassette.CassetteTape;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
+import net.mehvahdjukaar.vista.integration.iris.IrisCompat;
 import net.minecraft.client.GraphicsStatus;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -169,9 +170,15 @@ public class TvScreenVertexConsumers {
 
 
     private static boolean hasSfx() {
-        return !VistaLevelRenderer.isRenderingLiveFeed() &&
-                Minecraft.getInstance().options.graphicsMode().get() != GraphicsStatus.FAST
-                && ClientConfigs.SCREEN_EFFECTS.get();
+        return !VistaLevelRenderer.isRenderingLiveFeed()
+                && Minecraft.getInstance().options.graphicsMode().get() != GraphicsStatus.FAST
+                && ClientConfigs.SCREEN_EFFECTS.get()
+                // The CRT shader is a custom ShaderInstance with a multi-texture state, and Iris
+                // only overrides vanilla shaders: drawn under an active shaderpack pipeline its
+                // samplers are not reliably bound, and the quad intermittently samples an empty
+                // texture, which reads as the whole TV flashing white. The feed pass already
+                // falls back to entitySolid for the same reason.
+                && !IrisCompat.hasActiveShaderPack();
     }
 
 

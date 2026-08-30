@@ -7,6 +7,7 @@ import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import net.mehvahdjukaar.moonlight.api.client.PostShadersHelper;
+import net.mehvahdjukaar.moonlight.api.client.texture_renderer.RenderableDynamicTexture;
 import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
@@ -90,6 +91,14 @@ public class LiveFeedTexture extends PerspectiveTexture {
                 return;
             }
             setDisconnected(false);
+
+            if (ClientConfigs.rendersDebug()) {
+                VistaMod.LOGGER.info("[VistaFeed] render tex={} canvas=#{} {}x{} vf={} start={} display={}",
+                        getTextureLocation(), System.identityHashCode(getRenderTarget()),
+                        getRenderTarget().width, getRenderTarget().height, vf.getBlockPos(),
+                        VistaLevelRenderer.readSamplePixels(getRenderTarget()),
+                        VistaLevelRenderer.readSamplePixels(readDisplayTarget()));
+            }
 
             VistaLevelRenderer.render(this, vf);
 
@@ -211,6 +220,19 @@ public class LiveFeedTexture extends PerspectiveTexture {
         if (ClientConfigs.rendersDebug()) {
             LiveFeedTexturesManager.UPDATE_TIMES.computeIfAbsent(getAssociatedUUID(), k -> new RollingBuffer<>(20))
                     .push(level.getGameTime());
+        }
+    }
+
+    // Temporary diagnostics: moonlight's display-side target (the one the TV quad actually
+    // samples), fetched reflectively since it's private.
+    @Nullable
+    private RenderTarget readDisplayTarget() {
+        try {
+            var field = RenderableDynamicTexture.class.getDeclaredField("readTarget");
+            field.setAccessible(true);
+            return (RenderTarget) field.get(this);
+        } catch (ReflectiveOperationException e) {
+            return null;
         }
     }
 

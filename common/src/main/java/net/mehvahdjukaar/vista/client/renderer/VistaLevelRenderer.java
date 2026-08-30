@@ -7,6 +7,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.mehvahdjukaar.moonlight.api.misc.WeakHashSet;
 import net.mehvahdjukaar.moonlight.api.util.math.EntityAngles;
 import net.mehvahdjukaar.moonlight.core.client.DummyCamera;
+import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaPlatStuff;
 import net.mehvahdjukaar.vista.client.textures.PerspectiveTexture;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
@@ -82,10 +83,14 @@ public class VistaLevelRenderer {
     }
 
     // Polygon offset layering doesn't take inside nested level renders, and z-fights under FAST
-    // graphics, so surface quads fall back to a manual forward offset in those cases.
+    // graphics, so surface quads fall back to a manual forward offset in those cases. Iris
+    // shaderpacks change the depth buffer format/precision, which beats the fixed polygon offset
+    // at coplanar distances: the screen quad intermittently loses to the block model's own screen
+    // face and the TV flashes dark.
     public static boolean needsManualSurfaceOffset() {
         if (isRenderingLiveFeed()) return true;
-        return Minecraft.getInstance().options.graphicsMode().get() == GraphicsStatus.FAST;
+        if (Minecraft.getInstance().options.graphicsMode().get() == GraphicsStatus.FAST) return true;
+        return IrisCompat.hasActiveShaderPack();
     }
 
     /**
@@ -219,9 +224,10 @@ public class VistaLevelRenderer {
         mc.mainRenderTarget = canvas;
 
         // A TV resize swaps in a whole new RenderTarget, which Iris's version-counter change detection
-        // misses, leaving its gbuffers attached to the old freed canvas. Nudge it manually.
+        // misses, leaving its gbuffers attached to the old freed canvas. Nudge it manually. Also
+        // publishes which feed texture is rendering, so the pipeline key can be derived per canvas.
         if (CompatHandler.IRIS) {
-            IrisCompat.onFeedCanvasBound(canvas);
+            IrisCompat.onFeedCanvasBound(canvas, text.getTextureLocation().getPath());
         }
 
         Camera camera = acquireDummyCamera(depth);
@@ -277,6 +283,12 @@ public class VistaLevelRenderer {
             // already wrapped outside; don't double-wrap this or it fucks everything over omg.
             renderLevel(mc, canvas, camera, fov, customProjection);
 
+            if (CompatHandler.IRIS && ClientConfigs.rendersDebug()) {
+                VistaMod.LOGGER.info("[VistaFeed] post-renderLevel pixels canvas=#{}/{}x{}: {}",
+                        System.identityHashCode(canvas), canvas.width, canvas.height,
+                        readSamplePixels(canvas));
+            }
+
             // save updated feed camera state
             feedCameraState.copyFrom(mc.levelRenderer);
 
@@ -286,6 +298,12 @@ public class VistaLevelRenderer {
                 RenderSystem.resetTextureMatrix();
                 DeltaTracker deltaTracker = mc.getTimer();
                 mc.gameRenderer.postEffect.process(deltaTracker.getGameTimeDeltaTicks());
+
+                if (CompatHandler.IRIS && ClientConfigs.rendersDebug()) {
+                    VistaMod.LOGGER.info("[VistaFeed] post-chain pixels canvas=#{}/{}x{}: {}",
+                            System.identityHashCode(canvas), canvas.width, canvas.height,
+                            readSamplePixels(canvas));
+                }
             }
         } finally {
             if (isOutermost) {
@@ -328,6 +346,31 @@ public class VistaLevelRenderer {
     private static Integer calculateRenderDistance(float fov) {
         //TODO: improve
         return ClientConfigs.RENDER_DISTANCE.get();
+    }
+
+    // Temporary diagnostics: samples four spread pixels straight from the feed canvas so a bad
+    // frame can be located to the render pass that produced it (scene vs post chain vs blit).
+    public static String readSamplePixels(@Nullable RenderTarget canvas) {
+        if (canvas == null) return "null";
+        int previous = GL11.glGetInteger(GL30.GL_FRAMEBUFFER_BINDING);
+        try {
+            GlStateManager._glBindFramebuffer(GL30.GL_FRAMEBUFFER, canvas.frameBufferId);
+            java.nio.ByteBuffer buf = java.nio.ByteBuffer.allocateDirect(4 * 4)
+                    .order(java.nio.ByteOrder.nativeOrder());
+            StringBuilder sb = new StringBuilder();
+            int w = canvas.width;
+            int h = canvas.height;
+            int[][] points = {{w / 4, h / 4}, {(3 * w) / 4, h / 4}, {w / 4, (3 * h) / 4}, {(3 * w) / 4, (3 * h) / 4}};
+            for (int[] p : points) {
+                buf.clear();
+                GL11.glReadPixels(p[0], p[1], 1, 1, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, buf);
+                sb.append(buf.get(0) & 0xFF).append(',').append(buf.get(1) & 0xFF).append(',')
+                        .append(buf.get(2) & 0xFF).append(' ');
+            }
+            return sb.toString().trim();
+        } finally {
+            GlStateManager._glBindFramebuffer(GL30.GL_FRAMEBUFFER, previous);
+        }
     }
 
 
@@ -483,9 +526,12 @@ public class VistaLevelRenderer {
         if (!hasCapturedFrustum) {
             boolean smartCulling = minecraft.smartCull;
 
-            // vanilla disables smart culling for spectators inside solid blocks
-            if (isSpectator && clientLevel.getBlockState(cameraBlockPos).isSolidRender(clientLevel, cameraBlockPos)) {
-                //    smartCulling = false;
+            // A feed camera parked inside an opaque section (viewfinder embedded in a wall or
+            // hillside) can't seed the occlusion BFS: nothing propagates out and the feed renders
+            // sky and clouds only. Vanilla only applies this escape hatch to spectators; the dummy
+            // camera is a BlockDisplay, so mirror the rule for it regardless.
+            if (clientLevel.getBlockState(cameraBlockPos).isSolidRender(clientLevel, cameraBlockPos)) {
+                smartCulling = false;
             }
 
             double entityViewScale = Mth.clamp( //TODO: change these

@@ -11,6 +11,7 @@
     "CompatGeckoLibMixin",
     "CompatRefurbishedFurnitureSelfTvBlockEntityMixin",
     "CompatSableTrackingMixin",
+    "CompatSodiumMixin",
     "EndermanMixin",
     "EndermanSkullBlockTileMixin"
   ],
