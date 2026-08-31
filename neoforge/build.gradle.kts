@@ -67,7 +67,7 @@ dependencies {
     modCompileOnly("curse.maven:camera-mod-289310:6715623")
 
     modImplementation("foundry.veil:veil-neoforge-1.21.1:4.4.1")
-    modImplementation("curse.maven:fsable-1312371:8263584")
+    modImplementation("curse.maven:fsable-1312371:8673825")
 
     // Light-beam mods used only to stress-test sublevel view finder feeds; excluded from the dev runtime.
     //modImplementation("curse.maven:spotlights-or-something-1565038:8429512") // searchlights 1.3.1, Veil cone spotlights
