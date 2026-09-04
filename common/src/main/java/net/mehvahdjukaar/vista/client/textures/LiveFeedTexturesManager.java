@@ -30,7 +30,6 @@ public class LiveFeedTexturesManager {
                             .minFps(ClientConfigs.MIN_UPDATE_FPS.get())
                             .targetBudgetMs(ClientConfigs.THROTTLING_UPDATE_MS.get()) //10% of a frame which at 60fps = 16.6ms is ~1.66ms which should lower fps from 60 to 54. in other words at most a 6fps drop
                             .evictAfterTicks(20 * 5) //5 seconds
-
                             .guardTargetFps(60) //if we go under 60 fps, be more aggressive
                             .build()
             );
@@ -71,9 +70,6 @@ public class LiveFeedTexturesManager {
                 requiresUpdate = false; //suppress recursive updates
             }
             texture.setShowsTime(showsTime);
-            // OR-set: never clear a tick already scheduled by another render pass this frame.
-            // setUpdateNextTick(false) would clobber a prior true and starve TVs touched
-            // by both a main-view render and a recursive live-feed render in the same frame.
             if (requiresUpdate) {
                 texture.setUpdateNextTick(true);
             }

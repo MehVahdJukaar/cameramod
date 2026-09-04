@@ -95,9 +95,6 @@ public class LevelRendererMixin implements ILevelRendererExt {
         boolean hidden = (mirror && entity.getType().is(VistaMod.CANT_SEE_THROUGH_MIRROR))
                 || (tv && entity.getType().is(VistaMod.CANT_SEE_THROUGH_TV));
 
-        // Vampire players are still minecraft:player and some mods flag mobs through an API instead of
-        // a tag, so entity type tags catch neither. The mod-loaded flags keep the compat impls from
-        // being classloaded when the mod is absent.
         if (!hidden && entity instanceof LivingEntity living) {
             hidden = (CompatHandler.SUPERNATURAL && SupernaturalCompat.isVampire(living))
                     || (CompatHandler.VAMPIRISM && living instanceof Player player && VampirismCompat.isVampire(player));
@@ -148,8 +145,6 @@ public class LevelRendererMixin implements ILevelRendererExt {
         return original;
     }
 
-    // F3+A and friends release every section VertexBuffer, so cached feed states have to be reset or
-    // they draw closed buffers.
     @Inject(method = "allChanged", at = @At("TAIL"))
     public void vista$onAllChanged(CallbackInfo ci) {
         VistaLevelRenderer.onLevelRendererAllChanged();

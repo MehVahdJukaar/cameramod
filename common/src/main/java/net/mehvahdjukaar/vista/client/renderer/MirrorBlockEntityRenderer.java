@@ -34,8 +34,6 @@ import java.util.UUID;
 
 public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBlockEntity> {
 
-    // fallback nudge off the coplanar block face, only used where polygon offset doesn't hold.
-    // See VistaLevelRenderer#needsManualSurfaceOffset.
     private static final float SURFACE_OFFSET = 0.01f;
 
     public MirrorBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
@@ -71,14 +69,8 @@ public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBloc
         Direction dir = blockEntity.getBlockState().getValue(MirrorBlock.FACING);
         double recession = MirrorBlock.surfaceRecession(blockEntity.getBlockState());
 
-        // A mirror on a Sable sublevel has a plot-grid block position, and the nested render drives its
-        // camera in plot space, so every bit of reflection math below has to use the eye in that space.
-        // Mix the two and the eye reflects across a plane thousands of blocks off, leaving only sky.
         ClientSubLevelAccess subLevel = SableCompanion.INSTANCE.getContainingClient(blockEntity);
 
-        // Cull against the recessed surface, not the front face, or the FAR model's quad disappears
-        // once the viewer crosses the face but not the surface. Skipped on sublevels since LOD is
-        // world space, the viewerInFront() gate below handles back-side culling there.
         LOD lod = LOD.at(blockEntity);
         if (subLevel == null && lod.isPlaneCulled(dir, (float) (0.5 - recession), 1.5f, 0f)) return;
 
@@ -98,14 +90,8 @@ public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBloc
         MirrorReflectionTexture text;
         if (depth == 0) {
             Vec2i screenSize = blockEntity.getScreenPixelSize();
-            // Capture the eye now, while we still hold the camera the BE was rendered with. The
-            // reflection itself fires later in the frame and would resample a drifted camera. Bob
-            // offset makes the reflection track the bobbed POV the quad is drawn with, otherwise the
-            // far scene wobbles against the surface as you walk.
             Vec3 eye = mainCamera.getPosition().add(VistaLevelRenderer.getMainBobEyeOffset());
             if (subLevel != null) eye = subLevel.renderPose(partialTick).transformPositionInverse(eye);
-            // at depth 0 the LOD from the top of render() is the player's real distance, except on
-            // sublevels where it compares world space to plot space
             int texLod = subLevel == null
                     ? MirrorTextureManager.distanceLod(lod)
                     : MirrorTextureManager.distanceLod(eyeLocal, blockEntity.getBlockPos());
@@ -119,9 +105,6 @@ public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBloc
         drawMirrorFace(blockEntity, dir, poseStack, buffer, text, recession);
     }
 
-    // Texture lookup for a mirror drawn inside another mirror's reflection. SHARED keeps cost flat at
-    // one texture per mirror but has wrong parallax past depth 0; RECURSIVE pays for a texture per
-    // chain and draws nothing past the depth cap, since a wrong-parallax fallback gives the lie away.
     @Nullable
     private MirrorReflectionTexture resolveNestedTexture(MirrorBlockEntity blockEntity,
                                                           Vec3 eye, int depth) {
@@ -131,11 +114,6 @@ public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBloc
             case OFF:
                 return null;
             case SHARED: {
-                // Read-only reuse of the direct-view texture: re-queueing it with the reflected eye
-                // would clobber its depth-0 PENDING entry and flicker the real reflection. Only
-                // schedule when nothing has rendered yet, i.e. the mirror is visible solely through
-                // this one, where there's no direct-view entry to stomp. LOD comes from the main
-                // camera so we key to the same texture the depth-0 pass draws into.
                 int sharedLod = MirrorTextureManager.distanceLod(blockEntity);
                 MirrorReflectionTexture shared =
                         MirrorTextureManager.getMirrorTexture(blockEntity.getId(), screenSize, sharedLod);
@@ -174,11 +152,7 @@ public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBloc
 
         VertexConsumer vc = buffer.getBuffer(VistaRenderTypes.mirrorMaterial(
                 text.getTextureLocation(), (int) w, (int) h));
-        // Fixed 1px inset so frame_front shows around the quad. It doesn't scale with the grid, which
-        // leaves a (16w-2)x(16h-2) surface matching the framebuffer 1:1 at any size.
         float inset = 1f / 16f;
-        // Master sits at bottom-right in local-rotated space, so the quad runs from x=0.5-w to x=0.5.
-        // UVs are rotated 180 since the framebuffer comes out flipped and mirrored against it.
         VertexUtil.addQuad(vc, poseStack,
                 0.5f - w + inset, -0.5f + inset, 0.5f - inset, h - 0.5f - inset,
                 1f, 1f, 0f, 0f,
