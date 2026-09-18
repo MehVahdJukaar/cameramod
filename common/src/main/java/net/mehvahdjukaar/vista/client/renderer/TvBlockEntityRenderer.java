@@ -9,6 +9,7 @@ import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.client.textures.ScreenFit;
+import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
 import net.mehvahdjukaar.vista.client.textures.perspective.LiveFeedTexturesManager;
 import net.mehvahdjukaar.vista.client.video_source.BroadcastVideoSource;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
@@ -99,8 +100,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         poseStack.pushPose();
         poseStack.translate(0.5, 0.5, 0.5);
         poseStack.mulPose(Axis.YP.rotationDegrees(180 - yaw));
-        // see VistaLevelRenderer#needsManualSurfaceOffset
-        float screenZ = VistaLevelRenderer.needsManualSurfaceOffset() ? -0.505f : -0.5f;
+        float screenZ = TvScreenVertexConsumers.hasSfx() ? -0.5f : -0.505f;
         poseStack.translate(-screenCenter.x, screenCenter.y, screenZ);
 
         Vec2i pixelEffectRes = ClientConfigs.SCALE_PIXELS.get() ? screenSize : TVBlockEntity.MIN_SCREEN_PIXEL_SIZE_VEC;

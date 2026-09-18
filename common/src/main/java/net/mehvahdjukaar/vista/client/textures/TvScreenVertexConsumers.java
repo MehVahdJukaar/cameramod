@@ -170,7 +170,7 @@ public class TvScreenVertexConsumers {
     }
 
 
-    private static boolean hasSfx() {
+    public static boolean hasSfx() {
         return !VistaLevelRenderer.isRenderingLiveFeed() &&
                 Minecraft.getInstance().options.graphicsMode().get() != GraphicsStatus.FAST
                 && ClientConfigs.SCREEN_EFFECTS.get();
