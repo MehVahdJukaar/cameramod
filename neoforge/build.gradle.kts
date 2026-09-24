@@ -39,7 +39,7 @@ dependencies {
     modRuntimeOnly("net.mehvahdjukaar:courier_owls-neoforge:${courier_owls_version}")
     modImplementation("curse.maven:sodium-394468:8382328")
     modCompileOnly("curse.maven:irisshaders-455508:6213635")
-    modImplementation("curse.maven:distant-horizons-508933:8287411")
+    modCompileOnly("curse.maven:distant-horizons-508933:8908517")
     modCompileOnly("maven.modrinth:iris:1.8.8+1.21.1-neoforge")
 
     modImplementation("curse.maven:geckolib-388172:7707149")

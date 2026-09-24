@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.client.web;
+package net.mehvahdjukaar.vista.client.web.audio;
 
 import net.minecraft.Util;
 import net.minecraft.client.sounds.AudioStream;
@@ -17,25 +17,27 @@ public class PcmAudioStream implements AudioStream {
     //the engine reads roughly a second at a time so this has to outlast one read
     private static final long LOUD_HOLD_MILLIS = 3000;
 
-    private final PcmSource source;
+    private final PcmAudioSource source;
     private long cursor;
     private volatile long lastLoudMillis = -LOUD_HOLD_MILLIS;
 
-    public PcmAudioStream(PcmSource source, double startSeconds) {
+    public PcmAudioStream(PcmAudioSource source, double startSeconds) {
         this.source = source;
-        this.cursor = Math.max(0, (long) (startSeconds * PcmSource.SAMPLE_RATE)) * PcmSource.FORMAT.getFrameSize();
+        this.cursor = Math.max(0, (long) (startSeconds * PcmAudioSource.SAMPLE_RATE)) * PcmAudioSource.FORMAT.getFrameSize();
     }
 
     @Override
     public AudioFormat getFormat() {
-        return PcmSource.FORMAT;
+        return PcmAudioSource.FORMAT;
     }
 
     @Override
     public ByteBuffer read(int size) {
         ByteBuffer buffer = BufferUtils.createByteBuffer(size);
         cursor = source.readInto(cursor, buffer);
-        if (rms(buffer) > LOUD_RMS) lastLoudMillis = Util.getMillis();
+        if (rms(buffer) > LOUD_RMS) {
+            lastLoudMillis = Util.getMillis();
+        }
         return buffer;
     }
 

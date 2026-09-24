@@ -136,7 +136,8 @@ public final class FFmpegManager {
     }
 
     private static class BrokenBinaryException extends UnusableFFmpegException {
-        BrokenBinaryException(String message, @Nullable Throwable cause) {
+
+        private BrokenBinaryException(String message, @Nullable Throwable cause) {
             super(message, cause);
         }
     }

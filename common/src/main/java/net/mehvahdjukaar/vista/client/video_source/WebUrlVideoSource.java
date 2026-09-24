@@ -140,7 +140,7 @@ public class WebUrlVideoSource implements IVideoSource {
     public boolean isPlayingMusic(TVBlockEntity tv) {
         if (uri == null) return false;
         IWebTexture texture = WebTexturesManager.getTextureIfPresent(uri, tv.getBlockPos(), tv.getScreenPixelSize());
-        return texture != null && texture.isSpeakerLoud();
+        return texture != null && texture.isPlayingLoudAudio();
     }
 
     @Nullable

@@ -30,7 +30,7 @@ public class WatermediaSession implements IMediaSession {
     //one vlc player for every screen showing this url
     @Nullable
     private VideoPlayer videoPlayer;
-    private final VlcAudioSink audio = new VlcAudioSink();
+    private final VlcAudioRingBuffer audio = new VlcAudioRingBuffer();
     private int framesDrawn;
     private int framesPaused;
 
@@ -84,7 +84,7 @@ public class WatermediaSession implements IMediaSession {
         if (paused) framesPaused++;
     }
 
-    public VlcAudioSink getAudio() {
+    public VlcAudioRingBuffer getAudio() {
         return audio;
     }
 

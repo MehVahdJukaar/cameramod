@@ -109,14 +109,14 @@ public class LiveFeedTexture extends PerspectiveTexture {
         LiveFeedTexturesManager.SCHEDULER.get().runIfShouldUpdate(getTextureLocation(), runTask);
     }
 
-    public void markReferenced(boolean paused) {
-        references.record(paused ? RefType.PAUSED : RefType.LIVE);
+    public void markReferenced(boolean requiresUpdate) {
+        references.record(requiresUpdate ? RefType.LIVE : RefType.PAUSED);
     }
 
     public CrtOverlay getOverlay(boolean wantPaused) {
         if (isDisconnected()) return CrtOverlay.DISCONNECT;
-        int paused = references.getCount(RefType.LIVE);
-        int live = references.getCount(RefType.PAUSED);
+        int paused = references.getCount(RefType.PAUSED);
+        int live = references.getCount(RefType.LIVE);
         if (live == 0 && paused != 0) {
             return CrtOverlay.PAUSE;
         }

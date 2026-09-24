@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.client.web;
+package net.mehvahdjukaar.vista.client.web.audio;
 
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
@@ -9,14 +9,15 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
-public class TvSpeakerSound extends AbstractTickableSoundInstance {
+public class TvSpeakerSoundInstance extends AbstractTickableSoundInstance {
 
-    private final PcmSource source;
+    private final PcmAudioSource source;
     private final double startSeconds;
+    //lazy
     @Nullable
     private volatile PcmAudioStream stream;
 
-    protected TvSpeakerSound(PcmSource source, Vec3 pos, double startSeconds) {
+    protected TvSpeakerSoundInstance(PcmAudioSource source, Vec3 pos, double startSeconds) {
         super(VistaMod.TV_SPEAKER_SOUND.get(), SoundSource.BLOCKS, SoundInstance.createUnseededRandom());
         this.source = source;
         this.startSeconds = startSeconds;

@@ -7,7 +7,7 @@ import net.mehvahdjukaar.vista.client.VistaClientPlatStuff;
 import net.mehvahdjukaar.vista.client.web.FFmpegMediaSession;
 import net.mehvahdjukaar.vista.client.web.MediaFrame;
 import net.mehvahdjukaar.vista.client.web.MediaStatus;
-import net.mehvahdjukaar.vista.client.web.TvSpeakerSound;
+import net.mehvahdjukaar.vista.client.web.audio.TvSpeakerSoundInstance;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.integration.sable.SableCompatClient;
 import net.minecraft.client.Minecraft;
@@ -28,7 +28,7 @@ public class FFmpegWebTexture extends DynamicTexture implements IWebTexture {
     private boolean wasFirstUploaded = false;
     private MediaStatus lastLookupState = MediaStatus.LOADING;
     @Nullable
-    private TvSpeakerSound speakerSound;
+    private TvSpeakerSoundInstance speakerSound;
     private double videoClockOffset = NOT_STARTED;
     private double audioClockOffset;
 
@@ -71,9 +71,9 @@ public class FFmpegWebTexture extends DynamicTexture implements IWebTexture {
             if (Math.abs(videoClockOffset - audioClockOffset) < AUDIO_RESYNC_THRESHOLD) return;
             stopSpeaker();
         }
-        if (!session.getAudio().hasSamples()) return;
-        speakerSound = VistaClientPlatStuff.createTvSpeakerSound(session.getAudio(), center,
-                playbackSeconds(tvClock));
+        var audioSource = session.getAudioSource();
+        if (audioSource.isEmpty()) return;
+        speakerSound = VistaClientPlatStuff.createTvSpeakerSound(audioSource, center, getPlaybackSeconds(tvClock));
         audioClockOffset = videoClockOffset;
         soundManager.play(speakerSound);
     }
@@ -85,7 +85,7 @@ public class FFmpegWebTexture extends DynamicTexture implements IWebTexture {
     }
 
     @Override
-    public boolean isSpeakerLoud() {
+    public boolean isPlayingLoudAudio() {
         return speakerSound != null && speakerSound.isLoud();
     }
 
@@ -93,7 +93,7 @@ public class FFmpegWebTexture extends DynamicTexture implements IWebTexture {
     public MediaStatus uploadFrameAtTime(int ticks, float deltaTime, boolean paused) {
         double tvClock = (ticks + deltaTime) / 20.0;
         syncVideoClock(tvClock);
-        double seconds = playbackSeconds(tvClock);
+        double seconds = getPlaybackSeconds(tvClock);
 
         var lookup = session.lookupFrame(seconds);
         this.lastLookupState = lookup.state();
@@ -119,7 +119,7 @@ public class FFmpegWebTexture extends DynamicTexture implements IWebTexture {
         }
     }
 
-    private double playbackSeconds(double tvClock) {
+    private double getPlaybackSeconds(double tvClock) {
         if (videoClockOffset == NOT_STARTED) return 0;
         return tvClock - videoClockOffset;
     }

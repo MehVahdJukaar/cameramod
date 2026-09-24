@@ -47,9 +47,6 @@ public class FFmpegMediaDecoder {
         VistaMod.LOGGER.info("Seek requested to {}s", seconds);
     }
 
-    /**
-     * Stop the decoder completely.
-     */
     public void stopDecoder() {
         running = false;
         resumePlay(); // wake up if paused
@@ -108,7 +105,6 @@ public class FFmpegMediaDecoder {
                             break; // break out of inner loop, outer loop will restart with new seek
                         }
 
-                        // Read one frame's raw RGB24 data
                         byte[] data = in.readNBytes(frameSize);
                         if (data.length < frameSize) {
                             //end of data

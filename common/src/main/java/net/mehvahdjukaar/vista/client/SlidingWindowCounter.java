@@ -9,30 +9,23 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public final class SlidingWindowCounter<K> {
 
-    private static final class Bucket<K> {
-        final Map<K, Integer> counts = new HashMap<>();
-    }
-
-    private final Bucket<K>[] ring;
     private final int bucketCount;
     private final long bucketDurationNanos;
+    private final Map<K, Integer>[] buckets;
 
     private final ConcurrentHashMap<K, AtomicInteger> totals = new ConcurrentHashMap<>();
 
     private volatile long lastTick;
 
     public SlidingWindowCounter(Duration expireWindow, Duration resolution) {
-        this(expireWindow.toNanos(),
-                TimeUnit.NANOSECONDS,
+        this(expireWindow.toNanos(), TimeUnit.NANOSECONDS,
                 (int) resolution.toMillis());
     }
 
     @SuppressWarnings("unchecked")
-    public SlidingWindowCounter(long window,
-                                TimeUnit unit,
-                                int resolutionMillis) {
+    public SlidingWindowCounter(long expireWindow, TimeUnit unit, int resolutionMillis) {
 
-        long windowNanos = unit.toNanos(window);
+        long windowNanos = unit.toNanos(expireWindow);
         this.bucketDurationNanos =
                 TimeUnit.MILLISECONDS.toNanos(resolutionMillis);
 
@@ -40,12 +33,12 @@ public final class SlidingWindowCounter<K> {
             throw new IllegalArgumentException();
 
         this.bucketCount = (int) (windowNanos / bucketDurationNanos);
-        if (bucketCount <= 0)
+        if (bucketCount <= 0) {
             throw new IllegalArgumentException("Resolution too large for window");
-
-        this.ring = (Bucket<K>[]) new Bucket[bucketCount];
+        }
+        this.buckets = new Map[bucketCount];
         for (int i = 0; i < bucketCount; i++) {
-            ring[i] = new Bucket<>();
+            buckets[i] = new HashMap<>();
         }
 
         this.lastTick = currentTick();
@@ -55,9 +48,7 @@ public final class SlidingWindowCounter<K> {
         advance();
 
         int index = (int) (currentTick() % bucketCount);
-        Bucket<K> bucket = ring[index];
-
-        bucket.counts.merge(key, 1, Integer::sum);
+        buckets[index].merge(key, 1, Integer::sum);
         totals.computeIfAbsent(key, k -> new AtomicInteger())
                 .incrementAndGet();
     }
@@ -66,16 +57,6 @@ public final class SlidingWindowCounter<K> {
         advance();
         AtomicInteger v = totals.get(key);
         return v == null ? 0 : v.get();
-    }
-
-    public Map<K, Integer> snapshot() {
-        advance();
-        Map<K, Integer> result = new HashMap<>();
-        totals.forEach((k, v) -> {
-            int count = v.get();
-            if (count > 0) result.put(k, count);
-        });
-        return result;
     }
 
     private long currentTick() {
@@ -91,16 +72,16 @@ public final class SlidingWindowCounter<K> {
 
         for (long i = 1; i <= steps; i++) {
             int index = (int) ((lastTick + i) % bucketCount);
-            Bucket<K> bucket = ring[index];
+            Map<K, Integer> bucket = buckets[index];
 
-            for (Map.Entry<K, Integer> e : bucket.counts.entrySet()) {
+            for (Map.Entry<K, Integer> e : bucket.entrySet()) {
                 AtomicInteger total = totals.get(e.getKey());
                 if (total != null) {
                     total.addAndGet(-e.getValue());
                 }
             }
 
-            bucket.counts.clear();
+            bucket.clear();
         }
 
         lastTick = now;

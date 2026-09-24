@@ -3,7 +3,7 @@ package net.mehvahdjukaar.vista.integration.watermedia;
 import net.mehvahdjukaar.vista.client.VistaClientPlatStuff;
 import net.mehvahdjukaar.vista.client.textures.web.IWebTexture;
 import net.mehvahdjukaar.vista.client.web.MediaStatus;
-import net.mehvahdjukaar.vista.client.web.TvSpeakerSound;
+import net.mehvahdjukaar.vista.client.web.audio.TvSpeakerSoundInstance;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
@@ -27,7 +27,7 @@ public class WatermediaVideoTexture extends AbstractTexture implements IWebTextu
     private final VideoPlayer videoPlayer;
     private int readyFrames;
     @Nullable
-    private TvSpeakerSound speakerSound;
+    private TvSpeakerSoundInstance speakerSound;
 
     public WatermediaVideoTexture(ResourceLocation textureLocation, WatermediaSession session, VideoPlayer videoPlayer) {
         this.session = session;
@@ -74,7 +74,7 @@ public class WatermediaVideoTexture extends AbstractTexture implements IWebTextu
         }
         SoundManager soundManager = Minecraft.getInstance().getSoundManager();
         if (speakerSound != null && soundManager.isActive(speakerSound)) return;
-        if (!session.getAudio().hasSamples()) return;
+        if (session.getAudio().isEmpty()) return;
         speakerSound = VistaClientPlatStuff.createTvSpeakerSound(session.getAudio(), center, 0);
         soundManager.play(speakerSound);
     }
@@ -86,7 +86,7 @@ public class WatermediaVideoTexture extends AbstractTexture implements IWebTextu
     }
 
     @Override
-    public boolean isSpeakerLoud() {
+    public boolean isPlayingLoudAudio() {
         return speakerSound != null && speakerSound.isLoud();
     }
 

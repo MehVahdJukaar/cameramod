@@ -144,5 +144,6 @@
   "vista.configuration.wave_gate.audio_volume": "Audio Volume",
   "vista.configuration.wave_gate.audio_volume.description": "Volume scale for videos audio. Applied on top of the Blocks sound slider",
   "vista.configuration.wave_gate.safe_urls": "Safe Urls",
-  "vista.configuration.wave_gate.safe_urls.description": "A list of regex which will filter out valid URLs. At least one of these must match for a URL video to work"
+  "vista.configuration.wave_gate.safe_urls.description": "A list of regex which will filter out valid URLs. At least one of these must match for a URL video to work",
+  "vista.configuration.television.use_furniture_electricity.description": "Makes TVs consume energy from the Refurbished Furnitures mod"
 }

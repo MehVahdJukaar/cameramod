@@ -4,6 +4,9 @@ import net.mehvahdjukaar.moonlight.api.util.FileDownloadUtils;
 import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpegManager;
 import org.jetbrains.annotations.Nullable;
 
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+
 
 public enum MediaError {
     NONE,
@@ -32,7 +35,7 @@ public enum MediaError {
                     || msg.contains("does not exist"))) {
                 return BAD_LINK;
             }
-            if (e instanceof java.net.MalformedURLException || e instanceof java.net.URISyntaxException) {
+            if (e instanceof MalformedURLException || e instanceof URISyntaxException) {
                 return BAD_LINK;
             }
         }

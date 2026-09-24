@@ -6,6 +6,7 @@ import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.textures.ImageRescaler;
 import net.mehvahdjukaar.vista.client.textures.web.FFmpegWebTexture;
 import net.mehvahdjukaar.vista.client.textures.web.IWebTexture;
+import net.mehvahdjukaar.vista.client.web.audio.FFmpegAudioTrack;
 import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpeg;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.resources.ResourceLocation;
@@ -23,7 +24,7 @@ import java.util.concurrent.Executor;
 
 public class FFmpegMediaSession implements IMediaSession {
     private final List<MediaFrame> frames = new ArrayList<>();
-    private final PcmAudioTrack audio = new PcmAudioTrack();
+    private final FFmpegAudioTrack audio = new FFmpegAudioTrack();
     private final CompletableFuture<Void> loadFuture;
 
     @Nullable
@@ -129,7 +130,7 @@ public class FFmpegMediaSession implements IMediaSession {
         return audioOnly || size() > 0;
     }
 
-    public PcmAudioTrack getAudio() {
+    public FFmpegAudioTrack getAudioSource() {
         return audio;
     }
 
@@ -223,7 +224,7 @@ public class FFmpegMediaSession implements IMediaSession {
         if (currentDecoder != null) {
             currentDecoder.stopDecoder();
         }
-        audio.stop();
+        audio.stopDecoding();
         for (MediaFrame frame : frames) {
             try {
                 frame.close();
