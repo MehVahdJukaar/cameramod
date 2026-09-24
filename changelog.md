@@ -1,2 +1,1 @@
-- improved tv recursion in mirrors
-- tv renders will also set back the gl clear color how it was.
+- fixed a bug with spectral arrows

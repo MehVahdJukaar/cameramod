@@ -35,7 +35,7 @@ import java.util.List;
 
 public class TvShowcaseWidget extends AbstractWidget {
 
-    public static final ConfigScreenExtensions.Showcase SHOWCASE = new ConfigScreenExtensions.Showcase() {
+    public static final ConfigScreenExtensions.Showcase INSTANCE = new ConfigScreenExtensions.Showcase() {
         @Override
         public AbstractWidget create(String modId, int x, int y, int width, int maxHeight) {
             return new TvShowcaseWidget(x, y, width, maxHeight);
@@ -59,9 +59,9 @@ public class TvShowcaseWidget extends AbstractWidget {
     private static final int MAX_STATIC_TICKS = 22;
 
     private static final float TILT = 15f;
-    private static final float YAW = 198f;            // the screen is on the block's north face, so 180 turns it to us
+    private static final float YAW = 198f;
     private static final float BLOCK_FILL = 0.72f;
-    private static final float SCREEN_NUDGE = 0.005f; // the gui has no polygon offset to lean on, so lift it manually
+    private static final float SCREEN_NUDGE = 0.005f;
     private static final float SCREEN_HALF_SIZE = TVBlockEntity.MIN_SCREEN_PIXEL_SIZE / 32f;
     private static final float SECONDS_PER_TICK = 0.05f;
     private static final float STATIC_VOLUME = 50f;
@@ -98,7 +98,7 @@ public class TvShowcaseWidget extends AbstractWidget {
         pose.scale(size, -size, size);
         pose.mulPose(Axis.XP.rotationDegrees(TILT));
         pose.mulPose(Axis.YP.rotationDegrees(YAW));
-        pose.translate(-0.5f, -0.5f, -0.5f);  // the block renderer starts from the block corner
+        pose.translate(-0.5f, -0.5f, -0.5f);
 
         Lighting.setupFor3DItems();
         MultiBufferSource.BufferSource buffer = graphics.bufferSource();

@@ -203,7 +203,7 @@ public class VistaModClient {
                 VistaMod.res("creative"),
                 (stack, world, entity, s) -> CommonConfigs.isWaveGateCraftable() ? 0 : 1
         );
-        ConfigScreenExtensions.registerShowcase(VistaMod.MOD_ID, TvShowcaseWidget.SHOWCASE);
+        ConfigScreenExtensions.registerShowcase(VistaMod.MOD_ID, TvShowcaseWidget.INSTANCE);
     }
 
     @EventCalled
