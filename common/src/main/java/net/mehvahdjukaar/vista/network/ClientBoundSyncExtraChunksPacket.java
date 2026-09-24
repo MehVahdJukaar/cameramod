@@ -13,7 +13,7 @@ import net.minecraft.world.level.ChunkPos;
 
 import java.util.Set;
 
-/** Replaces the client's zone set with the server's and rebuilds the ViewArea. */
+//Replaces the client's zone set with the server's and rebuilds the ViewArea
 public record ClientBoundSyncExtraChunksPacket(ExtraChunkViewData data) implements Message {
 
     public static final TypeAndCodec<RegistryFriendlyByteBuf, ClientBoundSyncExtraChunksPacket> CODEC =

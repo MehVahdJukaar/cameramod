@@ -14,14 +14,14 @@ import java.util.Set;
 
 public class PinnedSections {
 
-    private final SectionRenderDispatcher dispatcher;
+    private final SectionRenderDispatcher renderDispatcher;
     private final Level level;
     private final int sectionGridSizeY;
     private final int normalSectionCount;
     private final Map<Long, SectionRenderDispatcher.RenderSection> sectionsByPos = new HashMap<>();
 
     public PinnedSections(SectionRenderDispatcher dispatcher, Level level, int sectionGridSizeY, int normalSectionCount) {
-        this.dispatcher = dispatcher;
+        this.renderDispatcher = dispatcher;
         this.level = level;
         this.sectionGridSizeY = sectionGridSizeY;
         this.normalSectionCount = normalSectionCount;
@@ -37,7 +37,7 @@ public class PinnedSections {
         for (ChunkPos chunkPos : zoneChunks) {
             for (int yIndex = 0; yIndex < sectionGridSizeY; yIndex++) {
                 int blockY = level.getMinBuildHeight() + (yIndex * 16);
-                var section = dispatcher.new RenderSection(index, chunkPos.getMinBlockX(), blockY, chunkPos.getMinBlockZ());
+                var section = renderDispatcher.new RenderSection(index, chunkPos.getMinBlockX(), blockY, chunkPos.getMinBlockZ());
                 ((IPinnableRenderSection) section).vista$setPinned(true);
                 sectionsWithPinned[index] = section;
                 sectionsByPos.put(SectionPos.asLong(chunkPos.x, SectionPos.blockToSectionCoord(blockY), chunkPos.z), section);

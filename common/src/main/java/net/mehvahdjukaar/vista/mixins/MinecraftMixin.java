@@ -13,4 +13,10 @@ public class MinecraftMixin {
     private static boolean vista$noFabulousInFeeds(boolean original) {
         return original && !VistaLevelRenderer.isRenderingLiveFeed();
     }
+
+    //we dont support this. npe occurs if this is on
+    @ModifyReturnValue(method = "shouldEntityAppearGlowing", at = @At("RETURN"))
+    private boolean vista$noGlowingInFeeds(boolean original) {
+        return original && !VistaLevelRenderer.isRenderingLiveFeed();
+    }
 }
