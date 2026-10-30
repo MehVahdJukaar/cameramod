@@ -17,8 +17,6 @@ import org.lwjgl.openal.SOFTSourceSpatialize;
 import org.watermedia.api.media.players.MediaPlayer;
 import org.watermedia.api.util.MediaType;
 
-import java.io.IOException;
-
 public class WatermediaTexture extends AbstractTexture implements IWebTexture {
 
     private static final int UNSEEN_PAUSE_TICKS = 20;
@@ -58,7 +56,7 @@ public class WatermediaTexture extends AbstractTexture implements IWebTexture {
     }
 
     @Override
-    public void load(ResourceManager resourceManager) throws IOException {
+    public void load(ResourceManager resourceManager) {
     }
 
     @Override
@@ -117,8 +115,12 @@ public class WatermediaTexture extends AbstractTexture implements IWebTexture {
         if (paused) framesPaused++;
 
         MediaPlayer player = getOrCreatePlayer();
-        if (player == null) return playerFailed || session.isFailed() ? MediaStatus.FAILED : MediaStatus.LOADING;
-        if (player.texture() == MediaPlayer.NO_TEXTURE && !isAudioOnly()) return MediaStatus.LOADING;
+        if (player == null) {
+            return (playerFailed || session.isFailed()) ? MediaStatus.FAILED : MediaStatus.LOADING;
+        }
+        if (player.texture() == MediaPlayer.NO_TEXTURE && !isAudioOnly()) {
+            return MediaStatus.LOADING;
+        }
 
         return switch (player.status()) {
             case WAITING, LOADING -> MediaStatus.LOADING;

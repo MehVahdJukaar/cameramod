@@ -10,6 +10,7 @@ import net.mehvahdjukaar.vista.integration.entity_culling.EntityCullingCompat;
 import net.mehvahdjukaar.vista.integration.exposure.ExposureCompat;
 import net.mehvahdjukaar.vista.integration.flashback.FlashbackCompat;
 import net.mehvahdjukaar.vista.integration.iris.IrisCompat;
+import net.mehvahdjukaar.vista.integration.joy_of_painting.JoyOfPaintingCompat;
 import net.mehvahdjukaar.vista.integration.supplementaries.SuppCompat;
 import net.mehvahdjukaar.vista.integration.veil.VeilCompat;
 
@@ -57,6 +58,7 @@ public class CompatHandler {
         if (EXPOSURE) ExposureCompat.init();
         if (SUPPLEMENTARIES) SuppCompat.init();
         if (COMPUTER_CRAFT) CCCompat.init();
+        if (JOY_OF_PAINTING) JoyOfPaintingCompat.init();
         PlatHelper.addCommonSetup(() -> {
             if (COMPUTER_CRAFT) CCCompat.setup();
             setupPlat();
