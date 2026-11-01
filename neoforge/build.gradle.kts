@@ -27,7 +27,7 @@ dependencies {
     implementation("com.github.bawnorton.mixinsquared:mixinsquared-forge:${mixin_squared_version}")
 
 
-    modImplementation("curse.maven:supplementaries-412082:8051628")
+    modImplementation("net.mehvahdjukaar:supplementaries-neoforge:1.21.1-4.1.0")
     modImplementation("curse.maven:quark-243121:7640331")
     modImplementation("curse.maven:zeta-968868:7640154")
 
@@ -41,6 +41,7 @@ dependencies {
     modCompileOnly("curse.maven:irisshaders-455508:6213635")
     modCompileOnly("curse.maven:distant-horizons-508933:8908517")
     modCompileOnly("maven.modrinth:iris:1.8.8+1.21.1-neoforge")
+    modCompileOnly("maven.modrinth:joy-of-painting:73U02HbA")
 
     modImplementation("curse.maven:geckolib-388172:7707149")
     modImplementation("maven.modrinth:watermedia:3.0.0.23")
@@ -65,14 +66,17 @@ dependencies {
     modImplementation("curse.maven:camera-mod-289310:6715623")
 
     modImplementation("foundry.veil:veil-neoforge-1.21.1:4.4.1")
-    modImplementation("curse.maven:fsable-1312371:8673825")
+    modImplementation("maven.modrinth:sable:fg9dTRz9") // 2.0.6
 
     modImplementation("curse.maven:spotlights-or-something-1565038:8429512")
     modImplementation("curse.maven:headlight-1190219:6282140") // 2.0.1
     modCompileOnly("curse.maven:create-train-lights-1318080:7761822") // v1.1.1
     modImplementation("maven.modrinth:flare-guns:1.0.0")
+    modImplementation("maven.modrinth:balm:21.0.66+neoforge-1.21.1")
     modCompileOnly("curse.maven:create-328085:7963363")
     modCompileOnly("curse.maven:create-aeronautics-676721:8240058")
+    modRuntimeOnly("curse.maven:create-328085:7963363")
+    modRuntimeOnly("maven.modrinth:create-aeronautics:44pLdPGg") // 1.3.2
 
     api("dev.ryanhcode.sable-companion:sable-companion-common-1.21.1:[${sable_companion_version},)")
     jarJar("dev.ryanhcode.sable-companion:sable-companion-common-1.21.1:[${sable_companion_version},)")

@@ -115,15 +115,15 @@ public class ViewFinderController {
             targetXRot = angles.pitch();
             justStarted = false;
         } else {
-            targetYRot = camera.getYRot() + yawIncrease;
-            targetXRot = Mth.clamp(camera.getXRot() + pitchIncrease, -90, 90);
+            targetYRot = lastCameraYaw + yawIncrease;
+            targetXRot = Mth.clamp(lastCameraPitch + pitchIncrease, -90, 90);
         }
 
         camera.setPosition(targetCameraPos);
         camera.setRotation(targetYRot, targetXRot);
 
-        lastCameraYaw = camera.getYRot();
-        lastCameraPitch = camera.getXRot();
+        lastCameraYaw = targetYRot;
+        lastCameraPitch = targetXRot;
 
         yawIncrease = 0;
         pitchIncrease = 0;

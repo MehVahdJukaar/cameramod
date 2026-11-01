@@ -19,7 +19,7 @@ public class DebugRendererMixin {
 
     @Inject(method ="render", at = @At("HEAD"))
     public void vista$renderDebug(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, double camX, double camY, double camZ, CallbackInfo ci){
-        vista$debugRenderer.render(poseStack,bufferSource, camX, camY, camZ);
+        if (false) vista$debugRenderer.render(poseStack, bufferSource, camX, camY, camZ);
     }
 
 

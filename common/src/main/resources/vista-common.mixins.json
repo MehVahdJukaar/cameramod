@@ -43,7 +43,6 @@
     "compat.CompatIrisTimerMixin",
     "compat.CompatSimpleCloudsMixin",
     "compat.CompatVeilMixin",
-    "compat.HackFixSable1563CameraAnglesMixin",
     "compat.HackFixVeil188FramebufferStackMixin",
     "compat.HackShushDistantHorizonsFogMixin",
     "compat.HackShushDistantHorizonsMixin"
