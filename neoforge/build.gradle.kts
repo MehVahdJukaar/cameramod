@@ -44,8 +44,8 @@ dependencies {
     modCompileOnly("maven.modrinth:joy-of-painting:73U02HbA")
 
     modImplementation("curse.maven:geckolib-388172:7707149")
-    modImplementation("maven.modrinth:watermedia:3.0.0.23")
-    modRuntimeOnly("maven.modrinth:watermedia-binaries:3.0.0.6")
+    modImplementation("maven.modrinth:watermedia:3.0.0")
+    modRuntimeOnly("maven.modrinth:watermedia-binaries:3.0.0")
 
     modImplementation("curse.maven:vampirism-become-a-vampire-233029:8105838")
     modImplementation("curse.maven:supernatural-610880:8275088")

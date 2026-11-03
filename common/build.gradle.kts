@@ -47,7 +47,7 @@ dependencies {
     modCompileOnly("curse.maven:framework-549225:7462477")
 
     modCompileOnly("curse.maven:alexs-caves-924854:4806837")
-    modImplementation("maven.modrinth:watermedia:3.0.0.23")
+    modImplementation("maven.modrinth:watermedia:3.0.0")
 
     modCompileOnly("foundry.veil:veil-neoforge-1.21.1:4.4.1")
 

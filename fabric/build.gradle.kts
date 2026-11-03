@@ -32,7 +32,7 @@ dependencies {
 
     modCompileOnly("curse.maven:supplementaries-412082:8044264")
             //modImplementation("net.mehvahdjukaar:supplementaries-fabric:${supplementaries_version}")
-    modCompileOnly("maven.modrinth:watermedia:3.0.0.23")
+    modCompileOnly("maven.modrinth:watermedia:3.0.0")
 
     modCompileOnly("curse.maven:irisshaders-455508:6213635")
     modCompileOnly("curse.maven:exposure-871755:8223556")

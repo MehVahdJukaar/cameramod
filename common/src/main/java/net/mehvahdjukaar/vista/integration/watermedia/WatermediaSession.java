@@ -5,9 +5,9 @@ import net.mehvahdjukaar.vista.client.web.IMediaSession;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
-import org.watermedia.api.media.MRL;
-import org.watermedia.api.media.MediaAPI;
-import org.watermedia.api.media.players.MediaPlayer;
+import org.watermedia.api.player.MRL;
+import org.watermedia.api.player.MediaPlayer;
+import org.watermedia.api.player.PlayerAPI;
 
 import java.net.URI;
 
@@ -19,7 +19,7 @@ public class WatermediaSession implements IMediaSession {
     private volatile boolean closed;
 
     public WatermediaSession(URI uri, int targetWidth, int targetHeight) {
-        this.mrl = MediaAPI.mrl(uri);
+        this.mrl = PlayerAPI.mrl(uri);
         this.targetWidth = targetWidth;
         this.targetHeight = targetHeight;
     }
@@ -36,9 +36,9 @@ public class WatermediaSession implements IMediaSession {
     //render thread only
     @Nullable
     public MediaPlayer createPlayer() {
-        MediaPlayer player = MediaAPI.createPlayer(mrl, () -> MediaAPI.glEngine(Thread.currentThread(), Minecraft.getInstance()), MediaAPI::alEngine);
+        MediaPlayer player = PlayerAPI.player(mrl, () -> PlayerAPI.glEngine(Thread.currentThread(), Minecraft.getInstance()), PlayerAPI::alEngine);
         if (player == null) return null;
-        player.maxSize(targetWidth, targetHeight);
+        player.scale(targetWidth, targetHeight);
         player.repeat(true);
         player.start();
         return player;

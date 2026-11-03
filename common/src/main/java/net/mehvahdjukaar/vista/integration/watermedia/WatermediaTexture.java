@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
 import org.lwjgl.openal.AL10;
 import org.lwjgl.openal.AL11;
 import org.lwjgl.openal.SOFTSourceSpatialize;
-import org.watermedia.api.media.players.MediaPlayer;
+import org.watermedia.api.player.MediaPlayer;
 import org.watermedia.api.util.MediaType;
 
 public class WatermediaTexture extends AbstractTexture implements IWebTexture {
