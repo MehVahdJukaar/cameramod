@@ -21,13 +21,13 @@ public class ModWarningScreen extends Screen {
     private static final Component IRIS_TEXT = Component.translatable("gui.vista.iris_warning.message");
     private static final Component IRIS_URL = Component.translatable("gui.vista.iris_warning.suggestions")
             .withStyle(Style.EMPTY.withColor(ChatFormatting.GOLD).applyFormat(ChatFormatting.UNDERLINE)
-                    .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://modrinth.com/mod/irisbonk")));
+                    .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://www.curseforge.com/projects/1635431")));
     private static final Component IRIS_TITLE = Component.translatable("gui.vista.iris_warning.title")
             .withStyle(ChatFormatting.RED).withStyle(ChatFormatting.BOLD);
     private static final Component VEIL_TEXT = Component.translatable("gui.vista.veil_warning.message");
     private static final Component VEIL_URL = Component.translatable("gui.vista.veil_warning.suggestions")
             .withStyle(Style.EMPTY.withColor(ChatFormatting.GOLD).applyFormat(ChatFormatting.UNDERLINE)
-                    .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://modrinth.com/mod/veil-bonk")));
+                    .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://www.curseforge.com/projects/1781467")));
     private static final Component VEIL_TITLE = Component.translatable("gui.vista.veil_warning.title")
             .withStyle(ChatFormatting.RED).withStyle(ChatFormatting.BOLD);
 
