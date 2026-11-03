@@ -42,8 +42,6 @@
     "compat.CompatIrisRenderingMixin",
     "compat.CompatIrisTimerMixin",
     "compat.CompatSimpleCloudsMixin",
-    "compat.CompatVeilMixin",
-    "compat.HackFixVeil188FramebufferStackMixin",
     "compat.HackShushDistantHorizonsFogMixin",
     "compat.HackShushDistantHorizonsMixin"
   ],

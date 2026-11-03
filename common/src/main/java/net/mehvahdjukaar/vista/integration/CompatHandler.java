@@ -12,7 +12,6 @@ import net.mehvahdjukaar.vista.integration.flashback.FlashbackCompat;
 import net.mehvahdjukaar.vista.integration.iris.IrisCompat;
 import net.mehvahdjukaar.vista.integration.joy_of_painting.JoyOfPaintingCompat;
 import net.mehvahdjukaar.vista.integration.supplementaries.SuppCompat;
-import net.mehvahdjukaar.vista.integration.veil.VeilCompat;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -93,9 +92,6 @@ public class CompatHandler {
         }
         if (FLASHBACK) {
             runTask = FlashbackCompat.decorateRenderRestoringMatrices(runTask);
-        }
-        if (VEIL) {
-            runTask = VeilCompat.decorateWithSameDarnHacksVeilUses(runTask);
         }
         return runTask;
     }
