@@ -29,6 +29,8 @@ public class CompatHandler {
     public static final boolean ALEX_CAVES = PlatHelper.isModLoaded("alexs-caves");
     public static final boolean FLASHBACK = PlatHelper.isModLoaded("flashback");
     public static final boolean VEIL = PlatHelper.isModLoaded("veil");
+    public static final boolean VEIL_BONK = PlatHelper.isModLoaded("veil_bonk");
+    public static final boolean IRIS_BONK = PlatHelper.isModLoaded("iris_bonk");
     public static final boolean VAMPIRISM = PlatHelper.isModLoaded("vampirism");
     public static final boolean SUPERNATURAL = PlatHelper.isModLoaded("supernatural");
     public static final boolean CREATE = PlatHelper.isModLoaded("create");

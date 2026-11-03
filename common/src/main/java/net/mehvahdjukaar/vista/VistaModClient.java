@@ -6,6 +6,7 @@ import net.mehvahdjukaar.moonlight.api.client.CoreShaderContainer;
 import net.mehvahdjukaar.moonlight.api.client.gui.ConfigScreenExtensions;
 import net.mehvahdjukaar.moonlight.api.misc.EventCalled;
 import net.mehvahdjukaar.moonlight.api.platform.ClientHelper;
+import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
@@ -17,6 +18,7 @@ import net.mehvahdjukaar.vista.client.textures.CassetteTexturesManager;
 import net.mehvahdjukaar.vista.client.textures.perspective.LiveFeedTexturesManager;
 import net.mehvahdjukaar.vista.client.textures.perspective.MirrorTextureManager;
 import net.mehvahdjukaar.vista.client.textures.web.WebTexturesManager;
+import net.mehvahdjukaar.vista.client.ui.ModWarningScreen;
 import net.mehvahdjukaar.vista.client.ui.TvShowcaseWidget;
 import net.mehvahdjukaar.vista.client.ui.ViewFinderScreen;
 import net.mehvahdjukaar.vista.client.ui.VistaWelcomeScreen;
@@ -213,6 +215,14 @@ public class VistaModClient {
                     () -> instantiateFFmpeg(null),
                     ClientConfigs::turnOffFFmpeg
             );
+        }
+        if (!PlatHelper.isDev()) {
+            if (CompatHandler.VEIL && !CompatHandler.VEIL_BONK && !ClientConfigs.NO_VEIL_WARN.get()) {
+                newScreen = ModWarningScreen.createVeil(newScreen);
+            }
+            if (CompatHandler.IRIS && !CompatHandler.IRIS_BONK && !ClientConfigs.NO_IRIS_WARN.get()) {
+                newScreen = ModWarningScreen.createIris(newScreen);
+            }
         }
         if (newScreen != screen) Minecraft.getInstance().setScreen(newScreen);
     }

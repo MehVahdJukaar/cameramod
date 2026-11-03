@@ -49,6 +49,8 @@ public class ClientConfigs {
     public static final Supplier<AudioMode> AUDIO_MODE;
     public static final Supplier<Double> AUDIO_VOLUME;
     public static final Supplier<List<String>> SAFE_URLS;
+    public static final Supplier<Boolean> NO_IRIS_WARN;
+    public static final Supplier<Boolean> NO_VEIL_WARN;
     public static Pattern safeRegex;
 
 
@@ -178,6 +180,13 @@ public class ClientConfigs {
                 .define("safe_urls", List.of());
         builder.pop(); // wave_gate
 
+        builder.push("general");
+        NO_IRIS_WARN = builder.comment("Disables the warning screen shown when Iris is installed without Iris Bonk")
+                .define("no_iris_warn_screen", false);
+        NO_VEIL_WARN = builder.comment("Disables the warning screen shown when Veil is installed without Veil Bonk")
+                .define("no_veil_warn_screen", false);
+        builder.pop();
+
         builder.onChange(() -> {
             List<String> elements = SAFE_URLS.get();
             if (elements.isEmpty()) {
@@ -207,6 +216,14 @@ public class ClientConfigs {
 
     public static void turnOffFFmpeg() {
         SPEC.manuallySetValue(ENABLE_FFMPEG, false);
+    }
+
+    public static void disableIrisWarn() {
+        SPEC.manuallySetValue(NO_IRIS_WARN, true);
+    }
+
+    public static void disableVeilWarn() {
+        SPEC.manuallySetValue(NO_VEIL_WARN, true);
     }
 
     public static boolean isSafeUrl(String input) {
