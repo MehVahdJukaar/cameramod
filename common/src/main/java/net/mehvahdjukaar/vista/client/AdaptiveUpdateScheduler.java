@@ -99,6 +99,21 @@ public class AdaptiveUpdateScheduler<ID> {
         }
     }
 
+    // for when the caller runs the update itself, report its cost with addUpdateTime
+    public boolean shouldUpdate(ID id) {
+        Entry e = entries.get(id);
+        if (e == null) {
+            e = new Entry(id, currentFrame);
+            entries.put(id, e);
+        }
+        e.lastFrameSeen = currentFrame;
+        return stepPhaseAndGrant(e);
+    }
+
+    public void addUpdateTime(long nanos) {
+        thisFrameAccumulatedUpdateTimeNano += nanos;
+    }
+
     private boolean stepPhaseAndGrant(Entry e) {
         double newPhase = e.phase01 + effectiveRateThisFrame;
 

@@ -51,6 +51,7 @@ public class VistaLevelRenderer {
     private static final AtomicReference<SectionOcclusionGraph> MC_OWN_GRAPH = new AtomicReference<>(null);
     private static final Deque<RenderFrame> RENDER_STACK = new ArrayDeque<>();
     private static final List<DummyCamera> DUMMY_CAMERA_POOL = new ArrayList<>();
+    private static final Map<SectionOcclusionGraph, Vec3> LAST_OFF_AXIS_EYE = new WeakHashMap<>();
 
     private static ResourceKey<Level> lastLevel = null;
     private static Vec3 mainBobEyeOffset = Vec3.ZERO;
@@ -118,6 +119,7 @@ public class VistaLevelRenderer {
 
     public static void clear() {
         DUMMY_CAMERA_POOL.clear();
+        LAST_OFF_AXIS_EYE.clear();
         MC_OWN_GRAPH.set(null);
         synchronized (STATES_LOCK) {
             MANAGED_STATES.clear();
@@ -330,7 +332,17 @@ public class VistaLevelRenderer {
         Vec3 cameraPos = camera.getPosition();
 
         gr.resetProjectionMatrix(projMatrix);
-        lr.prepareCullFrustum(cameraPos, cameraMatrix, projMatrix);
+        // cull to the feed render distance instead of the projection far plane (1000 for mirrors)
+        float cullFar = Math.max(gr.renderDistance, 32f) * 1.15f + 32f;
+        lr.prepareCullFrustum(cameraPos, cameraMatrix, tightenFarPlane(projMatrix, cullFar));
+
+        // swap in our own translucency sort origin, otherwise feeds and the main view keep re-sorting all translucent sections every frame
+        double oldTransparentX = lr.xTransparentOld;
+        double oldTransparentY = lr.yTransparentOld;
+        double oldTransparentZ = lr.zTransparentOld;
+        lr.xTransparentOld = cameraPos.x;
+        lr.yTransparentOld = cameraPos.y;
+        lr.zTransparentOld = cameraPos.z;
 
         boolean irisWasRenderingLevel = CompatHandler.IRIS && IrisCompat.isIrisRenderingLevel();
         try {
@@ -338,12 +350,29 @@ public class VistaLevelRenderer {
                     gr.lightTexture(), cameraMatrix, projMatrix);
         } finally {
             if (irisWasRenderingLevel) IrisCompat.setIrisRenderingLevel(true);
+            lr.xTransparentOld = oldTransparentX;
+            lr.yTransparentOld = oldTransparentY;
+            lr.zTransparentOld = oldTransparentZ;
         }
 
         Matrix4f modelViewMatrix = RenderSystem.getModelViewMatrix();
 
         VistaClientPlatStuff.dispatchRenderStageAfterLevel(mc, poseStack, camera, modelViewMatrix, projMatrix);
         gr.resetProjectionMatrix(oldProjectionMatrix);
+    }
+
+    // clamps the far plane of a perspective matrix to maxFar
+    private static Matrix4f tightenFarPlane(Matrix4f proj, float maxFar) {
+        float a = proj.m22();
+        float b = proj.m32();
+        float near = b / (a - 1f);
+        float far = b / (a + 1f);
+        if (!(near > 0f) || !Float.isFinite(far) || far <= maxFar) return proj;
+
+        Matrix4f tightened = new Matrix4f(proj);
+        tightened.m22((maxFar + near) / (near - maxFar));
+        tightened.m32(2f * maxFar * near / (near - maxFar));
+        return tightened;
     }
 
     @SuppressWarnings("ConstantConditions")
@@ -491,7 +520,8 @@ public class VistaLevelRenderer {
             double cameraRotXHalf = Math.floor(camera.getXRot() / 2.0);
             double cameraRotYHalf = Math.floor(camera.getYRot() / 2.0);
 
-            boolean hasOffAxis = currentFrame != null && currentFrame.hasOffAxisFrustum;
+            boolean hasOffAxis = currentFrame != null && currentFrame.hasOffAxisFrustum
+                    && offAxisEyeMoved(graph, camera.getPosition());
             if (graph.consumeFrustumUpdate() ||
                     cameraRotXHalf != lr.prevCamRotX ||
                     cameraRotYHalf != lr.prevCamRotY ||
@@ -505,6 +535,15 @@ public class VistaLevelRenderer {
 
         minecraft.getProfiler().pop();
 
+        return true;
+    }
+
+    private static boolean offAxisEyeMoved(SectionOcclusionGraph graph, Vec3 eye) {
+        Vec3 lastEye = LAST_OFF_AXIS_EYE.get(graph);
+        if (lastEye != null && lastEye.distanceToSqr(eye) < 1.0E-8) {
+            return false;
+        }
+        LAST_OFF_AXIS_EYE.put(graph, eye);
         return true;
     }
 

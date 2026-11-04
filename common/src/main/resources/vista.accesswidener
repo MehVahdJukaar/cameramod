@@ -76,3 +76,6 @@ accessible method net/minecraft/client/renderer/LevelRenderer captureFrustum (Lo
 
 
 accessible method net/minecraft/client/renderer/ViewArea getRenderSectionAt (Lnet/minecraft/core/BlockPos;)Lnet/minecraft/client/renderer/chunk/SectionRenderDispatcher$RenderSection;
+accessible field net/minecraft/client/renderer/LevelRenderer xTransparentOld D
+accessible field net/minecraft/client/renderer/LevelRenderer yTransparentOld D
+accessible field net/minecraft/client/renderer/LevelRenderer zTransparentOld D
