@@ -217,7 +217,8 @@ public class VistaModClient {
             );
         }
         if (!PlatHelper.isDev()) {
-            if (CompatHandler.VEIL && !CompatHandler.VEIL_BONK && !ClientConfigs.NO_VEIL_WARN.get()) {
+            if (CompatHandler.VEIL && !CompatHandler.VEIL_BONK && !PlatHelper.getPlatform().isFabric()
+                    && !ClientConfigs.NO_VEIL_WARN.get()) {
                 newScreen = ModWarningScreen.createVeil(newScreen);
             }
             if (CompatHandler.IRIS && !CompatHandler.IRIS_BONK && !ClientConfigs.NO_IRIS_WARN.get()) {

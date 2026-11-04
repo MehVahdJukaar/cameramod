@@ -1,1 +1,3 @@
-- removed all workarounds for veil that were just fixing or avoiding flat out veil bugs. use veil bonk instead
+- fixed yellow lens being missing
+- minor fixes
+- fixed big tvs showing missing power warning with refurbished furniture. fixes #198
