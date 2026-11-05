@@ -74,18 +74,18 @@ public class ClientConfigs {
         MIRROR_MAX_UPDATE_FPS = builder
                 .gameRestart()
                 .comment("How many times per second a mirror re-renders its reflection at most. Throttling and the idle rate below can only lower it. Lowering this will improve performance but make the reflection choppier")
-                .define("max_update_fps", 30.0, 1, 240);
+                .define("max_update_fps", 60.0, 1, 240);
         MIRROR_MIN_UPDATE_FPS = builder
                 .gameRestart()
                 .comment("The minimum update fps for mirrors. The mod will throttle update rate when fps are low so this serves as a lower limit")
-                .define("min_update_fps", 5.0, 1, 240);
+                .define("min_update_fps", 10.0, 1, 240);
         MIRROR_IDLE_UPDATE_FPS = builder
                 .comment("Caps the update fps while the camera stands still. A flat mirror only changes when the eye moves, so standing still only needs to keep up with moving entities")
                 .define("idle_update_fps", 10.0, 1, 240);
         MIRROR_THROTTLING_UPDATE_MS = builder
                 .gameRestart()
                 .comment("The maximum number of milliseconds all mirror reflections can take per frame before fps throttling begins")
-                .define("throttling_update_ms", 5.0, 0, 1000000);
+                .define("throttling_update_ms", 6.0, 0, 1000000);
         MIRROR_SMOOTH = builder
                 .comment("Smooth the mirror reflection with bilinear texture filtering. Enabled gives a softer, less pixelated reflection; disabled keeps it crisp and pixelated.")
                 .define("smooth_reflection", false);
