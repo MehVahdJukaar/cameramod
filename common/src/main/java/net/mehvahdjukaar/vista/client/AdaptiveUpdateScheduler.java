@@ -1,6 +1,5 @@
 package net.mehvahdjukaar.vista.client;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
 
 import java.util.HashMap;
@@ -15,159 +14,185 @@ import java.util.Map;
 public class AdaptiveUpdateScheduler<ID> {
 
     private final class Entry {
-        double phase01;
-        long lastFrameSeen;
+        //0..1, the update fires when this wraps past 1
+        double phase;
+        double lastRequestedMs;
 
-        private Entry(ID id, long frame) {
-            this.phase01 = stablePhaseFromId(id);
-            this.lastFrameSeen = frame;
+        private Entry(ID id, double nowMs) {
+            this.phase = stablePhaseFromId(id);
+            lastRequestedMs = nowMs;
         }
     }
 
     private final Map<ID, Entry> entries = new HashMap<>();
 
-    // normalized to per-frame values
-    private final double baseUpdateRatePerFrame;
-    private final double minUpdateRatePerFrame;
-    private final double updateTimeTargetMs;
-    private final double updateTimeSmoothingWindowMs;
-    private final double scaleSmoothingTimeConstantMs;
-    private final double maxScaleChangePerFrame;
+    private final double maxUpdatesPerSecond;
+    private final double minUpdatesPerSecond;
 
-    private final boolean useFpsGuard;
-    private final double fpsGuardTargetFrameMs;
-    private final double fpsEmaAlpha;
-    private final double minFpsScale;
-    private final int evictAfterFrames;
+    //throttle when mirrors go slow
+    private final double budgetMsPerFrame;
+    private final double averageUpdateMsSmoothingMs;
 
-    public double smoothedAverageUpdateTimeMs = 0.0;
-    private double smoothedAverageFrameTimeMs;
-    private long thisFrameAccumulatedUpdateTimeNano = 0L;
-    private double smoothedBudgetScale = 1.0;
+    private final double budgetThrottleSmoothingMs;
+    private final double budgetThrottleMaxChangePerFrame;
 
-    private long currentFrame = 0L;
-    private double effectiveRateThisFrame = 1.0;
+    //when enabled and game drops below 60fps we slow down still
+    private final boolean fpsGuardEnabled;
+    private final double fpsGuardFrameMs;
+    private final double fpsGuardSmoothingMs;
+    //the guard scales our scale. this is a minimum bound ,i.e 20%
+    private final double fpsGuardMinScale;
+
+
+    private final double evictUnseenAfterMs;
+
+    //live state here
+
+    private double averageUpdateMsPerFrame = 0.0;
+    private double fpsGuardAverageFrameMs;
+    private long updateNanosThisFrame = 0L;
+    //1 = within budget, lower = over budget so slow down
+    private double budgetThrottle = 1.0;
+
+    private double elapsedMs = 0;
+    private double lastFrameMs = 16.667;
+    private long lastFrameEndNanos = -1L;
+    private long frameCount = 0L;
+    private double phaseStepThisFrame = 1.0;
 
     public AdaptiveUpdateScheduler(
-            double baseRatePerFrame,
-            double minRatePerFrame,
-            double targetBudgetMs,
-            double smoothingWindowMs,
-            double scaleSmoothingTimeConstantMs,
-            double maxScaleChangePerFrame,
-            boolean useFpsGuard,
-            double fpsGuardTargetFrameMs,
-            double fpsEmaAlpha,
-            double minFpsScale,
-            int evictAfterFrames
+            double maxUpdatesPerSecond,
+            double minUpdatesPerSecond,
+            double budgetMsPerFrame,
+            double averageUpdateMsSmoothingMs,
+            double budgetThrottleSmoothingMs,
+            double budgetThrottleMaxChangePerFrame,
+            boolean fpsGuardEnabled,
+            double fpsGuardFrameMs,
+            double fpsGuardSmoothingMs,
+            double fpsGuardMinScale,
+            double evictUnseenAfterMs
     ) {
-        this.baseUpdateRatePerFrame = baseRatePerFrame;
-        this.minUpdateRatePerFrame = minRatePerFrame;
-        this.updateTimeTargetMs = targetBudgetMs;
-        this.updateTimeSmoothingWindowMs = smoothingWindowMs;
-        this.scaleSmoothingTimeConstantMs = scaleSmoothingTimeConstantMs;
-        this.maxScaleChangePerFrame = maxScaleChangePerFrame;
-        this.useFpsGuard = useFpsGuard;
-        this.fpsGuardTargetFrameMs = useFpsGuard ? fpsGuardTargetFrameMs : 16.667;
-        this.fpsEmaAlpha = fpsEmaAlpha;
-        this.minFpsScale = minFpsScale;
-        this.evictAfterFrames = evictAfterFrames;
+        this.maxUpdatesPerSecond = maxUpdatesPerSecond;
 
-        this.smoothedAverageFrameTimeMs = this.fpsGuardTargetFrameMs;
+        this.minUpdatesPerSecond = minUpdatesPerSecond;
+        this.budgetMsPerFrame = budgetMsPerFrame;
+        this.averageUpdateMsSmoothingMs = averageUpdateMsSmoothingMs;
+        this.budgetThrottleSmoothingMs = budgetThrottleSmoothingMs;
+        this.budgetThrottleMaxChangePerFrame = budgetThrottleMaxChangePerFrame;
+        this.fpsGuardEnabled = fpsGuardEnabled;
+        this.fpsGuardFrameMs = fpsGuardEnabled ? fpsGuardFrameMs : 16.667;
+        this.fpsGuardSmoothingMs = fpsGuardSmoothingMs;
+        this.fpsGuardMinScale = fpsGuardMinScale;
+        this.evictUnseenAfterMs = evictUnseenAfterMs;
+
+        this.fpsGuardAverageFrameMs = this.fpsGuardFrameMs;
     }
 
-    public double getAverageUpdateTimeMs() {
-        return this.smoothedAverageUpdateTimeMs;
+    public double getAverageUpdateMsPerFrame() {
+        return this.averageUpdateMsPerFrame;
     }
 
     public void runIfShouldUpdate(ID id, Runnable update) {
+        runIfShouldUpdate(id, Double.MAX_VALUE, update);
+    }
+
+    //maxUpdatesPerSecondForThis caps just this entry below the shared rate. it cant go above it
+    public void runIfShouldUpdate(ID id, double maxUpdatesPerSecondForThis, Runnable update) {
         //not using computeIfAbsent since its a hot path
         Entry e = entries.get(id);
         if (e == null) {
-            e = new Entry(id, currentFrame);
+            e = new Entry(id, elapsedMs);
             entries.put(id, e);
         }
-        e.lastFrameSeen = currentFrame;
+        e.lastRequestedMs = elapsedMs;
 
-        if (stepPhaseAndGrant(e)) {
+        double step = Math.min(phaseStepThisFrame, maxUpdatesPerSecondForThis * lastFrameMs / 1000.0);
+        if (advancePhaseAndCheckIfDue(e, step)) {
             long t0 = System.nanoTime();
             try {
                 update.run();
             } finally {
-                thisFrameAccumulatedUpdateTimeNano += (System.nanoTime() - t0);
+                updateNanosThisFrame += (System.nanoTime() - t0);
             }
         }
     }
 
-    private boolean stepPhaseAndGrant(Entry e) {
-        double newPhase = e.phase01 + effectiveRateThisFrame;
+
+    private boolean advancePhaseAndCheckIfDue(Entry e, double step) {
+        double newPhase = e.phase + step;
 
         if (newPhase >= 1.0) {
             //wrap
-            e.phase01 = newPhase - 1.0;
+            e.phase = newPhase - 1.0;
             return true;
         }
 
-        e.phase01 = newPhase;
+        e.phase = newPhase;
         return false;
     }
 
     public void onEndOfFrame() {
-        double lastFrameMs = Math.max(0.001, Minecraft.getInstance().getFrameTimeNs() / 1_000_000.0);
+        //not using mc.getFrameTimeNs, that one only times the render part and skips vsync wait and tick
+        long now = System.nanoTime();
+        if (lastFrameEndNanos > 0) lastFrameMs = Mth.clamp((now - lastFrameEndNanos) / 1_000_000.0, 0.001, 1000);
+        lastFrameEndNanos = now;
+        elapsedMs += lastFrameMs;
 
-        double updateMsThisFrame = thisFrameAccumulatedUpdateTimeNano / 1_000_000.0;
-        double alpha = 1.0 - Math.exp(-lastFrameMs / updateTimeSmoothingWindowMs);
+        double updateMsThisFrame = updateNanosThisFrame / 1_000_000.0;
+        double averageUpdateAlpha = 1.0 - Math.exp(-lastFrameMs / averageUpdateMsSmoothingMs);
 
-        smoothedAverageUpdateTimeMs = (1.0 - alpha) * smoothedAverageUpdateTimeMs + alpha * updateMsThisFrame;
-        thisFrameAccumulatedUpdateTimeNano = 0L;
+        averageUpdateMsPerFrame = (1.0 - averageUpdateAlpha) * averageUpdateMsPerFrame + averageUpdateAlpha * updateMsThisFrame;
+        updateNanosThisFrame = 0L;
 
-        double rawScale = (smoothedAverageUpdateTimeMs <= 0.0)
+        double wantedBudgetThrottle = (averageUpdateMsPerFrame <= 0.0)
                 ? 1.0
-                : Mth.clamp(updateTimeTargetMs / smoothedAverageUpdateTimeMs, 0.0, 1.0);
+                : Mth.clamp(budgetMsPerFrame / averageUpdateMsPerFrame, 0.0, 1.0);
 
-        double beta = 1.0 - Math.exp(-lastFrameMs / scaleSmoothingTimeConstantMs);
-        double targetScale = (1.0 - beta) * smoothedBudgetScale + beta * rawScale;
+        double budgetThrottleAlpha = 1.0 - Math.exp(-lastFrameMs / budgetThrottleSmoothingMs);
+        double smoothedBudgetThrottle = (1.0 - budgetThrottleAlpha) * budgetThrottle + budgetThrottleAlpha * wantedBudgetThrottle;
 
         //rate limit to avoid jitteryness
-        double delta = Mth.clamp(targetScale - smoothedBudgetScale, -maxScaleChangePerFrame, +maxScaleChangePerFrame);
-        smoothedBudgetScale += delta;
+        double budgetThrottleChange = Mth.clamp(smoothedBudgetThrottle - budgetThrottle, -budgetThrottleMaxChangePerFrame, +budgetThrottleMaxChangePerFrame);
+        budgetThrottle += budgetThrottleChange;
 
-        if (useFpsGuard) {
-            smoothedAverageFrameTimeMs = (1.0 - fpsEmaAlpha) * smoothedAverageFrameTimeMs + fpsEmaAlpha * lastFrameMs;
+        if (fpsGuardEnabled) {
+            double fpsGuardAlpha = 1.0 - Math.exp(-lastFrameMs / fpsGuardSmoothingMs);
+            fpsGuardAverageFrameMs = (1.0 - fpsGuardAlpha) * fpsGuardAverageFrameMs + fpsGuardAlpha * lastFrameMs;
         }
 
-        currentFrame++;
-        effectiveRateThisFrame = computeEffectiveUpdateRate();
+        frameCount++;
+        phaseStepThisFrame = Mth.clamp(throttledUpdatesPerSecond() * lastFrameMs / 1000.0, 0.0, 1.0);
 
-        if ((currentFrame & 0xFF) == 0) {
-            long cutoff = currentFrame - evictAfterFrames;
-            entries.entrySet().removeIf(en -> en.getValue().lastFrameSeen < cutoff);
+        if ((frameCount & 0xFF) == 0) {
+            double cutoff = elapsedMs - evictUnseenAfterMs;
+            entries.entrySet().removeIf(en -> en.getValue().lastRequestedMs < cutoff);
         }
     }
 
-    private double computeEffectiveUpdateRate() {
-        double scaled = Math.max(minUpdateRatePerFrame, baseUpdateRatePerFrame * smoothedBudgetScale);
+    private double throttledUpdatesPerSecond() {
+        double updatesPerSecond = Math.max(minUpdatesPerSecond, maxUpdatesPerSecond * budgetThrottle);
 
-        if (useFpsGuard) {
-            double fpsScale = Mth.clamp(
-                    fpsGuardTargetFrameMs / Math.max(smoothedAverageFrameTimeMs, fpsGuardTargetFrameMs),
+        if (fpsGuardEnabled) {
+            double fpsGuardScale = Mth.clamp(
+                    fpsGuardFrameMs / Math.max(fpsGuardAverageFrameMs, fpsGuardFrameMs),
                     0.0, 1.0
             );
-            fpsScale = Math.max(minFpsScale, fpsScale);
-            scaled = Math.max(minUpdateRatePerFrame, scaled * fpsScale);
+            fpsGuardScale = Math.max(fpsGuardMinScale, fpsGuardScale);
+            updatesPerSecond = Math.max(minUpdatesPerSecond, updatesPerSecond * fpsGuardScale);
         }
 
-        return Mth.clamp(scaled, 0.0, 1.0);
+        return updatesPerSecond;
     }
 
-    public void forceUpdateNextTick(ID id) {
+    public void forceUpdateNextFrame(ID id) {
         Entry e = entries.get(id);
         if (e == null) {
-            e = new Entry(id, currentFrame);
+            e = new Entry(id, elapsedMs);
             entries.put(id, e);
         }
-        e.lastFrameSeen = currentFrame;
-        e.phase01 = 0.999999;
+        e.lastRequestedMs = elapsedMs;
+        e.phase = 0.999999;
     }
 
     private static double stablePhaseFromId(Object id) {
@@ -185,103 +210,90 @@ public class AdaptiveUpdateScheduler<ID> {
     }
 
     public static class Builder {
-        private double baseRatePerTick;
-        private double minRatePerTick;
+        private double maxUpdatesPerSecond;
+        private double minUpdatesPerSecond;
 
-        private double updateTimeTargetMs = 5.0;
-        private double updateTimeSmoothingTimeWindowMs = 300;
-        private double scaleSmoothingTimeWindowMs = 350;
-        private double maxScaleChangePerFrame = 0.08;
+        private double budgetMsPerFrame = 5.0;
+        private double averageUpdateMsSmoothingMs = 300;
+        private double budgetThrottleSmoothingMs = 350;
+        private double budgetThrottleMaxChangePerFrame = 0.08;
 
-        private boolean useFpsGuard = false;
-        private double fpsGuardTargetFrameMs = 16.667;
-        private double fpsEmaAlpha = 0.2;
-        private double minFpsScale = 0.2;
+        private boolean fpsGuardEnabled = false;
+        private double fpsGuardFrameMs = 16.667;
+        private double fpsGuardSmoothingMs = 75;
+        private double fpsGuardMinScale = 0.2;
 
-        private int evictAfterTicks = 20 * 5;
+        private double evictUnseenAfterMs = 5000;
 
-        public Builder baseRatePerTick(double v) {
-            this.baseRatePerTick = v;
+        public Builder maxUpdatesPerSecond(double updatesPerSecond) {
+            this.maxUpdatesPerSecond = updatesPerSecond;
             return this;
         }
 
-        public Builder basePeriodTicks(int ticks) {
-            return baseRatePerTick(1.0 / ticks);
-        }
-
-        public Builder baseFps(double fps) {
-            return baseRatePerTick(fps / 20.0); // assuming 20 TPS
-        }
-
-        public Builder minRatePerTick(double v) {
-            this.minRatePerTick = v;
+        //never throttled below this
+        public Builder minUpdatesPerSecond(double updatesPerSecond) {
+            this.minUpdatesPerSecond = updatesPerSecond;
             return this;
         }
 
-        public Builder minPeriodTicks(int ticks) {
-            return minRatePerTick(1.0 / ticks);
-        }
-
-        public Builder minFps(double fps) {
-            return minRatePerTick(fps / 20.0);
-        }
-
-        public Builder targetBudgetMs(double v) {
-            this.updateTimeTargetMs = v;
+        //all updates together may take this long per frame before throttling kicks in
+        public Builder budgetMsPerFrame(double ms) {
+            this.budgetMsPerFrame = ms;
             return this;
         }
 
         //share of one frame, 0..1
-        public Builder targetBudgetFromFps(double fps, double share) {
-            return targetBudgetMs((1000.0 / fps) * share);
+        public Builder budgetAsShareOfFrame(double fps, double share) {
+            return budgetMsPerFrame((1000.0 / fps) * share);
         }
 
-        public Builder smoothingTimeConstantMs(double v) {
-            this.updateTimeSmoothingTimeWindowMs = v;
+        public Builder averageUpdateMsSmoothingMs(double ms) {
+            this.averageUpdateMsSmoothingMs = ms;
             return this;
         }
 
-        public Builder scaleSmoothingTimeConstantMs(double v) {
-            this.scaleSmoothingTimeWindowMs = v;
+        public Builder budgetThrottleSmoothingMs(double ms) {
+            this.budgetThrottleSmoothingMs = ms;
             return this;
         }
 
-        public Builder maxScaleChangePerFrame(double v) {
-            this.maxScaleChangePerFrame = v;
+        public Builder budgetThrottleMaxChangePerFrame(double change) {
+            this.budgetThrottleMaxChangePerFrame = change;
             return this;
         }
 
-        public Builder guardTargetFps(double fps) {
-            this.fpsGuardTargetFrameMs = 1000.0 / fps;
-            this.useFpsGuard = true;
+        //under this fps the update rate also gets scaled down by how far below we are
+        public Builder slowDownBelowFps(double fps) {
+            this.fpsGuardFrameMs = 1000.0 / fps;
+            this.fpsGuardEnabled = true;
             return this;
         }
 
 
-        public Builder fpsGuardAlpha(double alpha) {
-            this.fpsEmaAlpha = alpha;
+        public Builder fpsGuardSmoothingMs(double ms) {
+            this.fpsGuardSmoothingMs = ms;
             return this;
         }
 
-        public Builder minFpsScale(double v) {
-            this.minFpsScale = v;
+        public Builder fpsGuardMinScale(double scale) {
+            this.fpsGuardMinScale = scale;
             return this;
         }
 
-        public Builder evictAfterTicks(int v) {
-            this.evictAfterTicks = v;
+        public Builder evictUnseenAfterSeconds(double seconds) {
+            this.evictUnseenAfterMs = seconds * 1000;
             return this;
         }
 
         public <T> AdaptiveUpdateScheduler<T> build() {
             return new AdaptiveUpdateScheduler<>(
-                    baseRatePerTick, minRatePerTick,
-                    updateTimeTargetMs,
-                    updateTimeSmoothingTimeWindowMs,
-                    scaleSmoothingTimeWindowMs,
-                    maxScaleChangePerFrame,
-                    useFpsGuard, fpsGuardTargetFrameMs, fpsEmaAlpha, minFpsScale,
-                    evictAfterTicks
+                    maxUpdatesPerSecond, minUpdatesPerSecond,
+                    budgetMsPerFrame,
+                    averageUpdateMsSmoothingMs,
+                    budgetThrottleSmoothingMs,
+                    budgetThrottleMaxChangePerFrame,
+                    fpsGuardEnabled, fpsGuardFrameMs, fpsGuardSmoothingMs, fpsGuardMinScale,
+                    evictUnseenAfterMs
             );
         }
     }

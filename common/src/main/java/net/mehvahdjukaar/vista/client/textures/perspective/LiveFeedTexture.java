@@ -7,11 +7,11 @@ import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import net.mehvahdjukaar.moonlight.api.client.PostShadersHelper;
-import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.CrtOverlay;
 import net.mehvahdjukaar.vista.client.SlidingWindowCounter;
+import net.mehvahdjukaar.vista.client.renderer.ScreenDebugText;
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
 import net.mehvahdjukaar.vista.common.cassette.IBroadcastSource;
@@ -76,7 +76,7 @@ public class LiveFeedTexture extends PerspectiveTexture {
         if (mc.isPaused()) return;
 
         Runnable runTask = () -> {
-            setLastUpdatedTime(level);
+            ScreenDebugText.recordUpdate(getAssociatedUUID());
             BroadcastManager manager = BroadcastManager.getInstance(level);
             IBroadcastSource provider = manager.getBroadcast(getAssociatedUUID(), true); //touch the feed to make sure it's still valid and linked
             if (!(provider instanceof ViewFinderBlockEntity vf)) {
@@ -205,13 +205,6 @@ public class LiveFeedTexture extends PerspectiveTexture {
         if (postChain != null) {
             postChain.close();
             postChain = null;
-        }
-    }
-
-    private void setLastUpdatedTime(ClientLevel level) {
-        if (ClientConfigs.rendersDebug()) {
-            LiveFeedTexturesManager.UPDATE_TIMES.computeIfAbsent(getAssociatedUUID(), k -> new RollingBuffer<>(20))
-                    .push(level.getGameTime());
         }
     }
 

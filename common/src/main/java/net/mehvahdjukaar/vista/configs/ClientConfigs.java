@@ -23,12 +23,16 @@ public class ClientConfigs {
     public static final Supplier<Integer> MIRROR_RENDER_DISTANCE;
     public static final Supplier<Integer> MIRROR_RESOLUTION_SCALE;
     public static final Supplier<MirrorUpdateMode> MIRROR_UPDATE_MODE;
+    public static final Supplier<Double> MIRROR_MAX_UPDATE_FPS;
+    public static final Supplier<Double> MIRROR_MIN_UPDATE_FPS;
+    public static final Supplier<Double> MIRROR_IDLE_UPDATE_FPS;
+    public static final Supplier<Double> MIRROR_THROTTLING_UPDATE_MS;
     public static final Supplier<MirrorRecursionMode> MIRROR_RECURSION_MODE;
     public static final Supplier<Integer> MIRROR_MAX_RECURSION_DEPTH;
     public static final Supplier<Double> MIRROR_RECURSION_RES_DIVIDER;
     public static final Supplier<Double> MIRROR_RECURSION_DIST_DIVIDER;
     public static final Supplier<Boolean> MIRROR_SMOOTH;
-    public static final Supplier<Double> UPDATE_FPS;
+    public static final Supplier<Double> MAX_UPDATE_FPS;
     public static final Supplier<Double> MIN_UPDATE_FPS;
     public static final Supplier<Double> THROTTLING_UPDATE_MS;
     public static final Supplier<Double> UPDATE_DISTANCE;
@@ -67,6 +71,21 @@ public class ClientConfigs {
         MIRROR_UPDATE_MODE = builder
                 .comment("How mirror reflections are dispatched. RENDER_TICK_END (default): mirrors are queued and flushed from a top level frame hook, which is guaranteed to run outside any level render and stays safe when other mods render the level recursively. TEXTURE_REFRESH: rides along with the live feed texture refresh instead, one render per visible mirror at the end of the frame. Try TEXTURE_REFRESH if you suspect a timing related rendering glitch.")
                 .define("update_mode", MirrorUpdateMode.RENDER_TICK_END);
+        MIRROR_MAX_UPDATE_FPS = builder
+                .gameRestart()
+                .comment("How many times per second a mirror re-renders its reflection at most. Throttling and the idle rate below can only lower it. Lowering this will improve performance but make the reflection choppier")
+                .define("max_update_fps", 30.0, 1, 240);
+        MIRROR_MIN_UPDATE_FPS = builder
+                .gameRestart()
+                .comment("The minimum update fps for mirrors. The mod will throttle update rate when fps are low so this serves as a lower limit")
+                .define("min_update_fps", 5.0, 1, 240);
+        MIRROR_IDLE_UPDATE_FPS = builder
+                .comment("Caps the update fps while the camera stands still. A flat mirror only changes when the eye moves, so standing still only needs to keep up with moving entities")
+                .define("idle_update_fps", 10.0, 1, 240);
+        MIRROR_THROTTLING_UPDATE_MS = builder
+                .gameRestart()
+                .comment("The maximum number of milliseconds all mirror reflections can take per frame before fps throttling begins")
+                .define("throttling_update_ms", 5.0, 0, 1000000);
         MIRROR_SMOOTH = builder
                 .comment("Smooth the mirror reflection with bilinear texture filtering. Enabled gives a softer, less pixelated reflection; disabled keeps it crisp and pixelated.")
                 .define("smooth_reflection", false);
@@ -111,10 +130,10 @@ public class ClientConfigs {
         builder.pop(); // screen_effects
 
         builder.icon("hollow_cassette").push("live_feed");
-        UPDATE_FPS = builder
+        MAX_UPDATE_FPS = builder
                 .gameRestart()
-                .comment("How many times per second the television updates its live feed texture. Lowering this will improve performance but make the video less smooth, fractions work too")
-                .define("update_fps", 10.0, 1, 60);
+                .comment("How many times per second the television updates its live feed texture at most. Throttling can only lower it. Lowering this will improve performance but make the video less smooth, fractions work too")
+                .define("max_update_fps", 10.0, 1, 60);
         MIN_UPDATE_FPS = builder
                 .gameRestart()
                 .comment("The minimum update fps for live feed. The mod will throttle update rate when fps are low so this serves at a lower limit")

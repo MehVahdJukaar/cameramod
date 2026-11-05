@@ -3,6 +3,7 @@ package net.mehvahdjukaar.vista.client.textures.perspective;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.client.MirrorReflection;
 import net.mehvahdjukaar.vista.client.renderer.SceneCameraSetup;
+import net.mehvahdjukaar.vista.client.renderer.ScreenDebugText;
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import net.mehvahdjukaar.vista.common.mirror.MirrorBlock;
 import net.mehvahdjukaar.vista.common.mirror.MirrorBlockEntity;
@@ -34,8 +35,10 @@ public class MirrorReflectionTexture extends PerspectiveTexture {
     @Nullable
     private Vec3 pendingEye;
 
-    private boolean hasRendered = false;
+    private boolean hasRenderedOnce = false;
     private long firstRenderNanos = -1L;
+    @Nullable
+    private Vec3 lastRenderedEye;
     private final int recursionDepth;
     private final List<UUID> parentChain;
 
@@ -58,8 +61,8 @@ public class MirrorReflectionTexture extends PerspectiveTexture {
         return parentChain;
     }
 
-    public boolean hasRendered() {
-        return hasRendered;
+    public boolean hasRenderedOnce() {
+        return hasRenderedOnce;
     }
 
     public float getFadeProgress() {
@@ -82,7 +85,24 @@ public class MirrorReflectionTexture extends PerspectiveTexture {
         pendingMirror = null;
         pendingEye = null;
         if (mirror == null || eye == null) return;
-        renderReflection(mirror, eye);
+        maybeRenderReflection(mirror, eye);
+    }
+
+    public void maybeRenderReflection(MirrorBlockEntity mirror, Vec3 eye) {
+        var scheduler = MirrorTextureManager.SCHEDULER.get();
+        if (!hasRenderedOnce) {
+            scheduler.forceUpdateNextFrame(getTextureLocation());
+        }
+
+        //the reflection only depends from where the eye is, not where it look. so if it didnt move slow down
+        Runnable render = () -> renderReflection(mirror, eye);
+        boolean eyeStandingStill = lastRenderedEye != null && lastRenderedEye.distanceToSqr(eye) < 1.0E-6;
+
+        if (eyeStandingStill) {
+            scheduler.runIfShouldUpdate(getTextureLocation(), ClientConfigs.MIRROR_IDLE_UPDATE_FPS.get(), render);
+        } else {
+            scheduler.runIfShouldUpdate(getTextureLocation(), render);
+        }
     }
 
     public void renderReflection(MirrorBlockEntity mirror, Vec3 eye) {
@@ -150,8 +170,10 @@ public class MirrorReflectionTexture extends PerspectiveTexture {
         // Nothing is composited here: mirror_material.fsh takes this as Sampler0 and layers the
         // underlay and overlay itself.
         swapBackToFront();
-        if (!hasRendered) {
-            hasRendered = true;
+        if (recursionDepth == 0) ScreenDebugText.recordUpdate(getAssociatedUUID());
+        lastRenderedEye = eye;
+        if (!hasRenderedOnce) {
+            hasRenderedOnce = true;
             firstRenderNanos = System.nanoTime();
         }
     }

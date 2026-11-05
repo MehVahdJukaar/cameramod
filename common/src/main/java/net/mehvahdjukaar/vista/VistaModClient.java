@@ -290,7 +290,7 @@ public class VistaModClient {
 
     public static void onRenderTickEnd(Minecraft minecraft) {
         LiveFeedTexturesManager.onRenderTickEnd();
-        MirrorTextureManager.processPending();
+        MirrorTextureManager.onRenderTickEnd();
         syncSoundPause(minecraft);
     }
 

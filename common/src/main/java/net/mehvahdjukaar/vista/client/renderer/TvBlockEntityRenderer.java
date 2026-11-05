@@ -5,7 +5,6 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.mehvahdjukaar.candlelight.api.VirtualOverride;
 import net.mehvahdjukaar.moonlight.api.client.util.LOD;
-import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.client.textures.ScreenFit;
@@ -19,8 +18,6 @@ import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.mehvahdjukaar.vista.integration.refurbished_furniture.RefurbishedFurnitureCompat;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
@@ -32,8 +29,6 @@ import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec2;
 import org.joml.Vector3f;
-
-import java.util.UUID;
 
 public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity> {
 
@@ -137,10 +132,10 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
                 uInset, vInset, 1 - uInset, 1 - vInset, light);
 
 
-        if (ClientConfigs.rendersDebug()) {
-            if (videoSource instanceof BroadcastVideoSource broadcast) {
-                renderDebug(broadcast.uuid(), poseStack, buffer, partialTick, blockEntity);
-            }
+        if (ClientConfigs.rendersDebug() && videoSource instanceof BroadcastVideoSource broadcast) {
+            float endermanAnim = blockEntity.endermanLook.animation.getValue(partialTick);
+            ScreenDebugText.draw(broadcast.uuid(), LiveFeedTexturesManager.SCHEDULER.get(), poseStack, buffer,
+                    1, 1.5f, endermanAnim != 0 ? "p " + endermanAnim : null);
         }
 
         poseStack.popPose();
@@ -182,62 +177,5 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         builder.setUv2(lu, lv);
         builder.setNormal(normal.x, normal.y, normal.z);
     }
-
-
-
-
-    private void renderDebug(UUID tex, PoseStack poseStack, MultiBufferSource buffer, float partialTick,
-                             TVBlockEntity tile) {
-        RollingBuffer<Long> lastUpdateTimes = LiveFeedTexturesManager.UPDATE_TIMES.get(tex);
-        if (lastUpdateTimes == null) {
-            return;
-        }
-
-        poseStack.pushPose();
-
-        Font font = Minecraft.getInstance().font;
-
-        poseStack.translate(1, 1.5, -0.1);
-        poseStack.mulPose(Axis.YP.rotationDegrees(-180));
-        poseStack.scale(1 / 16f, -1 / 16f, 1 / 16f);
-        poseStack.scale(0.5f, 0.5f, 0.5f);
-
-
-        double averageUpdateinterval = calculateAverageUpdateTime(lastUpdateTimes);
-
-        int y = 0;
-        font.drawInBatch(String.format("up rate %.2f", averageUpdateinterval), 0, 7, -1,
-                false, poseStack.last().pose(), buffer, Font.DisplayMode.NORMAL,
-                OverlayTexture.NO_OVERLAY,
-                LightTexture.FULL_BRIGHT);
-
-        double updateMs = LiveFeedTexturesManager.SCHEDULER.get().getAverageUpdateTimeMs();
-
-        y -= 9;
-        font.drawInBatch(String.format("up ms %.2f", updateMs), 0, y, -1, false, poseStack.last().pose(), buffer, Font.DisplayMode.NORMAL,
-                OverlayTexture.NO_OVERLAY, LightTexture.FULL_BRIGHT);
-
-        float endermanAnim = tile.endermanLook.animation.getValue(partialTick);
-        if (endermanAnim != 0) {
-            y -= 9;
-            font.drawInBatch("p " + endermanAnim, 0, y, -1, false, poseStack.last().pose(), buffer, Font.DisplayMode.NORMAL,
-                    OverlayTexture.NO_OVERLAY, LightTexture.FULL_BRIGHT);
-
-        }
-        poseStack.popPose();
-    }
-
-    static double calculateAverageUpdateTime(RollingBuffer<Long> lastUpdateTimes) {
-        int size = lastUpdateTimes.size();
-        if (size < 2) return 0; // Need at least 2 timestamps to compute intervals
-
-        long totalDiff = 0;
-        for (int i = 1; i < size; i++) {
-            totalDiff += lastUpdateTimes.get(i) - lastUpdateTimes.get(i - 1);
-        }
-
-        return totalDiff / (size - 1d); // average in nanoseconds
-    }
-
 
 }

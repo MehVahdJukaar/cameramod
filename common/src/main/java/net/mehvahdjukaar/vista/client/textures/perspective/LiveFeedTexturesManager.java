@@ -2,35 +2,30 @@ package net.mehvahdjukaar.vista.client.textures.perspective;
 
 import com.google.common.base.Suppliers;
 import net.mehvahdjukaar.moonlight.api.client.texture_renderer.DynamicTextureRenderer;
-import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.AdaptiveUpdateScheduler;
+import net.mehvahdjukaar.vista.client.renderer.ScreenDebugText;
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.VisibleForDebug;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 import java.util.function.Supplier;
 
 public class LiveFeedTexturesManager {
 
     @VisibleForDebug
-    public static final Map<UUID, RollingBuffer<Long>> UPDATE_TIMES = new HashMap<>();
-
-    @VisibleForDebug
     public static final Supplier<AdaptiveUpdateScheduler<ResourceLocation>> SCHEDULER =
             Suppliers.memoize(() ->
                     AdaptiveUpdateScheduler.builder()
-                            .baseFps(ClientConfigs.UPDATE_FPS.get())
-                            .minFps(ClientConfigs.MIN_UPDATE_FPS.get())
-                            .targetBudgetMs(ClientConfigs.THROTTLING_UPDATE_MS.get()) //10% of a frame which at 60fps = 16.6ms is ~1.66ms which should lower fps from 60 to 54. in other words at most a 6fps drop
-                            .evictAfterTicks(20 * 5) //5 seconds
-                            .guardTargetFps(60) //if we go under 60 fps, be more aggressive
+                            .maxUpdatesPerSecond(ClientConfigs.MAX_UPDATE_FPS.get())
+                            .minUpdatesPerSecond(ClientConfigs.MIN_UPDATE_FPS.get())
+                            .budgetMsPerFrame(ClientConfigs.THROTTLING_UPDATE_MS.get()) //10% of a frame which at 60fps = 16.6ms is ~1.66ms which should lower fps from 60 to 54. in other words at most a 6fps drop
+                            .evictUnseenAfterSeconds(5)
+                            .slowDownBelowFps(60) //if we go under 60 fps, be more aggressive
                             .build()
             );
 
@@ -57,7 +52,7 @@ public class LiveFeedTexturesManager {
 
 
             if (texture == null) {
-                SCHEDULER.get().forceUpdateNextTick(textureId);
+                SCHEDULER.get().forceUpdateNextFrame(textureId);
                 return null;
             }
 
@@ -97,7 +92,7 @@ public class LiveFeedTexturesManager {
 
     @SuppressWarnings("ConstantConditions")
     public static void clear() {
-        UPDATE_TIMES.clear();
+        ScreenDebugText.clear();
         //TODO: change just invalidate our own
         DynamicTextureRenderer.clearCache();
     }

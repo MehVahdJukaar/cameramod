@@ -50,8 +50,6 @@ dependencies {
     modCompileOnly("curse.maven:refurbished-furniture-897116:7473562")
     modCompileOnly("curse.maven:framework-549225:7462474")
 
-    modImplementation("curse.maven:lets-do-furniture-1062363:9203795")
-    modImplementation("curse.maven:architectury-api-419699:8492725")
     modImplementation("curse.maven:cloth-config-348521:5623418")
 
     modCompileOnly("curse.maven:origins-391943:7365871")

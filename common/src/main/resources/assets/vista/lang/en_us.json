@@ -35,7 +35,8 @@
   "cassette_tape.vista.bonfire_steve.tooltip": "HappyMeek - Bonfire",
   "subtitles.vista.television.eject": "Cassette Eject",
   "subtitles.vista.television.insert": "Cassette Insert",
-  "subtitles.vista.hollow_cassette.link": "Cassette Linked",  "subtitles.vista.television.turn_on": "Television On",
+  "subtitles.vista.hollow_cassette.link": "Cassette Linked",
+  "subtitles.vista.television.turn_on": "Television On",
   "subtitles.vista.television.turn_off": "Television Off",
   "message.vista.viewfinder.control": "Press %1$s to Dismount, %2$s to Lock/Unlock",
   "gui.vista.viewfinder.view": "Look through",
@@ -159,5 +160,15 @@
   "vista.configuration.general.no_iris_warn_screen.description": "Disables the warning screen shown when Iris is installed without Iris Bonk",
   "vista.configuration.general.no_veil_warn_screen": "No Veil Warn Screen",
   "vista.configuration.general.no_veil_warn_screen.description": "Disables the warning screen shown when Veil is installed without Veil Bonk",
-  "vista.configuration.television.use_furniture_electricity.description": "Makes TVs consume energy from the Refurbished Furnitures mod"
+  "vista.configuration.television.use_furniture_electricity.description": "Makes TVs consume energy from the Refurbished Furnitures mod",
+  "vista.configuration.mirror.max_update_fps": "Max Update Fps",
+  "vista.configuration.mirror.max_update_fps.description": "How many times per second a mirror re-renders its reflection at most. Throttling and the idle rate below can only lower it. Lowering this will improve performance but make the reflection choppier",
+  "vista.configuration.mirror.min_update_fps": "Min Update Fps",
+  "vista.configuration.mirror.min_update_fps.description": "The minimum update fps for mirrors. The mod will throttle update rate when fps are low so this serves as a lower limit",
+  "vista.configuration.mirror.idle_update_fps": "Idle Update Fps",
+  "vista.configuration.mirror.idle_update_fps.description": "Update fps used while the camera stands still. A flat mirror only changes when the eye moves, so standing still only needs to keep up with moving entities",
+  "vista.configuration.mirror.throttling_update_ms": "Throttling Update Ms",
+  "vista.configuration.mirror.throttling_update_ms.description": "The maximum number of milliseconds all mirror reflections can take per frame before fps throttling begins",
+  "vista.configuration.live_feed.max_update_fps": "Max Update Fps",
+  "vista.configuration.live_feed.max_update_fps.description": "How many times per second the television updates its live feed texture at most. Throttling can only lower it. Lowering this will improve performance but make the video less smooth, fractions work too"
 }

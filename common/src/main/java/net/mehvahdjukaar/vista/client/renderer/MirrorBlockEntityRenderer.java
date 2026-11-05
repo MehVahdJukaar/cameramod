@@ -80,11 +80,15 @@ public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBloc
         Camera mainCamera = mc.gameRenderer.mainCamera;
         Vec3 eyeLocal = SableCompatClient.projectIntoSubLevel(blockEntity, mainCamera.getPosition(), partialTick);
         MirrorReflection reflection = MirrorReflection.compute(planePoint, normal, eyeLocal);
-        if (!reflection.viewerInFront()) return;
+
+        if (!reflection.viewerInFront()) {
+            return;
+        }
 
         // depth > 0 means we're inside another mirror's reflection
         int depth = VistaLevelRenderer.getCurrentDepth();
         MirrorReflectionTexture text;
+
         if (depth == 0) {
             Vec2i screenSize = blockEntity.getScreenPixelSize();
             Vec3 eye = mainCamera.getPosition().add(VistaLevelRenderer.getMainBobEyeOffset());
@@ -114,7 +118,7 @@ public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBloc
                 int sharedLod = MirrorTextureManager.distanceLod(blockEntity);
                 MirrorReflectionTexture shared =
                         MirrorTextureManager.getMirrorTexture(blockEntity.getId(), screenSize, sharedLod);
-                if (shared != null && shared.hasRendered()) return shared;
+                if (shared != null && shared.hasRenderedOnce()) return shared;
                 return MirrorTextureManager.getMirrorTexture(blockEntity, screenSize, eye, sharedLod);
             }
             case RECURSIVE: {
@@ -139,7 +143,7 @@ public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBloc
         poseStack.pushPose();
         poseStack.translate(0.5, 0.5, 0.5);
         poseStack.mulPose(Axis.YP.rotationDegrees(180 - dir.toYRot()));
-        // recession pushes the surface back into the cell for the FAR model
+
         float zFightOffset = VistaLevelRenderer.needsManualSurfaceOffset() ? SURFACE_OFFSET : 0f;
         poseStack.translate(0, 0, -0.5 + (float) recession - zFightOffset);
 
@@ -155,6 +159,12 @@ public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBloc
                 1f, 1f, 0f, 0f,
                 255, 255, 255, 255,
                 VertexUtil.lightU(light), VertexUtil.lightV(light));
+
+        if (ClientConfigs.rendersDebug()) {
+            ScreenDebugText.draw(blockEntity.getId(), MirrorTextureManager.SCHEDULER.get(), poseStack, buffer,
+                    1, h + 0.5f, text.getWidth() + "x" + text.getHeight(),
+                    "depth " + text.getRecursionDepth());
+        }
 
         poseStack.popPose();
     }

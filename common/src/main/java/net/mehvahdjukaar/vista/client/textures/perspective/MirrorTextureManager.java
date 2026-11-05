@@ -1,9 +1,11 @@
 package net.mehvahdjukaar.vista.client.textures.perspective;
 
+import com.google.common.base.Suppliers;
 import net.mehvahdjukaar.moonlight.api.client.texture_renderer.DynamicTextureRenderer;
 import net.mehvahdjukaar.moonlight.api.client.util.LOD;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.client.AdaptiveUpdateScheduler;
 import net.mehvahdjukaar.vista.common.mirror.MirrorBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.integration.sable.SableCompatClient;
@@ -15,10 +17,22 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.Supplier;
 
 public class MirrorTextureManager {
 
     private static final Map<String, Pending> PENDING = new HashMap<>();
+
+    public static final Supplier<AdaptiveUpdateScheduler<ResourceLocation>> SCHEDULER =
+            Suppliers.memoize(() ->
+                    AdaptiveUpdateScheduler.builder()
+                            .maxUpdatesPerSecond(ClientConfigs.MIRROR_MAX_UPDATE_FPS.get())
+                            .minUpdatesPerSecond(ClientConfigs.MIRROR_MIN_UPDATE_FPS.get())
+                            .budgetMsPerFrame(ClientConfigs.MIRROR_THROTTLING_UPDATE_MS.get())
+                            .evictUnseenAfterSeconds(5)
+                            .slowDownBelowFps(60)
+                            .build()
+            );
 
     private record Pending(MirrorBlockEntity mirror, Vec2i screenSize, Vec3 eye,
                            int depth, List<UUID> parentChain, int lod) {
@@ -34,8 +48,8 @@ public class MirrorTextureManager {
         return Math.max(1, scaled);
     }
 
-    // Texture resolution LOD, halving per level. Does not touch MIRROR_RENDER_DISTANCE, a distant
-    // mirror still renders its full scene, just into a smaller target.
+    // Texture resolution LOD, halving per level. Does not touch MIRROR_RENDER_DISTANCE.
+    //a distant mirror still renders its full scene, just into a smaller target.
     public static int distanceLod(LOD lod) {
         if (lod.within(24)) return 0;
         if (lod.within(40)) return 1;
@@ -97,7 +111,7 @@ public class MirrorTextureManager {
             texture.setPending(mirror, eye);
             texture.setUpdateNextTick(true);
         }
-        return texture.hasRendered() ? texture : null;
+        return texture.hasRenderedOnce() ? texture : null;
     }
 
     @Nullable
@@ -106,7 +120,7 @@ public class MirrorTextureManager {
         MirrorReflectionTexture texture = getMirrorTextureForChain(mirror.getId(), screenSize, depth, parentChain);
         if (texture == null) return null;
         requestUpdate(mirror, screenSize, eye, depth, parentChain, 0);
-        return texture.hasRendered() ? texture : null;
+        return texture.hasRenderedOnce() ? texture : null;
     }
 
     private static void requestUpdate(MirrorBlockEntity mirror, Vec2i screenSize, Vec3 eye,
@@ -115,7 +129,13 @@ public class MirrorTextureManager {
         PENDING.put(key, new Pending(mirror, screenSize, eye, depth, parentChain, lod));
     }
 
-    public static void processPending() {
+    public static void onRenderTickEnd() {
+        processPending();
+
+        SCHEDULER.get().onEndOfFrame();
+    }
+
+    private static void processPending() {
         if (PENDING.isEmpty()) return;
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) {
@@ -128,7 +148,9 @@ public class MirrorTextureManager {
             MirrorReflectionTexture text = p.depth == 0
                     ? getMirrorTexture(p.mirror.getId(), p.screenSize, p.lod)
                     : getMirrorTextureForChain(p.mirror.getId(), p.screenSize, p.depth, p.parentChain);
-            if (text != null) text.renderReflection(p.mirror, p.eye);
+            if (text != null) {
+                text.maybeRenderReflection(p.mirror, p.eye);
+            }
         }
     }
 
