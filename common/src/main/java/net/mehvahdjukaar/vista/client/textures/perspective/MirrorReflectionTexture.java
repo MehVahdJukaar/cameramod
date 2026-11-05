@@ -26,7 +26,6 @@ import java.util.UUID;
 public class MirrorReflectionTexture extends PerspectiveTexture {
 
     private static final float MIN_NEAR = 0.05f;
-    private static final float FAR = 1000f;
     private static final double FRAME_BLOCKS = 2.0 / 16.0;
     private static final long FADE_DURATION_NANOS = 300_000_000L;
 
@@ -131,10 +130,10 @@ public class MirrorReflectionTexture extends PerspectiveTexture {
         if (!reflection.viewerInFront()) return;
 
         Vec3 halfRight = camRight.scale(halfW);
-        Vec3 halfUp    = worldUp.scale(halfH);
-        Vec3 bottomLeft  = groupCenter.subtract(halfRight).subtract(halfUp);
+        Vec3 halfUp = worldUp.scale(halfH);
+        Vec3 bottomLeft = groupCenter.subtract(halfRight).subtract(halfUp);
         Vec3 bottomRight = groupCenter.add(halfRight).subtract(halfUp);
-        Vec3 topLeft     = groupCenter.subtract(halfRight).add(halfUp);
+        Vec3 topLeft = groupCenter.subtract(halfRight).add(halfUp);
 
         double depth = reflection.signedDistance();
         float near = Math.max(MIN_NEAR, (float) depth);
@@ -149,7 +148,17 @@ public class MirrorReflectionTexture extends PerspectiveTexture {
         float b = (float) vbl.dot(worldUp)  * scale;
         float t = (float) vtl.dot(worldUp)  * scale;
 
-        Matrix4f projection = new Matrix4f().frustum(l, r, b, t, near, FAR);
+        int sceneRenderDistance = ClientConfigs.RENDER_DISTANCE.get();
+        Integer renderDistanceOverride = null;
+        if (recursionDepth > 0) {
+            double divider = Math.pow(ClientConfigs.MIRROR_RECURSION_DIST_DIVIDER.get(), recursionDepth);
+            renderDistanceOverride = (int) Math.max(1, sceneRenderDistance / divider);
+            sceneRenderDistance = renderDistanceOverride;
+        }
+
+        //same 4x that GameRenderer.getDepthFar does. fog ends way before that anyways
+        float far = near + sceneRenderDistance * 4f;
+        Matrix4f projection = new Matrix4f().frustum(l, r, b, t, near, far);
 
         final float camYaw = dir.toYRot();
         SceneCameraSetup setup = (camera, pt) ->
@@ -157,20 +166,14 @@ public class MirrorReflectionTexture extends PerspectiveTexture {
 
         Vec3 bfsStart = groupCenter.add(normal.scale(1.0));
 
-        Integer renderDistanceOverride = null;
-        if (recursionDepth > 0) {
-            double divider = Math.pow(ClientConfigs.MIRROR_RECURSION_DIST_DIVIDER.get(), recursionDepth);
-            renderDistanceOverride = (int) Math.max(1,
-                    ClientConfigs.RENDER_DISTANCE.get() / divider);
-        }
-
         VistaLevelRenderer.render(this, mirror, setup, 0f, false, projection, bfsStart,
                 renderDistanceOverride);
 
-        // Nothing is composited here: mirror_material.fsh takes this as Sampler0 and layers the
-        // underlay and overlay itself.
         swapBackToFront();
-        if (recursionDepth == 0) ScreenDebugText.recordUpdate(getAssociatedUUID());
+
+        if (recursionDepth == 0) {
+            ScreenDebugText.recordUpdate(getAssociatedUUID());
+        }
         lastRenderedEye = eye;
         if (!hasRenderedOnce) {
             hasRenderedOnce = true;
@@ -184,11 +187,13 @@ public class MirrorReflectionTexture extends PerspectiveTexture {
         if (camera.entity == null) {
             camera.entity = new Display.BlockDisplay(EntityType.BLOCK_DISPLAY, level);
         }
+
         Entity dummy = camera.getEntity();
         dummy.setPos(reflectedEye);
         dummy.setXRot(0f);
         dummy.setYRot(yaw);
         camera.setPosition(reflectedEye);
         camera.setRotation(yaw, 0f);
+
     }
 }

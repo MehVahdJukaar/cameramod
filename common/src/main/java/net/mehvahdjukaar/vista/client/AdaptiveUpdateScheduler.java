@@ -58,7 +58,7 @@ public class AdaptiveUpdateScheduler<ID> {
     private double lastFrameMs = 16.667;
     private long lastFrameEndNanos = -1L;
     private long frameCount = 0L;
-    private double phaseStepThisFrame = 1.0;
+    private double updatesPerSecondThisFrame;
 
     public AdaptiveUpdateScheduler(
             double maxUpdatesPerSecond,
@@ -87,6 +87,7 @@ public class AdaptiveUpdateScheduler<ID> {
         this.evictUnseenAfterMs = evictUnseenAfterMs;
 
         this.fpsGuardAverageFrameMs = this.fpsGuardFrameMs;
+        this.updatesPerSecondThisFrame = maxUpdatesPerSecond;
     }
 
     public double getAverageUpdateMsPerFrame() {
@@ -102,12 +103,15 @@ public class AdaptiveUpdateScheduler<ID> {
         //not using computeIfAbsent since its a hot path
         Entry e = entries.get(id);
         if (e == null) {
-            e = new Entry(id, elapsedMs);
+            e = new Entry(id, elapsedMs - lastFrameMs);
             entries.put(id, e);
         }
+        //mirrors come once per frame and tvs or once per tick. step by whatever time passed for them
+        double sinceLastRequestMs = elapsedMs - e.lastRequestedMs;
         e.lastRequestedMs = elapsedMs;
 
-        double step = Math.min(phaseStepThisFrame, maxUpdatesPerSecondForThis * lastFrameMs / 1000.0);
+        double updatesPerSecond = Math.min(updatesPerSecondThisFrame, maxUpdatesPerSecondForThis);
+        double step = Mth.clamp(updatesPerSecond * sinceLastRequestMs / 1000.0, 0.0, 1.0);
         if (advancePhaseAndCheckIfDue(e, step)) {
             long t0 = System.nanoTime();
             try {
@@ -162,7 +166,7 @@ public class AdaptiveUpdateScheduler<ID> {
         }
 
         frameCount++;
-        phaseStepThisFrame = Mth.clamp(throttledUpdatesPerSecond() * lastFrameMs / 1000.0, 0.0, 1.0);
+        updatesPerSecondThisFrame = throttledUpdatesPerSecond();
 
         if ((frameCount & 0xFF) == 0) {
             double cutoff = elapsedMs - evictUnseenAfterMs;
@@ -192,7 +196,7 @@ public class AdaptiveUpdateScheduler<ID> {
             entries.put(id, e);
         }
         e.lastRequestedMs = elapsedMs;
-        e.phase = 0.999999;
+        e.phase = 1.0;
     }
 
     private static double stablePhaseFromId(Object id) {
@@ -208,6 +212,7 @@ public class AdaptiveUpdateScheduler<ID> {
         z = (z ^ (z >>> 27)) * 0x94D049BB133111EBL;
         return z ^ (z >>> 31);
     }
+
 
     public static class Builder {
         private double maxUpdatesPerSecond;

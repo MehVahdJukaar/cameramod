@@ -1,6 +1,7 @@
 package net.mehvahdjukaar.vista;
 
 import com.google.common.collect.MapMaker;
+import com.mojang.blaze3d.audio.Channel;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import net.mehvahdjukaar.moonlight.api.client.CoreShaderContainer;
 import net.mehvahdjukaar.moonlight.api.client.gui.ConfigScreenExtensions;
@@ -24,6 +25,7 @@ import net.mehvahdjukaar.vista.client.ui.ViewFinderScreen;
 import net.mehvahdjukaar.vista.client.ui.VistaWelcomeScreen;
 import net.mehvahdjukaar.vista.client.ui.picture_tape.MapTapeEntryRenderer;
 import net.mehvahdjukaar.vista.client.ui.picture_tape.PictureTapeScreen;
+import net.mehvahdjukaar.vista.client.web.audio.TvSpeakerSoundInstance;
 import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpeg;
 import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpegManager;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ExtraChunkViewData;
@@ -294,13 +296,22 @@ public class VistaModClient {
         syncSoundPause(minecraft);
     }
 
-    //sort of does this for all pause screens... can be consider a feature... i guess. since vanilla for some reason doesnt
+    //tv clock stops with game but speaker stream would keep going. only touch our own channels
     private static void syncSoundPause(Minecraft minecraft) {
-        boolean paused = minecraft.isPaused() && minecraft.screen != null;
-        if (paused == soundsPausedByUs) return;
-        soundsPausedByUs = paused;
-        if (paused) minecraft.getSoundManager().pause();
-        else minecraft.getSoundManager().resume();
+        boolean isGamePaused = minecraft.isPaused() && minecraft.screen != null;
+        if (!isGamePaused && !soundsPausedByUs) {
+            return;
+        }
+
+        soundsPausedByUs = isGamePaused;
+
+        var channels = minecraft.getSoundManager().soundEngine.instanceToChannel;
+        for (var entry : channels.entrySet()) {
+            if (entry.getKey() instanceof TvSpeakerSoundInstance) {
+                entry.getValue().execute(isGamePaused ? Channel::pause : Channel::unpause);
+            }
+        }
+
     }
 
 

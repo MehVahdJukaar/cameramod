@@ -76,3 +76,6 @@ accessible method net/minecraft/client/renderer/LevelRenderer captureFrustum (Lo
 
 
 accessible method net/minecraft/client/renderer/ViewArea getRenderSectionAt (Lnet/minecraft/core/BlockPos;)Lnet/minecraft/client/renderer/chunk/SectionRenderDispatcher$RenderSection;
+
+accessible field net/minecraft/client/sounds/SoundManager soundEngine Lnet/minecraft/client/sounds/SoundEngine;
+accessible field net/minecraft/client/sounds/SoundEngine instanceToChannel Ljava/util/Map;
