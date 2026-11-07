@@ -1,6 +1,5 @@
 package net.mehvahdjukaar.vista.mixins;
 
-import com.llamalad7.mixinextras.expression.Expression;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.sugar.Local;
@@ -82,13 +81,6 @@ public class LevelRendererMixin implements ILevelRendererExt {
         return original;
     }
 
-
-    @Expression("? * ? + ? * ? + ? * ? > 1.0")
-    @ModifyExpressionValue(method = "renderSectionLayer", at = @At("MIXINEXTRAS:EXPRESSION"), require = 0)
-    private boolean vista$dontResortTranslucencyInFeedsPls(boolean original) {
-        //sort is shared so this would just be wasted work. idk if this can alter the feed look tho
-        return original && (!VistaLevelRenderer.isRenderingLiveFeed());
-    }
 
     @Inject(method = "renderEntity", at = @At("HEAD"), cancellable = true)
     private void vista$hideMirrorInvisibleEntities(Entity entity, double camX, double camY, double camZ,

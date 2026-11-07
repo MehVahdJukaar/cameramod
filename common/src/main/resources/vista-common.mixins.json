@@ -27,6 +27,7 @@
     "ItemRendererMixin",
     "KeyboardHandlerMixin",
     "LevelRendererMixin",
+    "LevelRendererTranslucencySortMixin",
     "LocalPlayerMixin",
     "MinecraftMixin",
     "MouseHandlerMixin",
