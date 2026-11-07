@@ -21,6 +21,11 @@ public class ClientConfigs {
 
     public static final Supplier<Integer> RENDER_DISTANCE;
     public static final Supplier<Integer> MIRROR_RENDER_DISTANCE;
+    public static final Supplier<Integer> MIRROR_REFLECTION_DISTANCE;
+    public static final Supplier<Double> MIRROR_UPDATE_FPS;
+    public static final Supplier<Double> MIRROR_MIN_UPDATE_FPS;
+    public static final Supplier<Double> MIRROR_IDLE_UPDATE_FPS;
+    public static final Supplier<Double> MIRROR_THROTTLING_UPDATE_MS;
     public static final Supplier<Integer> MIRROR_RESOLUTION_SCALE;
     public static final Supplier<MirrorUpdateMode> MIRROR_UPDATE_MODE;
     public static final Supplier<MirrorRecursionMode> MIRROR_RECURSION_MODE;
@@ -70,6 +75,24 @@ public class ClientConfigs {
         MIRROR_SMOOTH = builder
                 .comment("Smooth the mirror reflection with bilinear texture filtering. Enabled gives a softer, less pixelated reflection; disabled keeps it crisp and pixelated.")
                 .define("smooth_reflection", false);
+        MIRROR_REFLECTION_DISTANCE = builder
+                .comment("Max distance in blocks that terrain and entities render to inside a mirror reflection. Lowering this will improve the performance of mirrors, possibly by a lot")
+                .define("reflection_distance", 64, 16, 2048);
+
+        builder.push("throttling");
+        MIRROR_UPDATE_FPS = builder
+                .comment("Regular reflection render rate per mirror. Small or far away mirrors update proportionally less often")
+                .define("update_fps", 30.0, 1.0, 240.0);
+        MIRROR_MIN_UPDATE_FPS = builder
+                .comment("The floor that the mirror update rate will never drop below. Values above update_fps are ignored")
+                .define("min_update_fps", 4.0, 0.25, 240.0);
+        MIRROR_IDLE_UPDATE_FPS = builder
+                .comment("Reflection update rate used while your eye is stationary. Set equal to update_fps to disable the idle slowdown")
+                .define("idle_update_fps", 5.0, 0.25, 240.0);
+        MIRROR_THROTTLING_UPDATE_MS = builder
+                .comment("Max milliseconds per frame that all mirror reflection renders may take before their update rate is throttled")
+                .define("throttling_update_ms", 3.5, 0.5, 1000.0);
+        builder.pop(); // throttling
 
         builder.push("recursion");
         MIRROR_RECURSION_MODE = builder

@@ -94,8 +94,10 @@ public class MirrorTextureManager {
         if (ClientConfigs.MIRROR_UPDATE_MODE.get() != ClientConfigs.MirrorUpdateMode.TEXTURE_REFRESH) {
             requestUpdate(mirror, screenSize, eye, 0, List.of(), lod);
         } else {
-            texture.setPending(mirror, eye);
-            texture.setUpdateNextTick(true);
+            if (MirrorUpdateScheduler.shouldRender(texture, mirror, eye)) {
+                texture.setPending(mirror, eye);
+                texture.setUpdateNextTick(true);
+            }
         }
         return texture.hasRendered() ? texture : null;
     }
@@ -128,11 +130,14 @@ public class MirrorTextureManager {
             MirrorReflectionTexture text = p.depth == 0
                     ? getMirrorTexture(p.mirror.getId(), p.screenSize, p.lod)
                     : getMirrorTextureForChain(p.mirror.getId(), p.screenSize, p.depth, p.parentChain);
-            if (text != null) text.renderReflection(p.mirror, p.eye);
+            if (text != null && MirrorUpdateScheduler.shouldRender(text, p.mirror, p.eye)) {
+                text.renderReflection(p.mirror, p.eye);
+            }
         }
     }
 
     public static void clear() {
         PENDING.clear();
+        MirrorUpdateScheduler.clear();
     }
 }

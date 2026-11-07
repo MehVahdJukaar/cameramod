@@ -86,6 +86,15 @@ public class MirrorReflectionTexture extends PerspectiveTexture {
     }
 
     public void renderReflection(MirrorBlockEntity mirror, Vec3 eye) {
+        MirrorUpdateScheduler.beginRender();
+        try {
+            doRenderReflection(mirror, eye);
+        } finally {
+            MirrorUpdateScheduler.endRender();
+        }
+    }
+
+    private void doRenderReflection(MirrorBlockEntity mirror, Vec3 eye) {
         if (mirror.isRemoved()) return;
         Level level = mirror.getLevel();
         if (level == null) return;
@@ -137,11 +146,10 @@ public class MirrorReflectionTexture extends PerspectiveTexture {
 
         Vec3 bfsStart = groupCenter.add(normal.scale(1.0));
 
-        Integer renderDistanceOverride = null;
+        int renderDistanceOverride = ClientConfigs.MIRROR_REFLECTION_DISTANCE.get();
         if (recursionDepth > 0) {
             double divider = Math.pow(ClientConfigs.MIRROR_RECURSION_DIST_DIVIDER.get(), recursionDepth);
-            renderDistanceOverride = (int) Math.max(1,
-                    ClientConfigs.RENDER_DISTANCE.get() / divider);
+            renderDistanceOverride = (int) Math.max(16, renderDistanceOverride / divider);
         }
 
         VistaLevelRenderer.render(this, mirror, setup, 0f, false, projection, bfsStart,

@@ -17,6 +17,7 @@ import net.mehvahdjukaar.vista.client.renderer.*;
 import net.mehvahdjukaar.vista.client.textures.CassetteTexturesManager;
 import net.mehvahdjukaar.vista.client.textures.perspective.LiveFeedTexturesManager;
 import net.mehvahdjukaar.vista.client.textures.perspective.MirrorTextureManager;
+import net.mehvahdjukaar.vista.client.textures.perspective.MirrorUpdateScheduler;
 import net.mehvahdjukaar.vista.client.textures.web.WebTexturesManager;
 import net.mehvahdjukaar.vista.client.ui.ModWarningScreen;
 import net.mehvahdjukaar.vista.client.ui.TvShowcaseWidget;
@@ -291,6 +292,7 @@ public class VistaModClient {
     public static void onRenderTickEnd(Minecraft minecraft) {
         LiveFeedTexturesManager.onRenderTickEnd();
         MirrorTextureManager.processPending();
+        MirrorUpdateScheduler.onEndOfFrame();
         syncSoundPause(minecraft);
     }
 

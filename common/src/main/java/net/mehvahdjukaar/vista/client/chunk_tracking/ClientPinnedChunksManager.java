@@ -13,6 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ClientPinnedChunksManager {
 
     private static final Map<Long, LevelChunk> PINNED = new ConcurrentHashMap<>();
+    private static volatile boolean everPinned = false;
 
     public static boolean clientWantsZoneChunksSent() {
         //sodium does its own stuff.
@@ -21,12 +22,12 @@ public class ClientPinnedChunksManager {
 
     @Nullable
     public static LevelChunk get(int chunkX, int chunkZ) {
-        if (PINNED.isEmpty()) return null;
+        if (!everPinned) return null;
         return PINNED.get(ChunkPos.asLong(chunkX, chunkZ));
     }
 
     public static boolean isPinned(LevelChunk chunk) {
-        if (PINNED.isEmpty()) return false;
+        if (!everPinned) return false;
         return PINNED.get(chunk.getPos().toLong()) == chunk;
     }
 
@@ -35,6 +36,7 @@ public class ClientPinnedChunksManager {
     }
 
     public static void pin(LevelChunk chunk) {
+        everPinned = true;
         LevelChunk old = PINNED.put(chunk.getPos().toLong(), chunk);
         if (old != null && old != chunk) unload(old);
     }
