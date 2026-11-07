@@ -157,7 +157,7 @@ public final class GazeRedirect {
         if (uv == null) return null;
 
         Vec3 dir = camera.getPixelRayDirection(uv.x, uv.y);
-        Vec3 origin = Vec3.atCenterOf(camera.getBlockPos()).add(dir.scale(LENS_EXIT_OFFSET));
+        Vec3 origin = camera.getGlobalPosition(1).add(dir.scale(LENS_EXIT_OFFSET));
         Ray ray = new Ray(origin, dir, tv);
         if (PlatHelper.getPhysicalSide().isClient() && ClientConfigs.rendersDebug()) {
             ViewFinderBlockEntityRenderer.debugLastCameraRay = ray;
