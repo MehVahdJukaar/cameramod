@@ -1,3 +1,1 @@
-- fixed yellow lens being missing
-- minor fixes
-- fixed big tvs showing missing power warning with refurbished furniture. fixes #198
+- fixed an issue with enderman gaze & sable sublevels

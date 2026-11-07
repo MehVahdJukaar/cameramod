@@ -36,9 +36,9 @@ subprojects {
     upload {
         val modLoader = project.name
 
-        maven {
-            nexus()
-        }
+        //maven {
+        //    nexus()
+        //}
         curseforge {
             dependencies {
                 required("selene")
