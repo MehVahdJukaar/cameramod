@@ -1,1 +1,2 @@
 - fixed an issue with enderman gaze & sable sublevels
+- slight performance improvements

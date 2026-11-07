@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ClientPinnedChunksManager {
 
     private static final Map<Long, LevelChunk> PINNED = new ConcurrentHashMap<>();
-    //chunk lookups hit this on every block read, a volatile read beats isEmpty on a concurrent map
+    //Microoptimization: chunk lookups hit this on every block read, a volatile read beats isEmpty on a concurrent map. incorrect technically as its never cleared.
     private static volatile boolean anyPinned = false;
 
     public static boolean clientWantsZoneChunksSent() {
