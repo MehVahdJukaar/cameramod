@@ -6,6 +6,8 @@ import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigType;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ModConfigHolder;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.textures.ScalingMode;
+import net.mehvahdjukaar.vista.client.textures.perspective.LiveFeedTexturesManager;
+import net.mehvahdjukaar.vista.client.textures.perspective.MirrorTextureManager;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 
 import java.util.List;
@@ -72,18 +74,15 @@ public class ClientConfigs {
                 .comment("How mirror reflections are dispatched. RENDER_TICK_END (default): mirrors are queued and flushed from a top level frame hook, which is guaranteed to run outside any level render and stays safe when other mods render the level recursively. TEXTURE_REFRESH: rides along with the live feed texture refresh instead, one render per visible mirror at the end of the frame. Try TEXTURE_REFRESH if you suspect a timing related rendering glitch.")
                 .define("update_mode", MirrorUpdateMode.RENDER_TICK_END);
         MIRROR_MAX_UPDATE_FPS = builder
-                .gameRestart()
                 .comment("How many times per second a mirror re-renders its reflection at most. Throttling and the idle rate below can only lower it. Lowering this will improve performance but make the reflection choppier")
                 .define("max_update_fps", 60.0, 1, 240);
         MIRROR_MIN_UPDATE_FPS = builder
-                .gameRestart()
                 .comment("The minimum update fps for mirrors. The mod will throttle update rate when fps are low so this serves as a lower limit")
                 .define("min_update_fps", 10.0, 1, 240);
         MIRROR_IDLE_UPDATE_FPS = builder
                 .comment("Caps the update fps while the camera stands still. A flat mirror only changes when the eye moves, so standing still only needs to keep up with moving entities")
                 .define("idle_update_fps", 10.0, 1, 240);
         MIRROR_THROTTLING_UPDATE_MS = builder
-                .gameRestart()
                 .comment("The maximum number of milliseconds all mirror reflections can take per frame before fps throttling begins")
                 .define("throttling_update_ms", 6.0, 0, 1000000);
         MIRROR_SMOOTH = builder
@@ -111,9 +110,6 @@ public class ClientConfigs {
                 .comment("Render distance that television will use when rendering the live feed. Decreasing this will improve the performance of TVs, possibly by a lot")
                 .define("render_distance", 64, 1, 2048);
 
-        // screen_effects gates all the visual options below it: when off, they gray out in the config screen.
-        // No explicit icon (the television icon already marks the parent tv entry) - it auto-infers from the name,
-        // which has no matching item, so it shows as a plain checkmark toggle.
         builder.comment("Turns off all the tv screen effects and draws it as a simple texture. Disabling can make the render slightly faster. All below options will be ignored if this is disabled");
         SCREEN_EFFECTS = builder.pushFeature("screen_effects");
         PIXEL_DENSITY = builder
@@ -131,15 +127,12 @@ public class ClientConfigs {
 
         builder.icon("hollow_cassette").push("live_feed");
         MAX_UPDATE_FPS = builder
-                .gameRestart()
                 .comment("How many times per second the television updates its live feed texture at most. Throttling can only lower it. Lowering this will improve performance but make the video less smooth, fractions work too")
                 .define("max_update_fps", 10.0, 1, 60);
         MIN_UPDATE_FPS = builder
-                .gameRestart()
                 .comment("The minimum update fps for live feed. The mod will throttle update rate when fps are low so this serves at a lower limit")
                 .define("min_update_fps", 4.0, 1, 60); //once every 5 ticks
         THROTTLING_UPDATE_MS = builder
-                .gameRestart()
                 .comment("The maximum number of milliseconds all the logic for updating live feeds can take before fps throttling begins. Lowering this will improve performance but make the video less smooth. 16.66ms equals to 5fps")
                 .define("throttling_update_ms", 16.66, 0, 1000000);
 
@@ -214,6 +207,8 @@ public class ClientConfigs {
                 String combined = String.join("|", elements);
                 safeRegex = Pattern.compile(combined);
             }
+            LiveFeedTexturesManager.resetScheduler();
+            MirrorTextureManager.resetScheduler();
         });
         SPEC = builder.build();
         SPEC.forceLoad();

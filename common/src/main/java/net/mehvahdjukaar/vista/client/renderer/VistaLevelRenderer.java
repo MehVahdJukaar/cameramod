@@ -51,6 +51,7 @@ public class VistaLevelRenderer {
     private static final AtomicReference<SectionOcclusionGraph> MC_OWN_GRAPH = new AtomicReference<>(null);
     private static final Deque<RenderFrame> RENDER_STACK = new ArrayDeque<>();
     private static final List<DummyCamera> DUMMY_CAMERA_POOL = new ArrayList<>();
+    private static final Map<SectionOcclusionGraph, Vec3> LAST_OFF_AXIS_EYE = new WeakHashMap<>();
 
     private static ResourceKey<Level> lastLevel = null;
     private static Vec3 mainBobEyeOffset = Vec3.ZERO;
@@ -118,6 +119,7 @@ public class VistaLevelRenderer {
 
     public static void clear() {
         DUMMY_CAMERA_POOL.clear();
+        LAST_OFF_AXIS_EYE.clear();
         MC_OWN_GRAPH.set(null);
         synchronized (STATES_LOCK) {
             MANAGED_STATES.clear();
@@ -491,7 +493,8 @@ public class VistaLevelRenderer {
             double cameraRotXHalf = Math.floor(camera.getXRot() / 2.0);
             double cameraRotYHalf = Math.floor(camera.getYRot() / 2.0);
 
-            boolean hasOffAxis = currentFrame != null && currentFrame.hasOffAxisFrustum;
+            boolean hasOffAxis = currentFrame != null && currentFrame.hasOffAxisFrustum
+                    && offAxisEyeMoved(graph, camera.getPosition());
             if (graph.consumeFrustumUpdate() ||
                     cameraRotXHalf != lr.prevCamRotX ||
                     cameraRotYHalf != lr.prevCamRotY ||
@@ -505,6 +508,15 @@ public class VistaLevelRenderer {
 
         minecraft.getProfiler().pop();
 
+        return true;
+    }
+
+    private static boolean offAxisEyeMoved(SectionOcclusionGraph graph, Vec3 eye) {
+        Vec3 lastEye = LAST_OFF_AXIS_EYE.get(graph);
+        if (lastEye != null && lastEye.distanceToSqr(eye) < 1.0E-8) {
+            return false;
+        }
+        LAST_OFF_AXIS_EYE.put(graph, eye);
         return true;
     }
 

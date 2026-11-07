@@ -1,6 +1,5 @@
 package net.mehvahdjukaar.vista.client.textures.perspective;
 
-import com.google.common.base.Suppliers;
 import net.mehvahdjukaar.moonlight.api.client.texture_renderer.DynamicTextureRenderer;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.VistaMod;
@@ -17,17 +16,26 @@ import java.util.function.Supplier;
 
 public class LiveFeedTexturesManager {
 
+    @Nullable
+    private static AdaptiveUpdateScheduler<ResourceLocation> scheduler;
+
     @VisibleForDebug
-    public static final Supplier<AdaptiveUpdateScheduler<ResourceLocation>> SCHEDULER =
-            Suppliers.memoize(() ->
-                    AdaptiveUpdateScheduler.builder()
-                            .maxUpdatesPerSecond(ClientConfigs.MAX_UPDATE_FPS.get())
-                            .minUpdatesPerSecond(ClientConfigs.MIN_UPDATE_FPS.get())
-                            .budgetMsPerFrame(ClientConfigs.THROTTLING_UPDATE_MS.get()) //10% of a frame which at 60fps = 16.6ms is ~1.66ms which should lower fps from 60 to 54. in other words at most a 6fps drop
-                            .evictUnseenAfterSeconds(5)
-                            .slowDownBelowFps(60) //if we go under 60 fps, be more aggressive
-                            .build()
-            );
+    public static final Supplier<AdaptiveUpdateScheduler<ResourceLocation>> SCHEDULER = () -> {
+        if (scheduler == null) {
+            scheduler = AdaptiveUpdateScheduler.builder()
+                    .maxUpdatesPerSecond(ClientConfigs.MAX_UPDATE_FPS.get())
+                    .minUpdatesPerSecond(ClientConfigs.MIN_UPDATE_FPS.get())
+                    .budgetMsPerFrame(ClientConfigs.THROTTLING_UPDATE_MS.get()) //10% of a frame which at 60fps = 16.6ms is ~1.66ms which should lower fps from 60 to 54. in other words at most a 6fps drop
+                    .evictUnseenAfterSeconds(5)
+                    .slowDownBelowFps(60) //if we go under 60 fps, be more aggressive
+                    .build();
+        }
+        return scheduler;
+    };
+
+    public static void resetScheduler() {
+        scheduler = null;
+    }
 
     public static class Handle {
 

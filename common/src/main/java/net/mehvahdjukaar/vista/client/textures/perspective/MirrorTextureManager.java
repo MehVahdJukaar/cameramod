@@ -1,6 +1,5 @@
 package net.mehvahdjukaar.vista.client.textures.perspective;
 
-import com.google.common.base.Suppliers;
 import net.mehvahdjukaar.moonlight.api.client.texture_renderer.DynamicTextureRenderer;
 import net.mehvahdjukaar.moonlight.api.client.util.LOD;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
@@ -23,16 +22,25 @@ public class MirrorTextureManager {
 
     private static final Map<String, Pending> PENDING = new HashMap<>();
 
-    public static final Supplier<AdaptiveUpdateScheduler<ResourceLocation>> SCHEDULER =
-            Suppliers.memoize(() ->
-                    AdaptiveUpdateScheduler.builder()
-                            .maxUpdatesPerSecond(ClientConfigs.MIRROR_MAX_UPDATE_FPS.get())
-                            .minUpdatesPerSecond(ClientConfigs.MIRROR_MIN_UPDATE_FPS.get())
-                            .budgetMsPerFrame(ClientConfigs.MIRROR_THROTTLING_UPDATE_MS.get())
-                            .evictUnseenAfterSeconds(5)
-                            .slowDownBelowFps(60)
-                            .build()
-            );
+    @Nullable
+    private static AdaptiveUpdateScheduler<ResourceLocation> scheduler;
+
+    public static final Supplier<AdaptiveUpdateScheduler<ResourceLocation>> SCHEDULER = () -> {
+        if (scheduler == null) {
+            scheduler = AdaptiveUpdateScheduler.builder()
+                    .maxUpdatesPerSecond(ClientConfigs.MIRROR_MAX_UPDATE_FPS.get())
+                    .minUpdatesPerSecond(ClientConfigs.MIRROR_MIN_UPDATE_FPS.get())
+                    .budgetMsPerFrame(ClientConfigs.MIRROR_THROTTLING_UPDATE_MS.get())
+                    .evictUnseenAfterSeconds(5)
+                    .slowDownBelowFps(60)
+                    .build();
+        }
+        return scheduler;
+    };
+
+    public static void resetScheduler() {
+        scheduler = null;
+    }
 
     private record Pending(MirrorBlockEntity mirror, Vec2i screenSize, Vec3 eye,
                            int depth, List<UUID> parentChain, int lod) {

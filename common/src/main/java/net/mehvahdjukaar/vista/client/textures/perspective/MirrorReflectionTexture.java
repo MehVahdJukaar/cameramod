@@ -148,7 +148,7 @@ public class MirrorReflectionTexture extends PerspectiveTexture {
         float b = (float) vbl.dot(worldUp)  * scale;
         float t = (float) vtl.dot(worldUp)  * scale;
 
-        int sceneRenderDistance = ClientConfigs.RENDER_DISTANCE.get();
+        int sceneRenderDistance = ClientConfigs.MIRROR_RENDER_DISTANCE.get();
         Integer renderDistanceOverride = null;
         if (recursionDepth > 0) {
             double divider = Math.pow(ClientConfigs.MIRROR_RECURSION_DIST_DIVIDER.get(), recursionDepth);
