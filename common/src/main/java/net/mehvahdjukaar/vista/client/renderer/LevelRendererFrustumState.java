@@ -23,7 +23,7 @@ public class LevelRendererFrustumState {
 
     @Nullable
     //lazy initialized
-    private SectionOcclusionGraph sectionOcclusionGraph;
+    private volatile SectionOcclusionGraph sectionOcclusionGraph;
     private ObjectArrayList<SectionRenderDispatcher.RenderSection> visibleSections = new ObjectArrayList<>(10000);
 
     public LevelRendererFrustumState() {
@@ -68,8 +68,10 @@ public class LevelRendererFrustumState {
 
     public void apply(LevelRenderer lr) {
         if (this.sectionOcclusionGraph == null) {
-            this.sectionOcclusionGraph = new FeedSectionOcclusionGraph();
-            this.sectionOcclusionGraph.waitAndReset(lr.viewArea);
+            //dont assing until its ready otherwise concurrency issue
+            var graph = new FeedSectionOcclusionGraph();
+            graph.waitAndReset(lr.viewArea);
+            this.sectionOcclusionGraph = graph;
         }
 
         //  lr.viewArea = this.viewArea;
