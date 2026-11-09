@@ -168,6 +168,7 @@ public class WatermediaTexture extends AbstractTexture implements IWebTexture {
         mp.volume((int) (blocks * ClientConfigs.AUDIO_VOLUME.get() * 100));
 
         //more nonsense state machine stuff
+        AL10.alSourcei(source, AL10.AL_SOURCE_RELATIVE, AL10.AL_FALSE);
         AL10.alSourcefv(source, AL10.AL_POSITION, new float[]{(float) speakerPos.x, (float) speakerPos.y, (float) speakerPos.z});
         AL10.alSourcei(source, AL10.AL_DISTANCE_MODEL, AL11.AL_LINEAR_DISTANCE);
         AL10.alSourcef(source, AL10.AL_MAX_DISTANCE, IWebTexture.SPEAKER_RANGE);

@@ -59,10 +59,15 @@ public final class GazeRedirect {
 
     public static List<Player> addRemoteViewers(Level level, BlockPos watched, List<Player> nearby) {
         List<? extends Player> all = level.players();
-        if (all.size() == nearby.size() || !hasCameraNear(level, watched)) return nearby;
+        if (all.size() == nearby.size() || !hasCameraNear(level, watched)) {
+            return nearby;
+        }
+
         List<Player> result = new ArrayList<>(nearby);
         for (Player p : all) {
-            if (!nearby.contains(p)) result.add(p);
+            if (!nearby.contains(p)) {
+                result.add(p);
+            }
         }
         return result;
     }
@@ -77,9 +82,13 @@ public final class GazeRedirect {
         boolean cameraNear = hasCameraNear(level, watched.blockPosition());
         for (Player player : level.players()) {
             boolean onlyReachableByCamera = player.distanceToSqr(watched) > MAX_DISTANCE * MAX_DISTANCE;
-            if (onlyReachableByCamera && !cameraNear) continue;
+            if (onlyReachableByCamera && !cameraNear) {
+                continue;
+            }
             ScreenGaze gaze = traceGazeTo(level, player, watched);
-            if (gaze != null) return gaze;
+            if (gaze != null) {
+                return gaze;
+            }
         }
         return null;
     }
@@ -142,8 +151,12 @@ public final class GazeRedirect {
             return new Ray(worldHit.add(reflectedDir.scale(1.0e-3)), reflectedDir, null);
         }
         if (state.getBlock() instanceof TVBlock tvBlock) {
-            if (hit.getDirection() != state.getValue(TVBlock.FACING)) return null;
-            if (!(tvBlock.findMasterBlockEntity(level, hitPos, state) instanceof TVBlockEntity tv)) return null;
+            if (hit.getDirection() != state.getValue(TVBlock.FACING)) {
+                return null;
+            }
+            if (!(tvBlock.findMasterBlockEntity(level, hitPos, state) instanceof TVBlockEntity tv)) {
+                return null;
+            }
             return cameraRayThroughScreen(level, tv, hit.getLocation());
         }
         return null;
