@@ -1,2 +1,1 @@
-- fixed some quirks with meia audio and wave gates
-- more sable compat, project out of sublevel calle everywhere
+- fixed watermedia audio missing a flag and thus not working properly

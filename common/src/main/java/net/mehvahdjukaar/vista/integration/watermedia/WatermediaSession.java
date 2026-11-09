@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 import org.watermedia.api.player.MRL;
 import org.watermedia.api.player.MediaPlayer;
 import org.watermedia.api.player.PlayerAPI;
+import org.watermedia.api.util.MediaQuality;
 
 import java.net.URI;
 
@@ -39,6 +40,7 @@ public class WatermediaSession implements IMediaSession {
         MediaPlayer player = PlayerAPI.player(mrl, () -> PlayerAPI.glEngine(Thread.currentThread(), Minecraft.getInstance()), PlayerAPI::alEngine);
         if (player == null) return null;
         player.scale(targetWidth, targetHeight);
+        player.quality(MediaQuality.of(targetWidth, targetHeight));
         player.repeat(true);
         player.start();
         return player;
