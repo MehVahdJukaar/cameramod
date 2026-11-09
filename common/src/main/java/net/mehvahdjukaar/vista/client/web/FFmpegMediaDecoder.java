@@ -5,96 +5,105 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mojang.blaze3d.platform.NativeImage;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.client.web.audio.FFmpegAudioTrack;
 import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpeg;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.system.MemoryUtil;
 
 import java.io.*;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 
 public class FFmpegMediaDecoder {
     private static final double FALLBACK_FPS = 20;
-    private static final int BYTES_PER_PIXEL = 3;
+    private static final int BYTES_PER_PIXEL = 4;
 
     private final FFmpeg ffmpeg;
-    private final FFmpegMediaSession session;
-    private final Path videoPath;
-    private volatile boolean running = true;
+    private final String input;
+    @Nullable
+    private final Path copyTo;
+    private volatile boolean stopped;
     @Nullable
     private volatile Process ffmpegProcess;
 
-    public FFmpegMediaDecoder(FFmpeg ffmpeg, FFmpegMediaSession session, Path videoPath) {
+    public FFmpegMediaDecoder(FFmpeg ffmpeg, String input, @Nullable Path copyTo) {
         this.ffmpeg = ffmpeg;
-        this.session = session;
-        this.videoPath = videoPath;
+        this.input = input;
+        this.copyTo = copyTo;
     }
 
     public void stop() {
-        running = false;
+        stopped = true;
         Process p = ffmpegProcess;
-        if (p != null) p.destroyForcibly();
-    }
-
-    public void run() {
-        try {
-            StreamInfo info = probeStreams();
-            if (!info.hasVideo()) {
-                if (!info.hasAudio()) {
-                    VistaMod.LOGGER.warn("No video or audio stream in {}, not playable media", videoPath);
-                    session.setFailed(MediaError.BAD_LINK);
-                    return;
-                }
-                VistaMod.LOGGER.info("No video stream in {}, playing audio only", videoPath);
-                session.setAudioOnly();
-                return;
-            }
-            int width = info.width(), height = info.height();
-            int bytesPerFrame = width * height * BYTES_PER_PIXEL;
-            double framerate = info.framerate();
-            if (!Double.isFinite(framerate) || framerate <= 0) {
-                VistaMod.LOGGER.warn("Invalid probed framerate {}, defaulting to {} fps", framerate, FALLBACK_FPS);
-                framerate = FALLBACK_FPS;
-            }
-            VistaMod.LOGGER.info("Video: {}x{}, {} fps", width, height, framerate);
-
-            Process process = ffmpeg.runFFmpeg("-hide_banner", "-loglevel", "error", "-i", videoPath.toString(),
-                    "-f", "image2pipe", "-vcodec", "rawvideo", "-pix_fmt", "rgb24", "-");
-            ffmpegProcess = process;
-            if (!running) process.destroyForcibly();
-
-            int frameCount = 0;
-            try (InputStream in = new BufferedInputStream(process.getInputStream(), 1024 * 1024)) {
-                while (running) {
-                    byte[] data = in.readNBytes(bytesPerFrame);
-                    if (data.length < bytesPerFrame) break;
-
-                    session.addFrame(new MediaFrame(rgbBytesToNativeImage(width, height, data), frameCount / framerate));
-                    frameCount++;
-                }
-            }
-
-            int exitCode = process.waitFor();
-            if (!running) return;
-            if (exitCode != 0) VistaMod.LOGGER.warn("FFmpeg exited with code {} on {}", exitCode, videoPath);
-            if (frameCount == 0) {
-                session.setFailed(MediaError.NONE);
-                return;
-            }
-            VistaMod.LOGGER.info("Finished decoding {}, total frames: {}", videoPath, frameCount);
-            session.markCompleted();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        } catch (Exception e) {
-            VistaMod.LOGGER.error("Failed to decode {}", videoPath, e);
-            if (running) session.setFailed(MediaError.classify(e));
-        } finally {
-            Process p = ffmpegProcess;
-            if (p != null) p.destroyForcibly();
+        if (p != null) {
+            p.destroyForcibly();
         }
     }
 
-    private StreamInfo probeStreams() throws IOException {
-        Process p = ffmpeg.runFFprobe("-v", "error", "-show_entries", "stream=codec_type,width,height,r_frame_rate",
-                "-of", "json", videoPath.toString());
+    //this is blocking until ffmpeg is done. returns true if it exited cleanly
+    public boolean decode(StreamInfo info, FFmpegAudioTrack audio, Consumer<NativeImage> frameSink, Executor executor) throws IOException, InterruptedException {
+
+        //setup args
+        List<String> args = new ArrayList<>();
+        if (info.hasVideo()) {
+            args.addAll(List.of("-f", "image2pipe", "-vcodec", "rawvideo", "-pix_fmt", "rgba", "-"));
+            if (info.hasAudio()) {
+                String socketUrl = audio.listenOnLocalSocket(executor);
+                args.addAll(FFmpegAudioTrack.createOutputArgs(socketUrl));
+            }
+        } else {
+            args.addAll(FFmpegAudioTrack.createOutputArgs("-"));
+        }
+        if (copyTo != null) {
+            args.addAll(List.of("-map", "0:v?", "-map", "0:a?", "-c", "copy", "-f", "matroska", copyTo.toString()));
+        }
+
+        Process process = ffmpeg.decode(input, args);
+        ffmpegProcess = process;
+        try {
+            if (stopped) {
+                return false;
+            }
+            try (InputStream in = new BufferedInputStream(process.getInputStream(), 1024 * 1024)) {
+                if (info.hasVideo()) {
+                    readFrames(in, info.width(), info.height(), frameSink);
+                } else {
+                    audio.receive(in);
+                }
+            }
+            int exitCode = process.waitFor();
+            if (exitCode != 0 && !stopped) {
+                VistaMod.LOGGER.warn("FFmpeg exited with code {} on {}", exitCode, input);
+            }
+            return exitCode == 0;
+        } finally {
+            process.destroyForcibly();
+        }
+    }
+
+    private void readFrames(InputStream in, int width, int height, Consumer<NativeImage> frameSink) throws IOException {
+        int bytesPerFrame = width * height * BYTES_PER_PIXEL;
+        byte[] data = new byte[bytesPerFrame];
+        while (!stopped) {
+            if (in.readNBytes(data, 0, bytesPerFrame) < bytesPerFrame) {
+                break;
+            }
+            NativeImage img = new NativeImage(NativeImage.Format.RGBA, width, height, false);
+            MemoryUtil.memByteBuffer(img.pixels, bytesPerFrame).put(data);
+            frameSink.accept(img);
+        }
+    }
+
+
+    public StreamInfo probeStreams() throws IOException {
+        //probe args
+        List<String> args = new ArrayList<>(List.of("-v", "error", "-show_entries", "stream=codec_type,width,height,r_frame_rate", "-of", "json"));
+        args.addAll(FFmpeg.inputArgs(input));
+
+        Process p = ffmpeg.runFFprobe(args.toArray(String[]::new));
         JsonElement json;
         try (Reader r = new InputStreamReader(p.getInputStream())) {
             json = JsonParser.parseReader(r);
@@ -114,35 +123,31 @@ public class FFmpegMediaDecoder {
             } else if (type.equals("video") && width == 0 && stream.has("width") && stream.has("height")) {
                 width = stream.get("width").getAsInt();
                 height = stream.get("height").getAsInt();
-                if (stream.has("r_frame_rate")) framerate = parseFrameRate(stream.get("r_frame_rate").getAsString());
+                if (stream.has("r_frame_rate")) {
+                    framerate = parseFrameRate(stream.get("r_frame_rate").getAsString());
+                }
             }
+        }
+        if (!Double.isFinite(framerate) || framerate <= 0) {
+            VistaMod.LOGGER.warn("Invalid probed framerate {}, defaulting to {} fps", framerate, FALLBACK_FPS);
+            framerate = FALLBACK_FPS;
         }
         return new StreamInfo(width, height, framerate, hasAudio);
     }
 
     private static double parseFrameRate(String rate) {
         String[] parts = rate.split("/");
-        if (parts.length == 2) return Double.parseDouble(parts[0]) / Double.parseDouble(parts[1]);
+        if (parts.length == 2) {
+            return Double.parseDouble(parts[0]) / Double.parseDouble(parts[1]);
+        }
         return Double.parseDouble(rate);
     }
 
-    private NativeImage rgbBytesToNativeImage(int width, int height, byte[] data) {
-        NativeImage img = new NativeImage(NativeImage.Format.RGBA, width, height, true);
-        for (int y = 0, p = 0; y < height; y++) {
-            for (int x = 0; x < width; x++, p += BYTES_PER_PIXEL) {
-                int r = data[p] & 0xFF;
-                int g = data[p + 1] & 0xFF;
-                int b = data[p + 2] & 0xFF;
-                int abgr = 0xFF000000 | (b << 16) | (g << 8) | r;
-                img.setPixelRGBA(x, y, abgr);
-            }
-        }
-        return img;
-    }
-
-    private record StreamInfo(int width, int height, double framerate, boolean hasAudio) {
-        private boolean hasVideo() {
+    public record StreamInfo(int width, int height, double framerate, boolean hasAudio) {
+        public boolean hasVideo() {
             return width > 0 && height > 0;
         }
     }
+
+
 }

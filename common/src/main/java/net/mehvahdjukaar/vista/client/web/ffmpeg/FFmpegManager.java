@@ -24,6 +24,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
+//this guy task is to just download and provide our ffmpeg instance
 public class FFmpegManager {
 
     private static final Path SOURCES_CONFIG_PATH = Paths.get("vista_ffmpeg_sources.json");
@@ -162,7 +163,9 @@ public class FFmpegManager {
         String key = OS_TYPE.key();
         String arch = System.getProperty("os.arch");
         boolean isArm = arch.equals("aarch64") || arch.equals("arm64");
-        if (isArm && root.has(key + "-arm64")) key += "-arm64";
+        if (isArm && root.has(key + "-arm64")) {
+            key += "-arm64";
+        }
         JsonElement value = root.get(key);
         if (value == null) {
             throw new IOException("Missing key '" + key + "' in " + SOURCES_CONFIG_PATH);

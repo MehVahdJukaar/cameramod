@@ -53,6 +53,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.function.Function;
 
 import static net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_BLOCKS;
@@ -118,19 +119,17 @@ public class VistaModClient {
             .makeMap();
 
     @Nullable
-    private static CompletableFuture<FFmpeg> ffmpegFuture;
+    private static volatile CompletableFuture<FFmpeg> ffmpegFuture;
 
-    public static synchronized FFmpeg getFFmpeg() {
-        if (ffmpegFuture == null) {
+    @Nullable
+    public static FFmpeg awaitFFmpeg() {
+        var future = ffmpegFuture;
+        if (future == null) return null;
+        try {
+            return future.join();
+        } catch (CompletionException e) {
             return null;
         }
-        if (ffmpegFuture.isCompletedExceptionally()) {
-            return null;
-        } else if (ffmpegFuture.isDone()) {
-            return ffmpegFuture.resultNow();
-        }
-        // setup failed. we give up and have no ffmpeg for this game
-        return null;
     }
 
     public static synchronized boolean isFFmpegDownloading() {
@@ -142,11 +141,6 @@ public class VistaModClient {
             return -1;
         }
         return FFmpegManager.getDownloadProgress();
-    }
-
-    @Nullable
-    public static synchronized CompletableFuture<FFmpeg> getFFmpegFuture() {
-        return ffmpegFuture;
     }
 
     private static void instantiateFFmpeg(@Nullable String url) {

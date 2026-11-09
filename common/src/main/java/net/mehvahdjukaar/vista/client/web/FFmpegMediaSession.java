@@ -1,6 +1,7 @@
 package net.mehvahdjukaar.vista.client.web;
 
 import com.mojang.blaze3d.platform.NativeImage;
+import net.mehvahdjukaar.moonlight.api.util.FileDownloadUtils;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.textures.ImageRescaler;
@@ -12,27 +13,25 @@ import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
 
 public class FFmpegMediaSession implements IMediaSession {
-    private final List<MediaFrame> frames = new ArrayList<>();
+    private final List<NativeImage> frames = new ArrayList<>(); //all frames are 1/framerate apart
     private final FFmpegAudioTrack audio = new FFmpegAudioTrack();
-    private final CompletableFuture<Void> loadFuture;
 
     @Nullable
-    private volatile FFmpegMediaDecoder decoder;
+    private FFmpegMediaDecoder decoder;
+    private volatile double framerate;
     private volatile boolean completed;
-    private volatile boolean failed;
+    @Nullable
+    private volatile MediaError error;
     private volatile boolean retrying;
-    private volatile MediaError error = MediaError.NONE;
     private volatile boolean isClosed;
     private volatile boolean audioOnly;
     private volatile int downloadProgress = -1;
@@ -43,87 +42,131 @@ public class FFmpegMediaSession implements IMediaSession {
     private final int targetWidth;
     private final int targetHeight;
 
-    public FFmpegMediaSession(URI uri, @Nullable FFmpeg ffmpeg, MediaCacheManager cacheManager,
-                              Executor executor,
-                              int targetWidth, int targetHeight) {
+    public FFmpegMediaSession(URI uri, MediaCacheManager cacheManager, Executor executor, int targetWidth, int targetHeight) {
         this.uri = uri;
         this.cacheManager = cacheManager;
         this.targetWidth = targetWidth;
         this.targetHeight = targetHeight;
-        this.loadFuture = CompletableFuture.runAsync(() -> downloadAndDecode(uri, ffmpeg, executor), executor);
+        executor.execute(() -> downloadAndDecode(executor));
     }
 
-    private void downloadAndDecode(URI uri, @Nullable FFmpeg ffmpeg, Executor executor) {
+    private void downloadAndDecode(Executor executor) {
+        Path streamCopy = null;
+        boolean fullCopy = false;
         try {
-            Path videoPath = cacheManager.getOrDownload(uri,
-                    percent -> this.downloadProgress = percent,
-                    (attempt, max, cause) -> this.retrying = true);
-            this.retrying = false;
-            this.downloadProgress = -1;
-            synchronized (this) {
-                if (isClosed) {
-                    cacheManager.release(uri);
-                    return;
-                }
-                holdsCachedFile = true;
-            }
+            String input;
+            if (isHttp(uri) && !cacheManager.isCached(uri)) {
+                checkReachable(uri);
+                input = uri.toString();
+                streamCopy = cacheManager.newPartialFile(uri);
+            } else {
+                Path videoPath = cacheManager.getOrDownload(uri,
+                        percent -> this.downloadProgress = percent,
+                        (attempt, max, cause) -> this.retrying = true);
+                this.retrying = false;
+                this.downloadProgress = -1;
 
-            FFmpeg effectiveFfmpeg = ffmpeg;
-            if (effectiveFfmpeg == null && VistaModClient.isFFmpegDownloading()) {
-                CompletableFuture<FFmpeg> ffmpegFuture = VistaModClient.getFFmpegFuture();
-                if (ffmpegFuture != null) {
-                    try {
-                        effectiveFfmpeg = ffmpegFuture.join();
-                    } catch (CompletionException e) {
-                        this.failed = true;
-                        this.error = MediaError.NO_FFMPEG;
+                synchronized (this) {
+                    if (isClosed) {
+                        cacheManager.release(uri);
                         return;
                     }
+                    holdsCachedFile = true;
                 }
+                input = videoPath.toString();
             }
 
-            if (effectiveFfmpeg == null) {
-                this.failed = true;
-                this.error = MediaError.NO_FFMPEG;
+            FFmpeg ffmpeg = VistaModClient.awaitFFmpeg();
+            if (ffmpeg == null) {
+                setFailed(MediaError.NO_FFMPEG);
                 return;
             }
+            FFmpegMediaDecoder newDecoder = new FFmpegMediaDecoder(ffmpeg, input, streamCopy);
+            synchronized (this) {
+                if (isClosed) return;
 
-            audio.decodeAsync(effectiveFfmpeg, videoPath, executor);
+                this.decoder = newDecoder;
+            }
 
-            FFmpegMediaDecoder newDecoder = new FFmpegMediaDecoder(effectiveFfmpeg, this, videoPath);
-            this.decoder = newDecoder;
-            newDecoder.run(); //blocking until done
+            var info = newDecoder.probeStreams();
+            if (!info.hasVideo() && !info.hasAudio()) {
+                VistaMod.LOGGER.warn("No video or audio stream in {}, not playable media", input);
+                setFailed(MediaError.BAD_LINK);
+                return;
+            }
+            if (info.hasVideo()) {
+                VistaMod.LOGGER.info("Video: {}x{}, {} fps", info.width(), info.height(), info.framerate());
+            } else {
+                VistaMod.LOGGER.info("No video stream in {}, playing audio only", input);
+            }
+            this.framerate = info.framerate();
+            this.audioOnly = !info.hasVideo();
+
+            boolean exitedCleanly = newDecoder.decode(info, audio, this::addFrame, executor);
+            if (isClosed) return;
+
+            boolean gotNothing = audioOnly ? audio.isEmpty() : frameCount() == 0;
+            if (gotNothing) {
+                setFailed(MediaError.NONE);
+                return;
+            }
+            VistaMod.LOGGER.info("Finished decoding {}, total frames: {}", input, frameCount());
+            this.completed = true;
+            fullCopy = exitedCleanly;
         } catch (Exception e) {
-            failed = true;
-            this.error = MediaError.classify(e);
+            if (isClosed) return;
+
+            setFailed(MediaError.classify(e));
             VistaMod.LOGGER.error("Failed to load web video {}", uri, e);
         } finally {
             this.downloadProgress = -1;
             this.retrying = false;
+            if (streamCopy != null) cacheManager.finishPartialFile(uri, streamCopy, fullCopy && !isClosed);
         }
     }
 
-    public synchronized void addFrame(MediaFrame frame) {
-        NativeImage originalImg = frame.image();
-        if (isClosed) {
-            originalImg.close();
-            return;
+    private static boolean isHttp(URI uri) {
+        String scheme = uri.getScheme();
+        return "http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme);
+    }
+
+    //ffmpeg only says "failed", this keeps the forbidden/not found screens
+    private static void checkReachable(URI uri) throws IOException {
+        HttpURLConnection conn = (HttpURLConnection) uri.toURL().openConnection();
+        try {
+            conn.setRequestProperty("User-Agent", "Mozilla/5.0");
+            conn.setRequestProperty("Range", "bytes=0-0");
+            conn.setConnectTimeout(10000);
+            conn.setReadTimeout(10000);
+            int code = conn.getResponseCode();
+            if (code >= 400) throw new FileDownloadUtils.HttpStatusException(code, uri.toString());
+        } finally {
+            conn.disconnect();
         }
-        NativeImage scaledImg = ImageRescaler.resize(originalImg, targetWidth, targetHeight,
+    }
+
+    private void addFrame(NativeImage frame) {
+        NativeImage scaled = ImageRescaler.resize(frame, targetWidth, targetHeight,
                 ClientConfigs.SCALING_MODE.get(), ClientConfigs.BILINEAR.get());
-        if (originalImg != scaledImg) {
-            originalImg.close();
+
+        if (frame != scaled) {
+            frame.close();
         }
-        frames.add(new MediaFrame(scaledImg, frame.pts()));
+        synchronized (this) {
+            if (isClosed) {
+                scaled.close();
+                return;
+            }
+            frames.add(scaled);
+        }
     }
 
-    public void setAudioOnly() {
-        this.audioOnly = true;
-    }
-
-    public void setFailed(MediaError error) {
+    private void setFailed(MediaError error) {
         this.error = error;
-        this.failed = true;
+    }
+
+    private synchronized int frameCount() {
+        return frames.size();
     }
 
     @Override
@@ -131,20 +174,8 @@ public class FFmpegMediaSession implements IMediaSession {
         return audioOnly;
     }
 
-    public synchronized void markCompleted() {
-        this.completed = true;
-    }
-
-    public synchronized boolean isCompleted() {
-        return completed;
-    }
-
-    public synchronized int size() {
-        return frames.size();
-    }
-
     public boolean isReady() {
-        return audioOnly || size() > 0;
+        return audioOnly || frameCount() > 0;
     }
 
     public FFmpegAudioTrack getAudioTrack() {
@@ -152,17 +183,25 @@ public class FFmpegMediaSession implements IMediaSession {
     }
 
     public synchronized double getLoopSeconds() {
-        if (audioOnly) return audio.getDurationSeconds();
-        return completed ? getDurationSecondsLocked() : 0;
+        if (audioOnly) {
+            return audio.getDurationSeconds();
+        }
+        return completed ? frames.size() / framerate : 0;
     }
 
+    public synchronized double getBufferedSeconds() {
+        return frames.size() / framerate;
+    }
+
+    @Override
     public boolean isFailed() {
-        return failed || loadFuture.isCompletedExceptionally();
+        return error != null;
     }
 
     @Override
     public MediaError getError() {
-        return error;
+        MediaError e = error;
+        return e == null ? MediaError.NONE : e;
     }
 
     @Override
@@ -175,68 +214,28 @@ public class FFmpegMediaSession implements IMediaSession {
         return downloadProgress;
     }
 
-    public MediaStatus.Pair lookupFrame(double seconds) {
-        synchronized (this) {
-            if (audioOnly) {
-                if (failed) return MediaStatus.pair(MediaStatus.FAILED, null);
-                if (isClosed) return MediaStatus.pair(MediaStatus.CLOSED, null);
-                return MediaStatus.pair(MediaStatus.READY, null);
-            }
-            if (frames.isEmpty()) {
-                if (failed) return MediaStatus.pair(MediaStatus.FAILED, null);
-                return MediaStatus.loading();
-            }
-            MediaStatus state = MediaStatus.READY;
-            if (isFailed()) {
-                state = MediaStatus.FAILED;
-            } else if (isClosed) {
-                state = MediaStatus.CLOSED;
-            }
+    public synchronized MediaStatus.Pair lookupFrame(double seconds) {
+        boolean failed = isFailed();
+        MediaStatus state = failed ? MediaStatus.FAILED : isClosed ? MediaStatus.CLOSED : MediaStatus.READY;
+        if (audioOnly) {
+            return new MediaStatus.Pair(state, null);
+        }
+        if (frames.isEmpty()) {
+            return new MediaStatus.Pair(failed ? MediaStatus.FAILED : MediaStatus.LOADING, null);
+        }
 
-            double queryTime = seconds;
-            double duration = getDurationSecondsLocked();
-
-            if (completed && duration > 0 && queryTime >= duration) {
-                queryTime = queryTime % duration;
+        int size = frames.size();
+        int index = (int) (seconds * framerate);
+        if (index >= size) {
+            if (completed) {
+                index %= size;
                 state = MediaStatus.COMPLETE;
-            } else if (!completed && queryTime > getLastFrameTimeLocked()) {
-                queryTime = getLastFrameTimeLocked();
+            } else {
+                index = size - 1;
                 state = MediaStatus.BUFFERING;
             }
-
-            return MediaStatus.pair(state, getFrameAtTimeLocked(queryTime));
         }
-    }
-
-    public synchronized double getBufferedSeconds() {
-        return getLastFrameTimeLocked();
-    }
-
-    private double getLastFrameTimeLocked() {
-        return frames.isEmpty() ? 0 : frames.getLast().pts();
-    }
-
-    private double getDurationSecondsLocked() {
-        if (frames.size() < 2) return 0;
-        double lastPts = frames.getLast().pts();
-        double previousPts = frames.get(frames.size() - 2).pts();
-        double frameDuration = Math.max(0, lastPts - previousPts);
-        return lastPts + frameDuration;
-    }
-
-    @Nullable
-    private MediaFrame getFrameAtTimeLocked(double time) {
-        if (frames.isEmpty()) return null;
-        int found = Collections.binarySearch(frames, new MediaFrame(null, time),
-                Comparator.comparingDouble(MediaFrame::pts));
-        if (found >= 0) {
-            return frames.get(found);
-        }
-        int insertionPoint = -found - 1;
-        if (insertionPoint == 0) {
-            return frames.getFirst();
-        }
-        return frames.get(insertionPoint - 1);
+        return new MediaStatus.Pair(state, frames.get(Math.max(0, index)));
     }
 
     @Override
@@ -246,16 +245,12 @@ public class FFmpegMediaSession implements IMediaSession {
             cacheManager.release(uri);
             holdsCachedFile = false;
         }
-        FFmpegMediaDecoder currentDecoder = decoder;
-        if (currentDecoder != null) {
-            currentDecoder.stop();
+        if (decoder != null) {
+            decoder.stop();
         }
-        audio.stopDecoding();
-        for (MediaFrame frame : frames) {
-            try {
-                frame.close();
-            } catch (Exception ignored) {
-            }
+        audio.stopReceiving();
+        for (NativeImage frame : frames) {
+            frame.close();
         }
         frames.clear();
         completed = false;

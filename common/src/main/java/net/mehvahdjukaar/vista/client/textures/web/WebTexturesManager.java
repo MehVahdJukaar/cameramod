@@ -6,12 +6,10 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.VistaMod;
-import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.video_source.WebUrlVideoSource;
 import net.mehvahdjukaar.vista.client.web.FFmpegMediaSession;
 import net.mehvahdjukaar.vista.client.web.IMediaSession;
 import net.mehvahdjukaar.vista.client.web.MediaCacheManager;
-import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpeg;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.mehvahdjukaar.vista.integration.watermedia.WatermediaSession;
@@ -119,18 +117,17 @@ public class WebTexturesManager {
 
     public static IMediaSession createMediaSession(URI url, int width, int height) {
         ClientConfigs.EngineMode engine = ClientConfigs.VIDEO_ENGINE.get();
-        FFmpeg ffmpeg = VistaModClient.getFFmpeg();
         if (CompatHandler.WATERMEDIA && engine != ClientConfigs.EngineMode.USE_FFMPEG) {
             if (engine == ClientConfigs.EngineMode.USE_VLC || !hasFileExtension(url)) {
                 return createWatermediaSession(url, width, height);
             } else {
                 return new AlternativeSession(
-                        () -> createFFmpegSession(url, width, height, ffmpeg),
+                        () -> createFFmpegSession(url, width, height),
                         () -> createWatermediaSession(url, width, height)
                 );
             }
         } else {
-            return createFFmpegSession(url, width, height, ffmpeg);
+            return createFFmpegSession(url, width, height);
         }
     }
 
@@ -138,8 +135,8 @@ public class WebTexturesManager {
         return new WatermediaSession(uri, width, height);
     }
 
-    private static FFmpegMediaSession createFFmpegSession(URI uri, int width, int height, FFmpeg ffmpeg) {
-        return new FFmpegMediaSession(uri, ffmpeg, MEDIA_CACHE_MANAGER, SESSION_LOADER_EXECUTOR, width, height);
+    private static FFmpegMediaSession createFFmpegSession(URI uri, int width, int height) {
+        return new FFmpegMediaSession(uri, MEDIA_CACHE_MANAGER, SESSION_LOADER_EXECUTOR, width, height);
     }
 
     private static final Pattern FILE_EXTENSION = Pattern.compile("\\.[a-zA-Z0-9]+(?:\\?.*)?$");

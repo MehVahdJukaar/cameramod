@@ -5,7 +5,6 @@ import com.mojang.blaze3d.platform.TextureUtil;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.mehvahdjukaar.vista.client.VistaClientPlatStuff;
 import net.mehvahdjukaar.vista.client.web.FFmpegMediaSession;
-import net.mehvahdjukaar.vista.client.web.MediaFrame;
 import net.mehvahdjukaar.vista.client.web.MediaStatus;
 import net.mehvahdjukaar.vista.client.web.audio.TvSpeakerSoundInstance;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
@@ -23,7 +22,7 @@ public class FFmpegWebTexture extends DynamicTexture implements IWebTexture {
     private final FFmpegMediaSession session;
     private final ResourceLocation textureLocation;
     @Nullable
-    private MediaFrame lastOriginalFrame;
+    private NativeImage lastFrame;
     private boolean wasFirstUploaded = false;
     private MediaStatus lastLookupState = MediaStatus.LOADING;
     @Nullable
@@ -109,10 +108,10 @@ public class FFmpegWebTexture extends DynamicTexture implements IWebTexture {
         if (lookup.state() == MediaStatus.BUFFERING) {
             videoClockOffset = tvClock - session.getBufferedSeconds();
         }
-        MediaFrame frame = lookup.frame();
-        if (frame != null && frame != this.lastOriginalFrame) {
-            uploadOnRenderThread(frame.image());
-            this.lastOriginalFrame = frame;
+        NativeImage frame = lookup.frame();
+        if (frame != null && frame != this.lastFrame) {
+            uploadOnRenderThread(frame);
+            this.lastFrame = frame;
         }
         if (!wasFirstUploaded && !session.isAudioOnly() && lookup.state().isGood()) {
             return MediaStatus.LOADING;

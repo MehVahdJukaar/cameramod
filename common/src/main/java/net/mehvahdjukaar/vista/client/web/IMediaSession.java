@@ -28,4 +28,7 @@ public interface IMediaSession extends AutoCloseable {
     default boolean isAudioOnly() {
         return false;
     }
+
+    @Override
+    void close();
 }

@@ -77,8 +77,12 @@ public class MediaCacheManager {
     private static Path asLocalFile(URI uri) throws MalformedURLException {
         String scheme = uri.getScheme();
         try {
-            if (scheme == null) return Path.of(uri.toString());
-            if (scheme.equalsIgnoreCase("file")) return Path.of(uri);
+            if (scheme == null) {
+                return Path.of(uri.toString());
+            }
+            if (scheme.equalsIgnoreCase("file")) {
+                return Path.of(uri);
+            }
             return null;
         } catch (IllegalArgumentException e) {
             throw new MalformedURLException("Bad local media path: " + uri);
@@ -88,15 +92,49 @@ public class MediaCacheManager {
     @Nullable
     private synchronized Path acquireIfCached(String key) {
         CachedFile file = filesByUrlHash.get(key);
-        if (file == null || !Files.exists(file.path)) return null;
+        if (file == null || !Files.exists(file.path)) {
+            return null;
+        }
         file.users++;
         file.lastAccess = System.currentTimeMillis();
         return file.path;
     }
 
+    public synchronized boolean isCached(URI uri) {
+        CachedFile file = filesByUrlHash.get(hashUrl(uri.toString()));
+        return file != null && Files.exists(file.path);
+    }
+
+    //unique name, two tvs with different sizes can stream same url at once
+    public Path newPartialFile(URI uri) {
+        return cacheDir.resolve(hashUrl(uri.toString()) + "-" + System.nanoTime() + PARTIAL_FILE_EXT);
+    }
+
+    public void finishPartialFile(URI uri, Path partial, boolean complete) {
+        String key = hashUrl(uri.toString());
+        try {
+            if (!complete || isCached(uri)) {
+                Files.deleteIfExists(partial);
+                return;
+            }
+            Path target = cacheDir.resolve(key + CACHED_FILE_EXT);
+            Files.move(partial, target, StandardCopyOption.REPLACE_EXISTING);
+
+            synchronized (this) {
+                filesByUrlHash.put(key, new CachedFile(target, System.currentTimeMillis()));
+                enforceQuota();
+            }
+            VistaMod.LOGGER.info("Cached streamed media {} -> {}", uri, target);
+        } catch (IOException e) {
+            VistaMod.LOGGER.warn("Failed to cache streamed media {}", uri, e);
+        }
+    }
+
     public synchronized void release(URI uri) {
         CachedFile file = filesByUrlHash.get(hashUrl(uri.toString()));
-        if (file != null && file.users > 0) file.users--;
+        if (file != null && file.users > 0) {
+            file.users--;
+        }
     }
 
     private Path downloadToCache(String url, String key, @Nullable FileDownloadUtils.ProgressCallback progressCallback,
@@ -111,7 +149,10 @@ public class MediaCacheManager {
     private void restoreFromDisk() throws IOException {
         try (var stream = Files.list(cacheDir)) {
             for (Path p : stream.toList()) {
-                if (!Files.isRegularFile(p)) continue;
+                if (!Files.isRegularFile(p)) {
+                    continue;
+                }
+
                 String name = p.getFileName().toString();
 
                 if (name.endsWith(PARTIAL_FILE_EXT)) {
@@ -137,11 +178,15 @@ public class MediaCacheManager {
         if (total <= maxSizeBytes) return;
 
         VistaMod.LOGGER.info("Cache size {} MB exceeds limit {} MB. Evicting...", total / (1024 * 1024), maxSizeBytes / (1024 * 1024));
-        List<Map.Entry<String, CachedFile>> oldestFirst = new ArrayList<>(filesByUrlHash.entrySet());
-        oldestFirst.sort(Comparator.comparingLong(a -> a.getValue().lastAccess));
-        for (var e : oldestFirst) {
+
+        var oldestCachedFiles = new ArrayList<>(filesByUrlHash.entrySet());
+        oldestCachedFiles.sort(Comparator.comparingLong(a -> a.getValue().lastAccess));
+
+        for (var e : oldestCachedFiles) {
             CachedFile file = e.getValue();
-            if (file.users > 0) continue;
+            if (file.users > 0) {
+                continue;
+            }
             try {
                 long size = Files.size(file.path);
                 Files.deleteIfExists(file.path);

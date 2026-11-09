@@ -1,13 +1,16 @@
 package net.mehvahdjukaar.vista.client.web.audio;
 
 import net.mehvahdjukaar.vista.VistaMod;
-import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpeg;
 
 import javax.sound.sampled.AudioFormat;
+import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.nio.ByteBuffer;
-import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
@@ -21,7 +24,7 @@ public class FFmpegAudioTrack {
     private byte[] pcm = new byte[BYTES_PER_SECOND * 8];
     private int length = 0;
     private volatile boolean completed = false;
-    private volatile Process ffmpegProcess;
+    private volatile ServerSocket server;
 
     public AudioFormat getFormat() {
         return FORMAT;
@@ -31,26 +34,34 @@ public class FFmpegAudioTrack {
         return Math.max(0, (long) (seconds * SAMPLE_RATE)) * FORMAT.getFrameSize();
     }
 
-    public void decodeAsync(FFmpeg ffmpeg, Path videoPath, Executor executor) {
-        CompletableFuture.runAsync(() -> decode(ffmpeg, videoPath), executor);
+    public static List<String> createOutputArgs(String target) {
+        return List.of("-map", "0:a:0", "-f", "s16le", "-ac", "1", "-ar", String.valueOf(SAMPLE_RATE), target);
     }
 
-    private void decode(FFmpeg ffmpeg, Path videoPath) {
-        try {
-            ffmpegProcess = ffmpeg.runFFmpeg("-hide_banner", "-loglevel", "error", "-i", videoPath.toString(),
-                    "-vn", "-f", "s16le", "-ac", "1", "-ar", String.valueOf(SAMPLE_RATE), "-");
-            try (InputStream in = ffmpegProcess.getInputStream()) {
-                byte[] chunk = new byte[BYTES_PER_SECOND];
-                int read;
-                while ((read = in.read(chunk)) > 0) {
-                    append(chunk, read);
+    //returns the socket url. we listen to the main process from this side socket
+    public String listenOnLocalSocket(Executor executor) throws IOException {
+        ServerSocket socketServer = new ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"));
+        socketServer.setSoTimeout(30000);
+        this.server = socketServer;
+        CompletableFuture.runAsync(() -> {
+            try (socketServer; Socket socket = socketServer.accept(); InputStream in = socket.getInputStream()) {
+                receive(in);
+            } catch (Exception e) {
+                if (!socketServer.isClosed()) {
+                    VistaMod.LOGGER.warn("Failed to receive audio from ffmpeg", e);
                 }
             }
-            ffmpegProcess.waitFor();
-            completed = true;
-        } catch (Exception e) {
-            VistaMod.LOGGER.warn("Failed to decode audio of {}", videoPath, e);
+        }, executor);
+        return "tcp://127.0.0.1:" + socketServer.getLocalPort();
+    }
+
+    public void receive(InputStream in) throws IOException {
+        byte[] chunk = new byte[BYTES_PER_SECOND];
+        int read;
+        while ((read = in.read(chunk)) > 0) {
+            append(chunk, read);
         }
+        completed = true;
     }
 
     private synchronized void append(byte[] chunk, int count) {
@@ -69,15 +80,22 @@ public class FFmpegAudioTrack {
         return completed ? length / (double) BYTES_PER_SECOND : 0;
     }
 
-    // the cursor always moves by the full buffer. past what we decoded its just silence
+    // the cursor always moves by the full buffer
     public synchronized long readInto(long cursor, ByteBuffer destination) {
         long count = Math.min(destination.remaining(), length - cursor);
-        if (count > 0) destination.put(0, pcm, (int) cursor, (int) count);
+        if (count > 0) {
+            destination.put(0, pcm, (int) cursor, (int) count);
+        }
         return cursor + destination.remaining();
     }
 
-    public void stopDecoding() {
-        Process p = ffmpegProcess;
-        if (p != null) p.destroyForcibly();
+    public void stopReceiving() {
+        ServerSocket socketServer = server;
+        if (socketServer != null) {
+            try {
+                socketServer.close();
+            } catch (IOException ignored) {
+            }
+        }
     }
 }
