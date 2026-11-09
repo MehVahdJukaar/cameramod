@@ -1,2 +1,2 @@
-- fixed an issue with enderman gaze & sable sublevels
-- slight performance improvements
+- fixed some quirks with meia audio and wave gates
+- more sable compat, project out of sublevel calle everywhere
