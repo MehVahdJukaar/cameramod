@@ -276,6 +276,9 @@ public class VistaModClient {
         VistaLevelRenderer.clear();
         MapTapeEntryRenderer.clear();
         if (CompatHandler.JOY_OF_PAINTING) CanvasTapeTextures.clear();
+        CLIENT_EXTRA_CHUNK_VIEW_DATA.clearZones();
+        ClientPinnedChunksManager.clear();
+        ViewFinderController.stopControlling();
     }
 
     public static void onClientTick(Minecraft minecraft) {

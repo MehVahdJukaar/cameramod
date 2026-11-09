@@ -331,9 +331,8 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     }
 
     /**
-     * Bakes a view finder's aim into save NBT (matching saveAdditional/loadAdditional) without a live
-     * block entity - used to persist aim into a Create contraption's stored block data. localRot is the
-     * world-local orientation as sent over the network; the stored rig rotation strips the block's structural spin.
+     * Bakes a view finder's aim into save NBT (matching saveAdditional/loadAdditional) without a live BE
+     * used to persist aim into a Create contraption's stored block data
      */
     public static CompoundTag buildAimNbt(CompoundTag base, BlockState state, Quaternionf localRot, int zoom, boolean locked) {
         Quaternionf additional = getStructureAdditionalRotation(state);
@@ -393,11 +392,9 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
         return rot.mul(additionalRot);
     }
 
-    // Network. The reference frame decides how the aim travels: a world view finder locates itself by block pos,
-    // a contraption view finder needs its own packet (no server-side block entity exists inside a contraption).
+
     public void syncToServer(boolean removeOwner, Player playerWhoChangedIt) {
-        referenceFrame.syncToServer(this.getWantedLocalOrientation(), this.zoom,
-                this.locked, removeOwner, playerWhoChangedIt);
+        referenceFrame.syncToServer(this.getWantedLocalOrientation(), this.zoom, this.locked, removeOwner, playerWhoChangedIt);
     }
 
     public void syncToClients() {

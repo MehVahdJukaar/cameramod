@@ -14,6 +14,10 @@ public class SableCompat {
         return SableCompanion.INSTANCE.isInPlotGrid(level, pos);
     }
 
+    public static Vec3 projectOutOfSubLevel(Level level, Vec3 pos) {
+        return SableCompanion.INSTANCE.projectOutOfSubLevel(level, (Position) pos);
+    }
+
     @Nullable
     public static ChunkPos projectChunkOutOfSubLevel(Level level, BlockPos plotPos) {
         Vec3 world = SableCompanion.INSTANCE.projectOutOfSubLevel(level, (Position) Vec3.atCenterOf(plotPos));

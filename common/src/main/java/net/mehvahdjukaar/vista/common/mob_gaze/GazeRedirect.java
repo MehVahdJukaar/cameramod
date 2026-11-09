@@ -8,6 +8,7 @@ import net.mehvahdjukaar.vista.common.tv.TVBlock;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
+import net.mehvahdjukaar.vista.integration.sable.SableCompat;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
@@ -46,9 +47,10 @@ public final class GazeRedirect {
             if (hit.getType() == HitResult.Type.MISS) return null;
             if (hit.getBlockPos().equals(target)) return hit;
 
+            Vec3 stop = SableCompat.projectOutOfSubLevel(level, hit.getLocation());
             Ray next = redirect(level, dir, hit);
             if (next == null) return null;
-            remaining -= hit.getLocation().distanceTo(origin);
+            remaining -= stop.distanceTo(origin);
             origin = next.origin();
             dir = next.dir();
         }
@@ -94,7 +96,7 @@ public final class GazeRedirect {
 
         for (int bounces = 0; bounces <= MAX_BOUNCES; bounces++) {
             BlockHitResult hit = clip(level, player, origin, dir, remaining);
-            Vec3 stop = hit.getLocation();
+            Vec3 stop = SableCompat.projectOutOfSubLevel(level, hit.getLocation());
             if (bounces != 0 && box.clip(origin, stop).isPresent()) return new ScreenGaze(player, tvsPassed);
             if (hit.getType() == HitResult.Type.MISS) return null;
 
@@ -132,9 +134,12 @@ public final class GazeRedirect {
             Direction facing = state.getValue(MirrorBlock.FACING);
             if (hit.getDirection() != facing) return null;
 
-            Vec3 normal = Vec3.atLowerCornerOf(facing.getNormal());
+            Vec3 worldHit = SableCompat.projectOutOfSubLevel(level, hit.getLocation());
+            Vec3 localNormal = Vec3.atLowerCornerOf(facing.getNormal());
+            Vec3 normal = SableCompat.projectOutOfSubLevel(level, hit.getLocation().add(localNormal))
+                    .subtract(worldHit).normalize();
             Vec3 reflectedDir = dir.subtract(normal.scale(2 * dir.dot(normal))).normalize();
-            return new Ray(hit.getLocation().add(reflectedDir.scale(1.0e-3)), reflectedDir, null);
+            return new Ray(worldHit.add(reflectedDir.scale(1.0e-3)), reflectedDir, null);
         }
         if (state.getBlock() instanceof TVBlock tvBlock) {
             if (hit.getDirection() != state.getValue(TVBlock.FACING)) return null;
