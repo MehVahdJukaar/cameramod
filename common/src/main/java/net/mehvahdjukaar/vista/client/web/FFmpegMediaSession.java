@@ -1,7 +1,6 @@
 package net.mehvahdjukaar.vista.client.web;
 
 import com.mojang.blaze3d.platform.NativeImage;
-import net.mehvahdjukaar.moonlight.api.util.FileDownloadUtils;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.textures.ImageRescaler;
@@ -14,19 +13,14 @@ import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
-import java.net.HttpURLConnection;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
-import java.util.Set;
 import java.util.concurrent.Executor;
 
 public class FFmpegMediaSession implements IMediaSession {
     //hardcoded list of extension that we'll even attempt streaming
-    private static final Set<String> STREAMED_EXTENSIONS = Set.of("mp4", "m4v", "mkv", "webm", "mov", "avi", "flv", "ts", "m3u8", "mpd");
-
     private final List<NativeImage> frames = new ArrayList<>(); //all frames are 1/framerate apart
     private final FFmpegAudioTrack audio = new FFmpegAudioTrack();
 
@@ -58,47 +52,40 @@ public class FFmpegMediaSession implements IMediaSession {
     private void downloadAndDecode(Executor executor) {
         Path streamCopy = null;
         boolean fullCopy = false;
+
         try {
-            String input;
-            if (isStreamable(uri) && !cacheManager.isCached(uri)) {
-                checkReachable(uri);
-                input = uri.toString();
-                streamCopy = cacheManager.newPartialFile(uri);
-            } else {
-                input = downloadToCache();
-                if (input == null) {
-                    return;
-                }
-            }
+            boolean streaming = UrlUtils.isLongVideoExtension(uri) && !cacheManager.isCached(uri);
+            if (streaming) UrlUtils.checkReachable(uri);
+            String input = streaming ? uri.toString() : downloadToCache();
+            if (input == null) return;
 
             FFmpeg ffmpeg = VistaModClient.awaitFFmpeg();
             if (ffmpeg == null) {
                 setFailed(MediaError.NO_FFMPEG);
                 return;
             }
-            FFmpegMediaDecoder newDecoder = openDecoder(ffmpeg, input, streamCopy);
-            if (newDecoder == null) {
-                return;
-            }
 
-            FFmpegMediaDecoder.StreamInfo info;
-            try {
-                info = newDecoder.probeStreams();
-            } catch (IOException e) {
-                if (streamCopy == null) throw e;
-                //added because on linux it segfaults for some reason
-                VistaMod.LOGGER.warn("Could not stream {}, downloading it instead", uri, e);
-                cacheManager.finishPartialFile(uri, streamCopy, false);
-                streamCopy = null;
+            FFmpegMediaDecoder.StreamInfo info = null;
+            if (streaming) {
+                streamCopy = cacheManager.newPartialFile(uri);
+                try {
+                    info = openAndProbe(ffmpeg, input, streamCopy);
+                } catch (IOException e) {
+                    if (isClosed) return;
+                    //added because on linux my binary segfaults for some reason
+                    VistaMod.LOGGER.warn("Could not stream {}, downloading it instead", uri, e);
+                    cacheManager.finishPartialFile(uri, streamCopy, false);
+                    streamCopy = null;
 
-                input = downloadToCache();
-                if (input == null) return;
-                newDecoder = openDecoder(ffmpeg, input, null);
-                if (newDecoder == null) {
-                    return;
+                    input = downloadToCache();
+                    if (input == null) return;
                 }
-                info = newDecoder.probeStreams();
             }
+            if (streamCopy == null) {
+                info = openAndProbe(ffmpeg, input, null);
+            }
+            if (info == null) return;
+
             if (!info.hasVideo() && !info.hasAudio()) {
                 VistaMod.LOGGER.warn("No video or audio stream in {}, not playable media", input);
                 setFailed(MediaError.BAD_LINK);
@@ -112,7 +99,7 @@ public class FFmpegMediaSession implements IMediaSession {
             this.framerate = info.framerate();
             this.audioOnly = !info.hasVideo();
 
-            boolean exitedCleanly = newDecoder.decode(info, audio, this::addFrame, executor);
+            boolean exitedCleanly = decoder.decode(info, audio, this::addFrame, executor);
             if (isClosed) return;
 
             boolean gotNothing = audioOnly ? audio.isEmpty() : frameCount() == 0;
@@ -156,38 +143,13 @@ public class FFmpegMediaSession implements IMediaSession {
     }
 
     @Nullable
-    private synchronized FFmpegMediaDecoder openDecoder(FFmpeg ffmpeg, String input, @Nullable Path copyTo) {
-        if (isClosed) return null;
-        this.decoder = new FFmpegMediaDecoder(ffmpeg, input, copyTo);
-        return this.decoder;
-    }
-
-    private static boolean isHttp(URI uri) {
-        String scheme = uri.getScheme();
-        return "http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme);
-    }
-
-    //short stuff like images and gifs is just downloaded
-    private static boolean isStreamable(URI uri) {
-        String path = uri.getPath();
-        if (!isHttp(uri) || path == null) return false;
-        int dot = path.lastIndexOf('.');
-        return dot != -1 && STREAMED_EXTENSIONS.contains(path.substring(dot + 1).toLowerCase(Locale.ROOT));
-    }
-
-    //ffmpeg only says "failed", this keeps the forbidden/not found screens
-    private static void checkReachable(URI uri) throws IOException {
-        HttpURLConnection conn = (HttpURLConnection) uri.toURL().openConnection();
-        try {
-            conn.setRequestProperty("User-Agent", "Mozilla/5.0");
-            conn.setRequestProperty("Range", "bytes=0-0");
-            conn.setConnectTimeout(10000);
-            conn.setReadTimeout(10000);
-            int code = conn.getResponseCode();
-            if (code >= 400) throw new FileDownloadUtils.HttpStatusException(code, uri.toString());
-        } finally {
-            conn.disconnect();
+    private FFmpegMediaDecoder.StreamInfo openAndProbe(FFmpeg ffmpeg, String input, @Nullable Path copyTo) throws IOException, InterruptedException {
+        FFmpegMediaDecoder newDecoder = new FFmpegMediaDecoder(ffmpeg, input, copyTo);
+        synchronized (this) {
+            if (isClosed) return null;
+            this.decoder = newDecoder;
         }
+        return newDecoder.probeStreams();
     }
 
     private void addFrame(NativeImage frame) {

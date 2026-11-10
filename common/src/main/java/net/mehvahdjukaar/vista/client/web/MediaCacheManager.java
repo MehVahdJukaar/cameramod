@@ -5,14 +5,14 @@ import net.mehvahdjukaar.vista.VistaMod;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.security.MessageDigest;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MediaCacheManager {
     private static final String CACHE_SUBDIR = "vista_web_content_cache";
@@ -38,7 +38,7 @@ public class MediaCacheManager {
 
     public Path getOrDownload(URI uri, @Nullable FileDownloadUtils.ProgressCallback progressCallback,
                               @Nullable FileDownloadUtils.RetryCallback retryCallback) throws Exception {
-        Path localPath = asLocalFile(uri);
+        Path localPath = UrlUtils.asLocalFile(uri);
         if (localPath != null) {
             if (!Files.exists(localPath)) {
                 throw new IOException("Local media file does not exist: " + localPath);
@@ -47,7 +47,7 @@ public class MediaCacheManager {
             return localPath;
         }
 
-        String key = hashUrl(uri.toString());
+        String key = UrlUtils.hashOf(uri);
         Path cached = acquireIfCached(key);
         if (cached != null) {
             VistaMod.LOGGER.info("Cache HIT for {} -> {}", uri, cached);
@@ -74,22 +74,6 @@ public class MediaCacheManager {
     }
 
     @Nullable
-    private static Path asLocalFile(URI uri) throws MalformedURLException {
-        String scheme = uri.getScheme();
-        try {
-            if (scheme == null) {
-                return Path.of(uri.toString());
-            }
-            if (scheme.equalsIgnoreCase("file")) {
-                return Path.of(uri);
-            }
-            return null;
-        } catch (IllegalArgumentException e) {
-            throw new MalformedURLException("Bad local media path: " + uri);
-        }
-    }
-
-    @Nullable
     private synchronized Path acquireIfCached(String key) {
         CachedFile file = filesByUrlHash.get(key);
         if (file == null || !Files.exists(file.path)) {
@@ -101,17 +85,17 @@ public class MediaCacheManager {
     }
 
     public synchronized boolean isCached(URI uri) {
-        CachedFile file = filesByUrlHash.get(hashUrl(uri.toString()));
+        CachedFile file = filesByUrlHash.get(UrlUtils.hashOf(uri));
         return file != null && Files.exists(file.path);
     }
 
     //unique name, two tvs with different sizes can stream same url at once
     public Path newPartialFile(URI uri) {
-        return cacheDir.resolve(hashUrl(uri.toString()) + "-" + System.nanoTime() + PARTIAL_FILE_EXT);
+        return cacheDir.resolve(UrlUtils.hashOf(uri) + "-" + System.nanoTime() + PARTIAL_FILE_EXT);
     }
 
     public void finishPartialFile(URI uri, Path partial, boolean complete) {
-        String key = hashUrl(uri.toString());
+        String key = UrlUtils.hashOf(uri);
         try {
             if (!complete || isCached(uri)) {
                 Files.deleteIfExists(partial);
@@ -131,7 +115,7 @@ public class MediaCacheManager {
     }
 
     public synchronized void release(URI uri) {
-        CachedFile file = filesByUrlHash.get(hashUrl(uri.toString()));
+        CachedFile file = filesByUrlHash.get(UrlUtils.hashOf(uri));
         if (file != null && file.users > 0) {
             file.users--;
         }
@@ -197,15 +181,6 @@ public class MediaCacheManager {
                 if (total <= maxSizeBytes) break;
             } catch (IOException ignored) {
             }
-        }
-    }
-
-    private String hashUrl(String url) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            return HexFormat.of().formatHex(md.digest(url.getBytes(StandardCharsets.UTF_8)));
-        } catch (Exception e) {
-            throw new RuntimeException("Hashing failed", e);
         }
     }
 

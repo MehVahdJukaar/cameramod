@@ -11,7 +11,6 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
 public class FFmpegAudioTrack {
@@ -43,7 +42,7 @@ public class FFmpegAudioTrack {
         ServerSocket socketServer = new ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"));
         socketServer.setSoTimeout(30000);
         this.server = socketServer;
-        CompletableFuture.runAsync(() -> {
+        executor.execute(() -> {
             try (socketServer; Socket socket = socketServer.accept(); InputStream in = socket.getInputStream()) {
                 receive(in);
             } catch (Exception e) {
@@ -51,7 +50,7 @@ public class FFmpegAudioTrack {
                     VistaMod.LOGGER.warn("Failed to receive audio from ffmpeg", e);
                 }
             }
-        }, executor);
+        });
         return "tcp://127.0.0.1:" + socketServer.getLocalPort();
     }
 

@@ -6,10 +6,10 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.VistaMod;
-import net.mehvahdjukaar.vista.client.video_source.WebUrlVideoSource;
 import net.mehvahdjukaar.vista.client.web.FFmpegMediaSession;
 import net.mehvahdjukaar.vista.client.web.IMediaSession;
 import net.mehvahdjukaar.vista.client.web.MediaCacheManager;
+import net.mehvahdjukaar.vista.client.web.UrlUtils;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.mehvahdjukaar.vista.integration.watermedia.WatermediaSession;
@@ -21,7 +21,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Pattern;
 
 public class WebTexturesManager {
     private static final long DEFAULT_CACHE_SIZE_BYTES = 512L * 1024L * 1024L;
@@ -106,7 +105,7 @@ public class WebTexturesManager {
     }
 
     public static void invalidateUrl(String url) {
-        URI uri = WebUrlVideoSource.createUri(url);
+        URI uri = UrlUtils.createUri(url);
         if (uri == null) return;
         SESSION_CACHE.asMap().keySet().removeIf(k -> k.uri().equals(uri));
         SESSION_CACHE.cleanUp();
@@ -118,7 +117,7 @@ public class WebTexturesManager {
     public static IMediaSession createMediaSession(URI url, int width, int height) {
         ClientConfigs.EngineMode engine = ClientConfigs.VIDEO_ENGINE.get();
         if (CompatHandler.WATERMEDIA && engine != ClientConfigs.EngineMode.USE_FFMPEG) {
-            if (engine == ClientConfigs.EngineMode.USE_VLC || !hasFileExtension(url)) {
+            if (engine == ClientConfigs.EngineMode.USE_VLC || !UrlUtils.hasFileExtension(url)) {
                 return createWatermediaSession(url, width, height);
             } else {
                 return new AlternativeSession(
@@ -137,12 +136,6 @@ public class WebTexturesManager {
 
     private static FFmpegMediaSession createFFmpegSession(URI uri, int width, int height) {
         return new FFmpegMediaSession(uri, MEDIA_CACHE_MANAGER, SESSION_LOADER_EXECUTOR, width, height);
-    }
-
-    private static final Pattern FILE_EXTENSION = Pattern.compile("\\.[a-zA-Z0-9]+(?:\\?.*)?$");
-
-    public static boolean hasFileExtension(URI url) {
-        return FILE_EXTENSION.matcher(url.toString()).find();
     }
 
     private record SessionKey(URI uri, int width, int height) {

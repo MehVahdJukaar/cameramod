@@ -20,6 +20,8 @@ public final class ImageRescaler {
 
         TextureImage srcTex = TextureImage.of(source);
         TextureImage destTex = TextureImage.createNew(targetW, targetH);
+        //starts as black background
+        destTex.getImage().fillRect(0, 0, targetW, targetH, 0xFF000000);
 
         Rect2D srcRect;
         Rect2D dstRect;

@@ -9,6 +9,7 @@ import net.mehvahdjukaar.vista.client.textures.web.IWebTexture;
 import net.mehvahdjukaar.vista.client.textures.web.WebTexturesManager;
 import net.mehvahdjukaar.vista.client.web.MediaError;
 import net.mehvahdjukaar.vista.client.web.MediaStatus;
+import net.mehvahdjukaar.vista.client.web.UrlUtils;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
@@ -21,48 +22,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.net.URI;
-import java.nio.file.Paths;
 
 public class WebUrlVideoSource implements IVideoSource {
     @Nullable
     private final URI uri;
 
     public WebUrlVideoSource(String url) {
-        this.uri = createUri(url);
-    }
-
-    @Nullable
-    public static URI createUri(String url) {
-        if (url == null || url.isBlank()) {
-            return null;
-        }
-        String s = url.trim();
-
-        try {
-            URI parsed = URI.create(s);
-            // Has a scheme like http:, https:, file:, ftp:, etc.
-            if (parsed.getScheme() != null) {
-                return fixArchiveOrgLink(parsed);
-            }
-        } catch (Exception ignored) {
-        }
-        // No valid URI scheme -> treat as filesystem path
-        try {
-            return Paths.get(s).toUri();
-        } catch (Exception ignored) {
-            return null;
-        }
-    }
-
-    //since i stumbled across this issue
-    private static URI fixArchiveOrgLink(URI uri) {
-        String host = uri.getHost();
-        if (host == null || !(host.equals("archive.org") || host.equals("www.archive.org"))) return uri;
-        String path = uri.getRawPath();
-        if (path == null || !path.startsWith("/details/")) return uri;
-        String itemAndFile = path.substring("/details/".length());
-        if (!itemAndFile.contains("/")) return uri;
-        return URI.create(uri.getScheme() + "://" + host + "/download/" + itemAndFile.replace("+", "%20"));
+        this.uri = UrlUtils.createUri(url);
     }
 
     @Override
@@ -91,12 +57,14 @@ public class WebUrlVideoSource implements IVideoSource {
             }
             return TvScreenVertexConsumers.getNoiseVC(buffer, pixelEffectRes, switchAnim);
         } else if (state == MediaStatus.LOADING) {
+
             if (VistaModClient.isFFmpegDownloading()) {
                int ffmpegProg = VistaModClient.getFFmpegDownloadProgress();
                 if (ffmpegProg >= 0) {
                     return TvScreenVertexConsumers.getDownloadingVc(buffer, pixelEffectRes, ffmpegProg, switchAnim);
                 }
             }
+
             int progress = texture.getDownloadProgress();
             if (progress >= 0) {
                 return TvScreenVertexConsumers.getDownloadingVc(buffer, pixelEffectRes, progress, switchAnim);

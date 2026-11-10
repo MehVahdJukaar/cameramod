@@ -16,11 +16,14 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 public class FFmpegWebTexture extends DynamicTexture implements IWebTexture {
+
     private static final double NOT_STARTED = -1;
     private static final double AUDIO_RESYNC_THRESHOLD = 0.3;
 
     private final FFmpegMediaSession session;
     private final ResourceLocation textureLocation;
+
+
     @Nullable
     private NativeImage lastFrame;
     private boolean wasFirstUploaded = false;
@@ -48,7 +51,7 @@ public class FFmpegWebTexture extends DynamicTexture implements IWebTexture {
 
     @Override
     public void close() {
-        //pixels are not closed here but by media frame
+        //pixels are not closed here but by the session
         this.releaseId();
         stopSpeaker();
     }
@@ -58,6 +61,7 @@ public class FFmpegWebTexture extends DynamicTexture implements IWebTexture {
         Vec3 centerPos = tv.getSpeakerSourcePos();
         double tvClock = tv.getPlaybackTicks() / 20.0;
         syncVideoClock(tvClock);
+
         boolean canHear = playing && videoClockOffset != NOT_STARTED && lastLookupState != MediaStatus.BUFFERING;
         if (!canHear || IWebTexture.distanceToCamera(centerPos) > SPEAKER_RANGE) {
             stopSpeaker();
@@ -87,7 +91,9 @@ public class FFmpegWebTexture extends DynamicTexture implements IWebTexture {
     }
 
     private void stopSpeaker() {
-        if (speakerSound == null) return;
+        if (speakerSound == null) {
+            return;
+        }
         Minecraft.getInstance().getSoundManager().stop(speakerSound);
         speakerSound = null;
     }
@@ -113,6 +119,7 @@ public class FFmpegWebTexture extends DynamicTexture implements IWebTexture {
             uploadOnRenderThread(frame);
             this.lastFrame = frame;
         }
+
         if (!wasFirstUploaded && !session.isAudioOnly() && lookup.state().isGood()) {
             return MediaStatus.LOADING;
         }
