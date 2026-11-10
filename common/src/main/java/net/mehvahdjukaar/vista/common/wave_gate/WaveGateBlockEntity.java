@@ -32,7 +32,7 @@ public class WaveGateBlockEntity extends BlockEntity implements IScreenProvider,
 
     private String url = "";
     private UUID myUUID;
-    private IVideoSource videoSource = IVideoSource.EMPTY;
+    private IVideoSource videoSource = IVideoSource.NO_SIGNAL;
 
     public WaveGateBlockEntity(BlockPos pos, BlockState state) {
         super(VistaMod.WAVE_GATE_TILE.get(), pos, state);
@@ -41,7 +41,7 @@ public class WaveGateBlockEntity extends BlockEntity implements IScreenProvider,
 
     @Override
     public @Nullable IVideoSource getBroadcastVideo() {
-        return getBlockState().getValue(WaveGateBlock.POWERED) ? IVideoSource.EMPTY : videoSource;
+        return getBlockState().getValue(WaveGateBlock.POWERED) ? IVideoSource.NO_SIGNAL : videoSource;
     }
 
     @Override
@@ -93,7 +93,7 @@ public class WaveGateBlockEntity extends BlockEntity implements IScreenProvider,
         this.url = url;
 
         if (PlatHelper.getPhysicalSide().isClient()) {
-            this.videoSource = (url.isBlank() || !ClientConfigs.isSafeUrl(url)) ? IVideoSource.EMPTY :
+            this.videoSource = (url.isBlank() || !ClientConfigs.isSafeUrl(url)) ? IVideoSource.NO_SIGNAL :
                     new WebUrlVideoSource(url);
         }
     }

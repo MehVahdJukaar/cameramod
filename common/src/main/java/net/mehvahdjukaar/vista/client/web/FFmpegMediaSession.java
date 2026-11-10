@@ -60,20 +60,10 @@ public class FFmpegMediaSession implements IMediaSession {
                 input = uri.toString();
                 streamCopy = cacheManager.newPartialFile(uri);
             } else {
-                Path videoPath = cacheManager.getOrDownload(uri,
-                        percent -> this.downloadProgress = percent,
-                        (attempt, max, cause) -> this.retrying = true);
-                this.retrying = false;
-                this.downloadProgress = -1;
-
-                synchronized (this) {
-                    if (isClosed) {
-                        cacheManager.release(uri);
-                        return;
-                    }
-                    holdsCachedFile = true;
+                input = downloadToCache();
+                if (input == null) {
+                    return;
                 }
-                input = videoPath.toString();
             }
 
             FFmpeg ffmpeg = VistaModClient.awaitFFmpeg();
@@ -81,14 +71,29 @@ public class FFmpegMediaSession implements IMediaSession {
                 setFailed(MediaError.NO_FFMPEG);
                 return;
             }
-            FFmpegMediaDecoder newDecoder = new FFmpegMediaDecoder(ffmpeg, input, streamCopy);
-            synchronized (this) {
-                if (isClosed) return;
-
-                this.decoder = newDecoder;
+            FFmpegMediaDecoder newDecoder = openDecoder(ffmpeg, input, streamCopy);
+            if (newDecoder == null) {
+                return;
             }
 
-            var info = newDecoder.probeStreams();
+            FFmpegMediaDecoder.StreamInfo info;
+            try {
+                info = newDecoder.probeStreams();
+            } catch (IOException e) {
+                if (streamCopy == null) throw e;
+                //added because on linux it segfaults for some reason
+                VistaMod.LOGGER.warn("Could not stream {}, downloading it instead", uri, e);
+                cacheManager.finishPartialFile(uri, streamCopy, false);
+                streamCopy = null;
+
+                input = downloadToCache();
+                if (input == null) return;
+                newDecoder = openDecoder(ffmpeg, input, null);
+                if (newDecoder == null) {
+                    return;
+                }
+                info = newDecoder.probeStreams();
+            }
             if (!info.hasVideo() && !info.hasAudio()) {
                 VistaMod.LOGGER.warn("No video or audio stream in {}, not playable media", input);
                 setFailed(MediaError.BAD_LINK);
@@ -121,8 +126,35 @@ public class FFmpegMediaSession implements IMediaSession {
         } finally {
             this.downloadProgress = -1;
             this.retrying = false;
-            if (streamCopy != null) cacheManager.finishPartialFile(uri, streamCopy, fullCopy && !isClosed);
+            if (streamCopy != null) {
+                cacheManager.finishPartialFile(uri, streamCopy, fullCopy && !isClosed);
+            }
         }
+    }
+
+    @Nullable
+    private String downloadToCache() throws Exception {
+        Path videoPath = cacheManager.getOrDownload(uri,
+                percent -> this.downloadProgress = percent,
+                (attempt, max, cause) -> this.retrying = true);
+        this.retrying = false;
+        this.downloadProgress = -1;
+
+        synchronized (this) {
+            if (isClosed) {
+                cacheManager.release(uri);
+                return null;
+            }
+            holdsCachedFile = true;
+        }
+        return videoPath.toString();
+    }
+
+    @Nullable
+    private synchronized FFmpegMediaDecoder openDecoder(FFmpeg ffmpeg, String input, @Nullable Path copyTo) {
+        if (isClosed) return null;
+        this.decoder = new FFmpegMediaDecoder(ffmpeg, input, copyTo);
+        return this.decoder;
     }
 
     private static boolean isHttp(URI uri) {

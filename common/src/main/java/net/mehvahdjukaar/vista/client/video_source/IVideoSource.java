@@ -23,6 +23,7 @@ public interface IVideoSource {
 
     IVideoSource EMPTY = new Empty();
     IVideoSource NO_ENERGY = new NoEnergy();
+    IVideoSource NO_SIGNAL = new NoSignal();
 
     @NotNull
     VertexConsumer getVideoFrameBuilder(
@@ -65,7 +66,7 @@ public interface IVideoSource {
         } else if (stack.has(VistaMod.LINKED_FEED_COMPONENT.get())) {
             return new BroadcastVideoSource(stack.get(VistaMod.LINKED_FEED_COMPONENT.get()));
         }
-        return EMPTY;
+        return stack.isEmpty() ? EMPTY : NO_SIGNAL;
     }
 
     class Empty implements IVideoSource {
@@ -97,6 +98,18 @@ public interface IVideoSource {
                 IntAnimationState switchAnim, IntAnimationState staticAnim, boolean showsTime) {
 
             return TvScreenVertexConsumers.getNoEnergyVC(buffer, pixelEffectRes, switchAnim);
+        }
+    }
+
+    class NoSignal implements IVideoSource {
+        @Override
+        public @NotNull VertexConsumer getVideoFrameBuilder(
+                TVBlockEntity tv, float partialTick, MultiBufferSource buffer,
+                boolean shouldUpdate, Vec2i screenSize, Vec2i pixelEffectRes,
+                int videoAnimationTick, boolean paused,
+                IntAnimationState switchAnim, IntAnimationState staticAnim, boolean showsTime) {
+
+            return TvScreenVertexConsumers.getNoiseVC(buffer, pixelEffectRes, switchAnim);
         }
     }
 }

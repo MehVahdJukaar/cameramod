@@ -98,7 +98,7 @@ public class FFmpegMediaDecoder {
     }
 
 
-    public StreamInfo probeStreams() throws IOException {
+    public StreamInfo probeStreams() throws IOException, InterruptedException {
         //probe args
         List<String> args = new ArrayList<>(List.of("-v", "error", "-show_entries", "stream=codec_type,width,height,r_frame_rate", "-of", "json"));
         args.addAll(FFmpeg.inputArgs(input));
@@ -107,6 +107,10 @@ public class FFmpegMediaDecoder {
         JsonElement json;
         try (Reader r = new InputStreamReader(p.getInputStream())) {
             json = JsonParser.parseReader(r);
+        }
+        int exitCode = p.waitFor();
+        if (exitCode != 0) {
+            throw new IOException("ffprobe exited with code " + exitCode + " on " + input);
         }
         int width = 0, height = 0;
         double framerate = FALLBACK_FPS;

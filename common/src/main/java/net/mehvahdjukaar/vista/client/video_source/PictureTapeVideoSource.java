@@ -38,7 +38,7 @@ public class PictureTapeVideoSource implements IVideoSource {
 
         if (pictures.isEmpty()) {
             this.shownPicture = ItemStack.EMPTY;
-            return TvScreenVertexConsumers.getBarsVC(buffer, pixelEffectRes, switchAnim);
+            return TvScreenVertexConsumers.getNoiseVC(buffer, pixelEffectRes, switchAnim);
         }
         int index = (videoAnimationTick / playSpeed) % pictures.size();
         this.shownPicture = pictures.get(index);

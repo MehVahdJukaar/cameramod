@@ -74,7 +74,7 @@ public class WebUrlVideoSource implements IVideoSource {
 
         boolean noLinkSet = uri == null;
         if (noLinkSet) {
-            return TvScreenVertexConsumers.getBarsVC(buffer, pixelEffectRes, switchAnim);
+            return TvScreenVertexConsumers.getNoiseVC(buffer, pixelEffectRes, switchAnim);
         }
 
         IWebTexture texture = WebTexturesManager.getTexture(uri, tv.getBlockPos(), screenSize);
