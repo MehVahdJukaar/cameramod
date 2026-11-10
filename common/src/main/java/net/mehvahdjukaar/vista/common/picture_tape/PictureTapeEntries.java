@@ -3,6 +3,7 @@ package net.mehvahdjukaar.vista.common.picture_tape;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.entity.DecoratedPotPatterns;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -18,6 +19,7 @@ public class PictureTapeEntries {
         //also catches other mods maps
         register(stack -> stack.has(DataComponents.MAP_ID));
         register(stack -> stack.is(Items.PAINTING));
+        register(stack -> DecoratedPotPatterns.getPatternFromItem(stack.getItem()) != null);
     }
 
     public static void register(Predicate<ItemStack> validator) {
@@ -25,8 +27,8 @@ public class PictureTapeEntries {
     }
 
     /**
-     * Registers a handler for items that hold several pictures inside them, like exposure's stacked
-     * photographs. Those aren't valid entries themselves: adding one to a tape adds what it contains instead.
+     * Registers a handler for items that hold several pictures inside them. (i.e. exposure stuff)
+     * So that their content can be added
      */
     public static void registerUnpacker(Unpacker unpacker) {
         UNPACKERS.add(unpacker);
@@ -61,8 +63,7 @@ public class PictureTapeEntries {
     }
 
     /**
-     * The pictures taken out of a container, plus what the container itself is left as. That remainder
-     * can end up being a different item (a lone photograph, once a stack is down to one) or nothing at all.
+     * The pictures taken out of a container, plus what the container itself is left as
      */
     public record Unpacked(List<ItemStack> pictures, ItemStack remainder) {
     }

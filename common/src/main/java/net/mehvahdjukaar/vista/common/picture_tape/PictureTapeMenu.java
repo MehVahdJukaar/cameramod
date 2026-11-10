@@ -28,6 +28,7 @@ public class PictureTapeMenu extends AbstractContainerMenu {
     private final int maxEntries;
     private final DataSlot playSpeed = DataSlot.standalone();
     private boolean mutating;
+    private int lastFilledCount;
 
     public static PictureTapeMenu fromBuffer(int containerId, Inventory playerInventory, FriendlyByteBuf buffer) {
         return new PictureTapeMenu(containerId, playerInventory, buffer.readVarInt());
@@ -56,6 +57,7 @@ public class PictureTapeMenu extends AbstractContainerMenu {
             tapeContent.setItem(i, stored.get(i).copy());
         }
         this.mutating = false;
+        this.lastFilledCount = getFilledCount();
 
         for (int i = 0; i < this.maxEntries; i++) {
             this.addSlot(new MapSlot(tapeContent, i));
@@ -174,6 +176,13 @@ public class PictureTapeMenu extends AbstractContainerMenu {
             this.mutating = false;
         }
         PictureTapeItem.setContent(tapeStack, new PictureTapeContent(new ArrayList<>(filled), getPlaySpeed()));
+
+        if (filled.size() > lastFilledCount) {
+            PictureTapeItem.playInsertSound(owner);
+        } else if (filled.size() < lastFilledCount) {
+            PictureTapeItem.playRemoveSound(owner);
+        }
+        lastFilledCount = filled.size();
         pushMapData();
     }
 

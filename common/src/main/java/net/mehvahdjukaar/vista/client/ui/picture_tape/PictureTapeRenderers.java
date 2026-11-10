@@ -15,6 +15,7 @@ public class PictureTapeRenderers {
     static {
         register(new MapTapeEntryRenderer());
         register(new PaintingTapeEntryRenderer());
+        register(new SherdTapeEntryRenderer());
     }
 
     public static void register(TapeEntryRenderer renderer) {

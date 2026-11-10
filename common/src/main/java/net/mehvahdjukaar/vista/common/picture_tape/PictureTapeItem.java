@@ -157,12 +157,12 @@ public class PictureTapeItem extends Item implements ITvCassette {
         return removed;
     }
 
-    private static void playInsertSound(Player player) {
-        player.playSound(SoundEvents.BUNDLE_INSERT, 0.8F, 0.8F + player.level().getRandom().nextFloat() * 0.4F);
+    public static void playInsertSound(Player player) {
+        player.playSound(SoundEvents.BOOK_PUT, 0.8F, 0.8F + player.level().getRandom().nextFloat() * 0.4F);
     }
 
-    private static void playRemoveSound(Player player) {
-        player.playSound(SoundEvents.BUNDLE_REMOVE_ONE, 0.8F, 0.8F + player.level().getRandom().nextFloat() * 0.4F);
+    public static void playRemoveSound(Player player) {
+        player.playSound(SoundEvents.BOOK_PAGE_TURN, 0.8F, 0.8F + player.level().getRandom().nextFloat() * 0.4F);
     }
 
     // fullness bar under the item, like a bundle

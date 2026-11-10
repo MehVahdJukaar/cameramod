@@ -160,11 +160,8 @@ public class ClientConfigs {
 
         builder.icon("picture_tape").push("picture_tape");
         PICTURE_TAPE_SCALING_MODE = builder
-                .comment("How a picture is fitted onto the TV screen when the two don't have the same shape. " +
-                        "STRETCH: distorts the picture to fill the screen. CONTAIN: shows all of it, leaving bars " +
-                        "on the two shorter sides. COVER: fills the screen, cropping whatever sticks out. " +
-                        "FIT_WIDTH / FIT_HEIGHT: match that side of the screen and let the other one bar or crop")
-                .define("scaling_mode", ScalingMode.CONTAIN);
+                .comment("How a picture is fitted onto the TV screen when the two don't have the same shape")
+                .define("scaling_mode", ScalingMode.COVER);
         builder.pop(); // picture_tape
 
         builder.icon("wave_gate").push("wave_gate");
