@@ -58,7 +58,7 @@
   "gui.vista.iris_warning.message": "Iris has several long standing bugs that breaks ANY mod using their own shaders, Vista included.\n\nWith a shader pack on, things like TVs, mirrors and wave gates can come out invisible or pitch black.\n\nFixes have never been added in Iris.\n\nIris Bonk is a workaround for these issues.",
   "gui.vista.iris_warning.suggestions": "Click here to get Iris Bonk",
   "gui.vista.veil_warning.title": "WARNING: VEIL DETECTED",
-  "gui.vista.veil_warning.message": "Veil has several very serious and known long standing bugs which can break rendering in many mods, Vista included.\n\nVeil Bonk is a mod that merges some of these PRs via mixins.",
+  "gui.vista.veil_warning.message": "Veil has several very serious and known long standing bugs which can break rendering in many mods, Vista included.\n\nVeil Bonk is a mod that fixes some of those issues and merges some of those PRS via mixins.",
   "gui.vista.veil_warning.suggestions": "Click here to get Veil Bonk",
   "tag.vista.vista.cassette_tape.supporter_tapes": "Supporter Tapes",
   "vista.nautilus_studio.cassette_tape": "Cassette Tape",
