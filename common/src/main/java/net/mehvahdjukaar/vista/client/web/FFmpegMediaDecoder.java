@@ -69,7 +69,7 @@ public class FFmpegMediaDecoder {
             }
             try (InputStream in = new BufferedInputStream(process.getInputStream(), 1024 * 1024)) {
                 if (info.hasVideo()) {
-                    readFrames(in, info.width(), info.height(), frameSink);
+                    readFrames(in, info.width(), info.height(), info.hasAlpha(), frameSink);
                 } else {
                     audio.receive(in);
                 }
@@ -84,12 +84,15 @@ public class FFmpegMediaDecoder {
         }
     }
 
-    private void readFrames(InputStream in, int width, int height, Consumer<NativeImage> frameSink) throws IOException {
+    private void readFrames(InputStream in, int width, int height, boolean hasAlpha, Consumer<NativeImage> frameSink) throws IOException {
         int bytesPerFrame = width * height * BYTES_PER_PIXEL;
         byte[] data = new byte[bytesPerFrame];
         while (!stopped) {
             if (in.readNBytes(data, 0, bytesPerFrame) < bytesPerFrame) {
                 break;
+            }
+            if (hasAlpha) {
+                foldAlpha(data);
             }
             NativeImage img = new NativeImage(NativeImage.Format.RGBA, width, height, false);
             MemoryUtil.memByteBuffer(img.pixels, bytesPerFrame).put(data);
@@ -98,9 +101,26 @@ public class FFmpegMediaDecoder {
     }
 
 
+    //screen doesnt support alpha so we multiply it in pixel
+    private static void foldAlpha(byte[] rgba) {
+        for (int i = 0; i < rgba.length; i += BYTES_PER_PIXEL) {
+            int a = rgba[i + 3] & 0xFF;
+            if (a == 255) continue;
+            for (int c = 0; c < 3; c++) {
+                rgba[i + c] = (byte) ((rgba[i + c] & 0xFF) * a / 255);
+            }
+        }
+    }
+
+    private static boolean pixelFormatHasAlpha(String pixFmt) {
+        return pixFmt.startsWith("yuva") || pixFmt.startsWith("gbrap") || pixFmt.startsWith("ya")
+                || pixFmt.contains("rgba") || pixFmt.contains("bgra") || pixFmt.contains("argb") || pixFmt.contains("abgr")
+                || pixFmt.equals("pal8");
+    }
+
     public StreamInfo probeStreams() throws IOException, InterruptedException {
         //probe args
-        List<String> args = new ArrayList<>(List.of("-v", "error", "-show_entries", "stream=codec_type,width,height,r_frame_rate", "-of", "json"));
+        List<String> args = new ArrayList<>(List.of("-v", "error", "-show_entries", "stream=codec_type,width,height,r_frame_rate,pix_fmt", "-of", "json"));
         args.addAll(FFmpeg.inputArgs(input));
 
         Process p = ffmpeg.runFFprobe(args.toArray(String[]::new));
@@ -108,15 +128,15 @@ public class FFmpegMediaDecoder {
         try (Reader r = new InputStreamReader(p.getInputStream())) {
             json = JsonParser.parseReader(r);
         }
-        int exitCode = p.waitFor();
-        if (exitCode != 0) {
-            throw new IOException("ffprobe exited with code " + exitCode + " on " + input);
+        if (!json.isJsonObject()) {
+            throw new IOException("ffprobe crashed with code " + p.waitFor() + " on " + input);
         }
         int width = 0, height = 0;
         double framerate = FALLBACK_FPS;
         boolean hasAudio = false;
-        if (!json.isJsonObject() || !json.getAsJsonObject().has("streams")) {
-            return new StreamInfo(width, height, framerate, false);
+        boolean hasAlpha = false;
+        if (!json.getAsJsonObject().has("streams")) {
+            return new StreamInfo(width, height, framerate, false, false);
         }
 
         for (JsonElement e : json.getAsJsonObject().getAsJsonArray("streams")) {
@@ -130,13 +150,16 @@ public class FFmpegMediaDecoder {
                 if (stream.has("r_frame_rate")) {
                     framerate = parseFrameRate(stream.get("r_frame_rate").getAsString());
                 }
+                if (stream.has("pix_fmt")) {
+                    hasAlpha = pixelFormatHasAlpha(stream.get("pix_fmt").getAsString());
+                }
             }
         }
         if (!Double.isFinite(framerate) || framerate <= 0) {
             VistaMod.LOGGER.warn("Invalid probed framerate {}, defaulting to {} fps", framerate, FALLBACK_FPS);
             framerate = FALLBACK_FPS;
         }
-        return new StreamInfo(width, height, framerate, hasAudio);
+        return new StreamInfo(width, height, framerate, hasAudio, hasAlpha);
     }
 
     private static double parseFrameRate(String rate) {
@@ -147,7 +170,7 @@ public class FFmpegMediaDecoder {
         return Double.parseDouble(rate);
     }
 
-    public record StreamInfo(int width, int height, double framerate, boolean hasAudio) {
+    public record StreamInfo(int width, int height, double framerate, boolean hasAudio, boolean hasAlpha) {
         public boolean hasVideo() {
             return width > 0 && height > 0;
         }

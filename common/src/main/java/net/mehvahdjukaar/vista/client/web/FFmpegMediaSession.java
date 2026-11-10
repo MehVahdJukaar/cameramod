@@ -19,9 +19,14 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.Executor;
 
 public class FFmpegMediaSession implements IMediaSession {
+    //hardcoded list of extension that we'll even attempt streaming
+    private static final Set<String> STREAMED_EXTENSIONS = Set.of("mp4", "m4v", "mkv", "webm", "mov", "avi", "flv", "ts", "m3u8", "mpd");
+
     private final List<NativeImage> frames = new ArrayList<>(); //all frames are 1/framerate apart
     private final FFmpegAudioTrack audio = new FFmpegAudioTrack();
 
@@ -55,7 +60,7 @@ public class FFmpegMediaSession implements IMediaSession {
         boolean fullCopy = false;
         try {
             String input;
-            if (isHttp(uri) && !cacheManager.isCached(uri)) {
+            if (isStreamable(uri) && !cacheManager.isCached(uri)) {
                 checkReachable(uri);
                 input = uri.toString();
                 streamCopy = cacheManager.newPartialFile(uri);
@@ -160,6 +165,14 @@ public class FFmpegMediaSession implements IMediaSession {
     private static boolean isHttp(URI uri) {
         String scheme = uri.getScheme();
         return "http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme);
+    }
+
+    //short stuff like images and gifs is just downloaded
+    private static boolean isStreamable(URI uri) {
+        String path = uri.getPath();
+        if (!isHttp(uri) || path == null) return false;
+        int dot = path.lastIndexOf('.');
+        return dot != -1 && STREAMED_EXTENSIONS.contains(path.substring(dot + 1).toLowerCase(Locale.ROOT));
     }
 
     //ffmpeg only says "failed", this keeps the forbidden/not found screens
