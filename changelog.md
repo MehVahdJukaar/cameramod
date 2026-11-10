@@ -1,1 +1,2 @@
-- fixed watermedia audio missing a flag and thus not working properly
+- sherds can be added to picture tape
+- minor wave gate fixes
