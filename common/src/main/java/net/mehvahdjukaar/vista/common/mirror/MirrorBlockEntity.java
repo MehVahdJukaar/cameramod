@@ -32,15 +32,12 @@ public class MirrorBlockEntity extends BlockEntity {
         this.connectedMirrorsAmount = size;
     }
 
-    // The surface leaves a fixed 1px frame per outer side no matter how wide the group is (same as
-    // the TV's bezel), so the visible area is 16*N - 2 px. Sizing the framebuffer to exactly that
-    // keeps the texel to screen ratio 1:1 at any size.
-    public static final int FRAME_PIXELS = 2;
+    public static final int FRAME_PIXELS_THICKNESS = 2;
 
     public Vec2i getScreenPixelSize() {
         return new Vec2i(
-                Math.max(1, connectedMirrorsAmount.x()) * 16 - FRAME_PIXELS,
-                Math.max(1, connectedMirrorsAmount.y()) * 16 - FRAME_PIXELS);
+                Math.max(1, connectedMirrorsAmount.x()) * 16 - FRAME_PIXELS_THICKNESS,
+                Math.max(1, connectedMirrorsAmount.y()) * 16 - FRAME_PIXELS_THICKNESS);
     }
 
     @Override
