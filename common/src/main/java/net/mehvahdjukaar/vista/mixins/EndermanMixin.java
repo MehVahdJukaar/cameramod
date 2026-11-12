@@ -15,6 +15,8 @@ public class EndermanMixin {
 
     @Inject(method = "setPersistentAngerTarget", at = @At("HEAD"))
     public void vista$clearTvAnger(@Nullable UUID persistentAngerTarget, CallbackInfo ci) {
-        if (persistentAngerTarget == null) VistaMod.ENDERMAN_CAP.set((EnderMan) (Object) this, null);
+        if (persistentAngerTarget == null) {
+            VistaMod.ENDERMAN_CAP.set((EnderMan) (Object) this, null);
+        }
     }
 }

@@ -26,9 +26,10 @@ public class ChunkTrackingViewMixin implements IChunkViewWithZones {
     @Inject(method = "forEach", at = @At("RETURN"))
     private void vista$addZoneChunks(Consumer<ChunkPos> action, CallbackInfo ci) {
         if (vista$extraZones == null) return;
-        ChunkTrackingView self = (ChunkTrackingView) this;
         for (ChunkPos pos : vista$extraZones.getAllChunks()) {
-            if (!self.isInViewDistance(pos.x, pos.z)) action.accept(pos);
+            if (!((ChunkTrackingView) this).isInViewDistance(pos.x, pos.z)) {
+                action.accept(pos);
+            }
         }
     }
 }

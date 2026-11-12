@@ -31,7 +31,7 @@ dependencies {
     modCompileOnly("curse.maven:exposure-871755:8223555")
     modCompileOnly("maven.modrinth:joy-of-painting:73U02HbA")
     modCompileOnly("curse.maven:distant-horizons-508933:8908517")
-    modCompileOnly("maven.modrinth:iris:1.8.8+1.21.1-neoforge")
+    modCompileOnly("maven.modrinth:iris:1.8.14-beta.1+1.21.1-neoforge")
 
     modCompileOnly("curse.maven:cc-tweaked-282001:5714512")
     //modCompileOnly files("mods/entityculling-fabric-1.10.1-mc1.21.1.jar")
@@ -40,7 +40,7 @@ dependencies {
     modCompileOnly("curse.maven:jei-238222:7420587")
     modCompileOnly("maven.modrinth:jade:15.10.5+neoforge")
     //modCompileOnly("curse.maven:irisshaders-455508:6213635")
-    modCompileOnly("curse.maven:sodium-394468:6382651")
+    modCompileOnly("maven.modrinth:sodium:mc1.21.1-0.8.13-neoforge")
     modCompileOnly("curse.maven:geckolib-388172:7707149")
 
     modCompileOnly("curse.maven:refurbished-furniture-897116:7473565")

@@ -147,6 +147,10 @@ public class IrisCompat {
         return VISTA_RENDERING.get() && irisShaderPacksOff.get() ? VISTA_PIPELINE : null;
     }
 
+    public static boolean feedHasShaderPack() {
+        return !irisShaderPacksOff.get() && Iris.getCurrentPack().isPresent();
+    }
+
     public static boolean shouldSwapDimensionForFeed() {
         return VISTA_RENDERING.get() && !irisShaderPacksOff.get();
     }

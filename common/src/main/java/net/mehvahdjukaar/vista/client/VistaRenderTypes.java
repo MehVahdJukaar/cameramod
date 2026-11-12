@@ -11,6 +11,7 @@ import net.mehvahdjukaar.vista.client.textures.perspective.MirrorReflectionTextu
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
+import net.mehvahdjukaar.vista.integration.iris.IrisCompat;
 import net.mehvahdjukaar.vista.integration.supplementaries.SuppCompat;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
@@ -87,7 +88,9 @@ public class VistaRenderTypes extends RenderType {
         setFloat(shader, "Smear", 1f);
         setFloat(shader, "EnableEnergyNormalize", 0.0f);
 
-        setFloat(shader, "VignetteIntensity", ClientConfigs.VIGNETTE.get());
+
+        boolean hasIrisShaderpack = CompatHandler.IRIS && IrisCompat.feedHasShaderPack();
+        setFloat(shader, "VignetteIntensity", hasIrisShaderpack ? 0 : ClientConfigs.VIGNETTE.get());
         setFloat(shader, "NoiseIntensity", key.staticAnim.getValue(pt));
         setFloat(shader, "FadeAnimation", key.turnOnAnim.getValue(pt));
     }
