@@ -41,6 +41,7 @@
     "compat.CompatIrisFrameCounterMixin",
     "compat.CompatIrisMixin",
     "compat.CompatIrisRenderingMixin",
+    "compat.CompatIrisSodiumRenderListMixin",
     "compat.CompatIrisTimerMixin",
     "compat.CompatSimpleCloudsMixin",
     "compat.HackShushDistantHorizonsFogMixin",

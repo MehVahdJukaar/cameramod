@@ -14,6 +14,8 @@ import net.mehvahdjukaar.vista.client.textures.perspective.MirrorTextureManager;
 import net.mehvahdjukaar.vista.common.mirror.MirrorBlock;
 import net.mehvahdjukaar.vista.common.mirror.MirrorBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
+import net.mehvahdjukaar.vista.integration.CompatHandler;
+import net.mehvahdjukaar.vista.integration.iris.IrisCompat;
 import net.mehvahdjukaar.vista.integration.sable.SableCompatClient;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -65,6 +67,8 @@ public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBloc
     @Override
     public void render(MirrorBlockEntity blockEntity, float partialTick, PoseStack poseStack,
                        MultiBufferSource buffer, int light, int overlay) {
+        if (CompatHandler.IRIS && IrisCompat.isRenderingShadowPass()) return;
+
         Direction dir = blockEntity.getBlockState().getValue(MirrorBlock.FACING);
         double recession = MirrorBlock.surfaceRecession(blockEntity.getBlockState());
 
