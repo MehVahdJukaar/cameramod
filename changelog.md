@@ -1,2 +1,1 @@
-- sherds can be added to picture tape
-- minor wave gate fixes
+- some more workarounds for iris
