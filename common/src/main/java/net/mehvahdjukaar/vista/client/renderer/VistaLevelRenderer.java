@@ -7,6 +7,7 @@ import net.mehvahdjukaar.moonlight.api.misc.WeakHashSet;
 import net.mehvahdjukaar.moonlight.api.util.math.EntityAngles;
 import net.mehvahdjukaar.moonlight.core.client.DummyCamera;
 import net.mehvahdjukaar.vista.client.VistaClientPlatStuff;
+import net.mehvahdjukaar.vista.client.chunk_tracking.IPinnableRenderSection;
 import net.mehvahdjukaar.vista.client.textures.perspective.MirrorReflectionTexture;
 import net.mehvahdjukaar.vista.client.textures.perspective.PerspectiveTexture;
 import net.mehvahdjukaar.vista.common.mirror.MirrorBlockEntity;
@@ -132,6 +133,17 @@ public class VistaLevelRenderer {
             for (LevelRendererFrustumState state : MANAGED_STATES) {
                 SectionOcclusionGraph graph = state.getOcclusionGraph();
                 if (graph != null) graph.invalidate();
+            }
+        }
+    }
+
+
+    public static void removePinnedFromVisibleSections(LevelRenderer lr) {
+        lr.visibleSections.removeIf(s -> ((IPinnableRenderSection) s).vista$isPinned());
+
+        synchronized (STATES_LOCK) {
+            for (LevelRendererFrustumState state : MANAGED_STATES) {
+                state.removePinnedSections();
             }
         }
     }

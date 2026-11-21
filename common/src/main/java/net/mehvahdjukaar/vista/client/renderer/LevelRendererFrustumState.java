@@ -1,6 +1,7 @@
 package net.mehvahdjukaar.vista.client.renderer;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import net.mehvahdjukaar.vista.client.chunk_tracking.IPinnableRenderSection;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.SectionOcclusionGraph;
 import net.minecraft.client.renderer.ViewArea;
@@ -86,6 +87,11 @@ public class LevelRendererFrustumState {
         lr.prevCamZ = this.prevCamZ;
         lr.prevCamRotX = this.prevCamRotX;
         lr.prevCamRotY = this.prevCamRotY;
+    }
+
+    //yeet
+    public void removePinnedSections() {
+        visibleSections.removeIf(s -> ((IPinnableRenderSection) s).vista$isPinned());
     }
 
     public SectionOcclusionGraph getOcclusionGraph() {

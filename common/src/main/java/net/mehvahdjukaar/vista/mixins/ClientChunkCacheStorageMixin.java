@@ -28,6 +28,8 @@ public class ClientChunkCacheStorageMixin {
     volatile int viewCenterX;
     @Shadow
     volatile int viewCenterZ;
+    @Shadow
+    int chunkCount;
 
     @Inject(method = "inRange", at = @At("HEAD"), cancellable = true)
     private void vista$alwaysInRangeForPinnedZone(int x, int z, CallbackInfoReturnable<Boolean> cir) {
@@ -52,6 +54,10 @@ public class ClientChunkCacheStorageMixin {
         LevelChunk evicted = this.chunks.get(chunkIndex);
         if (evicted != null && evicted != chunk && vista$isFarZoneChunk(evicted.getPos())) {
             ClientPinnedChunksManager.pin(evicted);
+            //we got to empty the chunk slot othewise vanilla unloads it and sodium stops tracking it before we can cancel
+            if (this.chunks.compareAndSet(chunkIndex, evicted, null)) {
+                this.chunkCount--;
+            }
         }
     }
 

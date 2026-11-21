@@ -1,6 +1,5 @@
 package net.mehvahdjukaar.vista.client.chunk_tracking;
 
-import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.world.level.ChunkPos;
@@ -15,11 +14,6 @@ public class ClientPinnedChunksManager {
     private static final Map<Long, LevelChunk> PINNED = new ConcurrentHashMap<>();
     //Microoptimization: chunk lookups hit this on every block read, a volatile read beats isEmpty on a concurrent map. incorrect technically as its never cleared.
     private static volatile boolean anyPinned = false;
-
-    public static boolean clientWantsZoneChunksSent() {
-        //sodium does its own stuff.
-        return !CompatHandler.SODIUM;
-    }
 
     @Nullable
     public static LevelChunk get(int chunkX, int chunkZ) {
