@@ -1,1 +1,1 @@
-- some more workarounds for iris
+- improved some code that dealt with dar away chunk send when sodium was on. tested with latest sodium
