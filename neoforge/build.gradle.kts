@@ -79,8 +79,10 @@ dependencies {
     modCompileOnly("maven.modrinth:balm:21.0.66+neoforge-1.21.1")
     modCompileOnly("curse.maven:create-328085:7963363")
     modCompileOnly("curse.maven:create-aeronautics-676721:8240058")
-    //modRuntimeOnly("curse.maven:create-328085:7963363")
-    //modRuntimeOnly("maven.modrinth:create-aeronautics:44pLdPGg") // 1.3.2
+    modRuntimeOnly("maven.modrinth:create:UjX6dr61") // 6.0.10
+    modRuntimeOnly("maven.modrinth:sable:fg9dTRz9") // 2.0.6
+    modRuntimeOnly("maven.modrinth:create-aeronautics:demX2roU") // 1.3.3
+    modRuntimeOnly("maven.modrinth:veil:IpGnlNgK") // 4.5.2
 
     api("dev.ryanhcode.sable-companion:sable-companion-common-1.21.1:[${sable_companion_version},)")
     jarJar("dev.ryanhcode.sable-companion:sable-companion-common-1.21.1:[${sable_companion_version},)")
