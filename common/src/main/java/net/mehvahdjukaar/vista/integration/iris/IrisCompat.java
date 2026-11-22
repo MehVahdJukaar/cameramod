@@ -2,8 +2,11 @@ package net.mehvahdjukaar.vista.integration.iris;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import net.irisshaders.iris.Iris;
+import net.irisshaders.iris.gl.IrisRenderSystem;
 import net.irisshaders.iris.gl.blending.BlendModeStorage;
 import net.irisshaders.iris.gl.blending.DepthColorStorage;
+import net.irisshaders.iris.gl.buffer.ShaderStorageBufferHolder;
+import net.irisshaders.iris.gl.sampler.SamplerLimits;
 import net.irisshaders.iris.pipeline.PipelineManager;
 import net.irisshaders.iris.pipeline.VanillaRenderingPipeline;
 import net.irisshaders.iris.pipeline.WorldRenderingPipeline;
@@ -19,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
 import org.joml.Vector3d;
+import org.lwjgl.opengl.GL43C;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
@@ -79,6 +83,8 @@ public class IrisCompat {
     }
 
     private static WeakReference<RenderTarget> lastFeedCanvas = new WeakReference<>(null);
+    @Nullable
+    private static ShaderStorageBufferHolder mainSsboHolder = null;
 
     public static void onFeedCanvasBound(RenderTarget canvas) {
         if (lastFeedCanvas.get() == canvas) return;
@@ -178,8 +184,47 @@ public class IrisCompat {
                 oldState.saveTo(CapturedRenderingState.INSTANCE);
                 setCurrentPipeline(lr, oldLrPipeline);
                 setPipelineManagerPipeline(pm, oldPmPipeline);
+                if (!oldVistaRendering) restoreMainSsbos();
             }
         };
+    }
+
+    //iris binds ssbos when a pipeline begins, feed pipeline leaves its bound
+    public static void onBeforeBeginLevelRendering(@Nullable ShaderStorageBufferHolder holder) {
+        if (!VISTA_RENDERING.get()) {
+            mainSsboHolder = holder;
+        }
+        if (holder != null) {
+            holder.setupBuffers();
+        } else {
+            unbindSsbos();
+        }
+    }
+
+    public static void restoreMainSsbos() {
+        if (mainSsboHolder != null) {
+            mainSsboHolder.setupBuffers();
+        } else {
+            unbindSsbos();
+        }
+    }
+
+    public static void onPipelineDestroyed() {
+        mainSsboHolder = null;
+    }
+
+    private static void unbindSsbos() {
+        try {
+            int units = Math.min(16, SamplerLimits.get().getMaxShaderStorageUnits());
+            for (int i = 0; i < units; i++) {
+                IrisRenderSystem.bindBufferBase(GL43C.GL_SHADER_STORAGE_BUFFER, i, 0);
+            }
+        } catch (Throwable ignored) {
+        }
+    }
+
+    public static boolean isRenderingShadowPass() {
+        return ShadowRenderer.ACTIVE;
     }
 
     private static void releaseIrisStateLocks() {

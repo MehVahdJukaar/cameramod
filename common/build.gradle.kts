@@ -13,6 +13,8 @@ val candlelight_version: String by extra
 val mixin_squared_version: String by extra
 val sable_companion_version: String by extra
 
+val sodiumWrapper: Configuration by configurations.creating
+
 dependencies {
 
     modCompileOnly("net.mehvahdjukaar:moonlight-common:${moonlight_version}")
@@ -40,7 +42,11 @@ dependencies {
     modCompileOnly("curse.maven:jei-238222:7420587")
     modCompileOnly("maven.modrinth:jade:15.10.5+neoforge")
     //modCompileOnly("curse.maven:irisshaders-455508:6213635")
-    modCompileOnly("maven.modrinth:sodium:mc1.21.1-0.8.13-neoforge")
+    //neoforge sodium 0.8 is a wrapper jar, real mod is JiJ'd inside
+    sodiumWrapper("maven.modrinth:sodium:mc1.21.1-0.8.13-neoforge")
+    compileOnly(files(provider {
+        zipTree(sodiumWrapper.singleFile).matching { include("META-INF/jarjar/*sodium-neoforge*-mod.jar") }.singleFile
+    }))
     modCompileOnly("curse.maven:geckolib-388172:7707149")
 
     modCompileOnly("curse.maven:refurbished-furniture-897116:7473565")

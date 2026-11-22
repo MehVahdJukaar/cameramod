@@ -1,2 +1,1 @@
-- sherds can be added to picture tape
-- minor wave gate fixes
+- improved some code that dealt with dar away chunk send when sodium was on. tested with latest sodium

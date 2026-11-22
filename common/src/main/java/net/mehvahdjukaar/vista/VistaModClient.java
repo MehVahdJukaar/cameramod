@@ -9,7 +9,6 @@ import net.mehvahdjukaar.moonlight.api.misc.EventCalled;
 import net.mehvahdjukaar.moonlight.api.platform.ClientHelper;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
-import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.mehvahdjukaar.vista.client.VistaDynamicResources;
@@ -33,7 +32,6 @@ import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.mehvahdjukaar.vista.integration.joy_of_painting.CanvasTapeTextures;
-import net.mehvahdjukaar.vista.network.ServerBoundWantsZoneChunksPacket;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -337,10 +335,6 @@ public class VistaModClient {
 
     public static void onLevelLoaded(ClientLevel cl) {
         KNOWN_LEVELS_BY_DIMENSION.put(cl.dimension(), cl);
-
-        if (Minecraft.getInstance().getConnection() != null) {
-            NetworkHelper.sendToServer(new ServerBoundWantsZoneChunksPacket(ClientPinnedChunksManager.clientWantsZoneChunksSent()));
-        }
     }
 
     public static Level getLocalLevel() {

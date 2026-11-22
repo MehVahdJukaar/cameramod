@@ -46,6 +46,7 @@ public class LevelRendererMixin implements ILevelRendererExt {
     @Unique
     @Override
     public void vista$refreshPinnedSections() {
+        VistaLevelRenderer.removePinnedFromVisibleSections((LevelRenderer) (Object) this);
         if (viewArea instanceof IViewAreaExt va) {
             va.vista$rebuildPinnedSections();
         }

@@ -17,6 +17,8 @@ import net.mehvahdjukaar.vista.common.tv.TVBlock;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
+import net.mehvahdjukaar.vista.integration.CompatHandler;
+import net.mehvahdjukaar.vista.integration.iris.IrisCompat;
 import net.mehvahdjukaar.vista.integration.refurbished_furniture.RefurbishedFurnitureCompat;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -67,6 +69,8 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
     @Override
     public void render(TVBlockEntity blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int light, int overlay) {
+        if (CompatHandler.IRIS && IrisCompat.isRenderingShadowPass()) return;
+
         // node and wires show regardless of the screen being on
         if (CommonConfigs.isTvElectricityEnabled()) {
             RefurbishedFurnitureCompat.renderNodeAndWires(blockEntity);

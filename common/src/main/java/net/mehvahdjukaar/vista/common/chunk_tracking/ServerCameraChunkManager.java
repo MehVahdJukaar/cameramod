@@ -65,7 +65,7 @@ public class ServerCameraChunkManager {
     private static void refreshWatchedViewFinders(ServerPlayer player, int zoneRadius,
                                                   boolean sendsChunks, boolean forceLoadsChunks) {
         ServerExtraChunkViewData viewData = VistaMod.EXTRA_VIEW_AREAS.getOrCreate(player);
-        Set<GlobalPos> wanted = viewData.clientWantsZoneChunks() ? findViewFindersWatchedBy(player) : Set.of();
+        Set<GlobalPos> wanted = findViewFindersWatchedBy(player);
         Set<GlobalPos> watched = viewData.getWatchedViewFinders();
         if (wanted.equals(watched)) return;
 

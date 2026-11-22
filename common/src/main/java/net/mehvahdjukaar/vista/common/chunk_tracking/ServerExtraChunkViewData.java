@@ -11,7 +11,6 @@ public class ServerExtraChunkViewData extends ExtraChunkViewData {
 
     private final Set<GlobalPos> watchedViewFinders = new HashSet<>();
     private final Set<Long> queuedZoneChunks = new HashSet<>();
-    private boolean clientWantsZoneChunks = true;
 
     public ServerExtraChunkViewData() {
     }
@@ -37,13 +36,5 @@ public class ServerExtraChunkViewData extends ExtraChunkViewData {
 
     public void markZoneChunkQueued(ChunkPos pos) {
         queuedZoneChunks.add(pos.toLong());
-    }
-
-    public boolean clientWantsZoneChunks() {
-        return clientWantsZoneChunks;
-    }
-
-    public void setClientWantsZoneChunks(boolean wants) {
-        clientWantsZoneChunks = wants;
     }
 }
