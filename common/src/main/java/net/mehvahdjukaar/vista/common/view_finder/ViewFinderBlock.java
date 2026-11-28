@@ -157,7 +157,7 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock, IR
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
         ItemStack heldItem = player.getItemInHand(hand);
-        if (heldItem.is(VistaMod.HOLLOW_CASSETTE.get())) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        if (heldItem.is(VistaMod.HOLLOW_CASSETTE.get())) return ItemInteractionResult.SKIP_DEFAULT_BLOCK_INTERACTION;
         if (level.getBlockEntity(pos) instanceof ViewFinderBlockEntity tile) {
             if (CommonConfigs.isViewFinderGuiEnabled()) {
                 openGuiOrView(tile, level, pos, player, stack, hitResult);
