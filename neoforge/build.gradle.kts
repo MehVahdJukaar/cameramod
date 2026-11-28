@@ -39,7 +39,7 @@ dependencies {
     modCompileOnly("curse.maven:jei-238222:7420587")
     //modRuntimeOnly("maven.modrinth:jade:15.10.5+neoforge")
     //modRuntimeOnly("net.mehvahdjukaar:courier_owls-neoforge:${courier_owls_version}")
-    sodiumWrapper("maven.modrinth:sodium:mc1.21.1-0.8.13-neoforge")
+    sodiumWrapper("maven.modrinth:sodium:mc1.21.1-0.8.14-beta.2-neoforge")
     compileOnly(files(provider {
         zipTree(sodiumWrapper.singleFile).matching { include("META-INF/jarjar/*sodium-neoforge*-mod.jar") }.singleFile
     }))

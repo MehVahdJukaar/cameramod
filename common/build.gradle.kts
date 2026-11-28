@@ -43,7 +43,7 @@ dependencies {
     modCompileOnly("maven.modrinth:jade:15.10.5+neoforge")
     //modCompileOnly("curse.maven:irisshaders-455508:6213635")
     //neoforge sodium 0.8 is a wrapper jar, real mod is JiJ'd inside
-    sodiumWrapper("maven.modrinth:sodium:mc1.21.1-0.8.13-neoforge")
+    sodiumWrapper("maven.modrinth:sodium:mc1.21.1-0.8.14-beta.2-neoforge")
     compileOnly(files(provider {
         zipTree(sodiumWrapper.singleFile).matching { include("META-INF/jarjar/*sodium-neoforge*-mod.jar") }.singleFile
     }))

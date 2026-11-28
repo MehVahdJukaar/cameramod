@@ -39,7 +39,7 @@ dependencies {
     modImplementation("maven.modrinth:joy-of-painting:1.21.1-2.0.1")
     modImplementation("maven.modrinth:freeze-frame:2.2-1.21")
     modCompileOnly("curse.maven:distant-horizons-508933:8908517")
-    modCompileOnly("maven.modrinth:sodium:mc1.21.1-0.8.13-fabric")
+    modCompileOnly("maven.modrinth:sodium:mc1.21.1-0.8.14-beta.2-fabric")
     modCompileOnly("curse.maven:cc-tweaked-282001:5714511")
     modCompileOnly("curse.maven:jei-238222:7420583")
     //  modRuntimeOnly("maven.modrinth:jade:15.10.5+fabric")
