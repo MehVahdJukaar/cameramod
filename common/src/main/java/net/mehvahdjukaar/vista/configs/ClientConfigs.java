@@ -190,10 +190,10 @@ public class ClientConfigs {
         builder.pop(); // wave_gate
 
         builder.push("general");
-        NO_IRIS_WARN = builder.comment("Disables the warning screen shown when Iris is installed without Iris Bonk")
-                .define("no_iris_warn_screen", false);
-        NO_VEIL_WARN = builder.comment("Disables the warning screen shown when Veil is installed without Veil Bonk")
-                .define("no_veil_warn_screen", false);
+        NO_IRIS_WARN = CompatHandler.IRIS ? builder.comment("Disables the warning screen shown when Iris is installed without Iris Bonk")
+                .define("iris_warn_screen_off", false) : () -> false;
+        NO_VEIL_WARN = CompatHandler.VEIL ? builder.comment("Disables the warning screen shown when Veil is installed without Veil Bonk")
+                .define("veil_warn_screen_off", false) : () -> false;
         builder.pop();
 
         builder.onChange(() -> {

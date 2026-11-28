@@ -1,1 +1,2 @@
-- improved some code that dealt with dar away chunk send when sodium was on. tested with latest sodium
+improved configs
+improved view finder interaction to not require shift for holow cassete bind
